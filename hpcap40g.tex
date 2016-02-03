@@ -1,4 +1,4 @@
-\documentclass[oneside]{epstfg}
+\documentclass[twoside]{epstfg}
 
 \usepackage{lipsum}
 
@@ -26,8 +26,14 @@
 \keywords[spa]{keyword, comma, separated, list}
 \keywords[eng]{keyword, comma, separated, engl}
 
+\newglossaryentry{test}{name={test}, description={a test}}
+\newacronym{svm}{SVM}{support vector machine}
 
 \begin{document}
+
+\selectlanguage{spanish}
+
+\frontmatter
 
 \maketitle[spa]
 \maketitle[eng]
@@ -38,6 +44,18 @@
 \makeabstract[spa]
 \makeabstract[eng]
 
+\printnoidxglossaries
+\clearpage
+
+\tableofcontents
+\clearpage
+\listoftables
+\clearpage
+\listoffigures
+\cleardoublepage
+
+\mainmatter
+
 \chapter{Test}
 \section{Section}
 \subsection{Subsection}
@@ -46,8 +64,10 @@
 
 \lipsum[2]
 
+\gls{test} \gls{svm}
+
 \subparagraph{Subparagarph}
 
-\lipsum[1]
+\lipsum[1-20]
 
 \end{document}

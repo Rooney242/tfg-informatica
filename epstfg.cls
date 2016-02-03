@@ -41,8 +41,12 @@
 \RequirePackage[usenames,dvipsnames]{xcolor}
 \RequirePackage[left=3cm,right=3cm,top=3cm,bottom=2cm]{geometry}
 \RequirePackage{imakeidx} % Correct index creation
+\RequirePackage[acronym, toc]{glossaries}
 \RequirePackage[spanish,es-noquoting,es-noshorthands,english]{babel}
 \RequirePackage{amsthm}
+\RequirePackage{amsmath}
+\RequirePackage{amsfonts}
+\RequirePackage{amssymb}
 \RequirePackage{framed}
 \RequirePackage{mdframed}
 \RequirePackage[pdfencoding=auto,psdextra]{hyperref}
@@ -51,10 +55,37 @@
 \RequirePackage{graphicx}
 \RequirePackage{setspace}
 \RequirePackage{collect}
+\RequirePackage{lastpage}
+
 
 \PrerenderUnicode{ÁáÉéÍíÓóÚúÑñ} % Ensure spanish characters are accepted
 \selectlanguage{spanish}
-\strictpagecheck
+
+% Glossary and acronyms
+\setacronymstyle{long-short}
+\makenoidxglossaries
+\renewcommand{\acronymname}{Acr\'onimos}
+\glsdisablehyper % glossaries hyperlinks don't work correctly.
+
+% Hyperref settings
+\hypersetup{
+	hyperindex,
+    colorlinks,
+    allcolors=blue!50!black
+}
+
+% Page styling
+\pagestyle{ruled}
+
+\def\titlefootstyle{\itshape\footnotesize}
+\def\pagenumberstyle{\small}
+
+\makeoddfoot{ruled}{}{\titlefootstyle\@nameuse{title-spa}}{\pagenumberstyle\thepage}
+\makeevenfoot{ruled}{\pagenumberstyle\thepage}{\titlefootstyle\@nameuse{title-eng}}{}
+\makefootrule{ruled}{\textwidth}{0.7pt}{2pt}
+
+\let\@internal@frontmatter\frontmatter
+\def\frontmatter{\@internal@frontmatter\pagenumbering{Roman}}
 
 % Division styling
 \headstyles{memman}
@@ -85,6 +116,8 @@
 \deftranslation{author}{Autor}{Author}
 \deftranslation{abstract}{Resumen}{Abstract}
 \deftranslation{keywords}{Palabras clave}{Keywords}
+\deftranslation{glossary}{Glosario}{Glossary}
+\deftranslation{acronyms}{Acr\'onimos}{Acronyms}
 
 % Attributes
 \def\setdegreeDouble{
@@ -162,6 +195,7 @@
 		\null\thispagestyle{empty}\newpage % Blank page after in twoside mode
 	\fi
 	\end{center}
+	\setcounter{page}{0}
 }
 
 \newcommand{\makeinnertitle}[1][spa]{ % For second (internal) titles
@@ -194,6 +228,7 @@
 		\null\thispagestyle{empty}\newpage % Blank page after in twoside mode
 	\fi
 	\end{center}
+	\setcounter{page}{0}
 }
 
 %% Abstract and keywords
@@ -222,6 +257,8 @@
 		\paragraph{\bfseries\@nameuse{keywords-#1}}
 		\@nameuse{keywords-contents-#1}
 	\fi
+
+	\clearpage
 }
 
 
