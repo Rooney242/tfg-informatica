@@ -1,6 +1,9 @@
 \documentclass[twoside]{epstfg}
 
 \usepackage{lipsum}
+\usepackage[numbers]{natbib}
+
+\bibliographystyle{abbrv}
 
 \title[spa]{Monitorización, captura y almacenamiento inteligente de tráfico de red a 40Gbps}
 \title[eng]{Monitoring, capture and smart storage of network traffic at 40 Gbps}
@@ -44,9 +47,6 @@
 \makeabstract[spa]
 \makeabstract[eng]
 
-\printnoidxglossaries
-\clearpage
-
 \tableofcontents
 \clearpage
 \listoftables
@@ -56,18 +56,26 @@
 
 \mainmatter
 
-\chapter{Test}
-\section{Section}
-\subsection{Subsection}
-\subsubsection{Subsubsection}
-\paragraph{Paragraph}
+\chapter{Introducción}
 
-\lipsum[2]
+\chapter{Estado del arte}
 
-\gls{test} \gls{svm}
+\chapter{Desarrollo e implementación}
 
-\subparagraph{Subparagarph}
+\chapter{Pruebas}
 
-\lipsum[1-20]
+\chapter{Conclusiones}
+
+\index{A} \gls{test} \gls{svm} Test
+
+\appendix
+
+\printnoidxglossaries
+\clearpage
+
+\nocite{*}
+\bibliography{hpcap40g}{}
+
+\printindex
 
 \end{document}

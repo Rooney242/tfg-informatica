@@ -56,7 +56,9 @@
 \RequirePackage{setspace}
 \RequirePackage{collect}
 \RequirePackage{lastpage}
+\RequirePackage{imakeidx}
 
+\makeindex[intoc]
 
 \PrerenderUnicode{ÁáÉéÍíÓóÚúÑñ} % Ensure spanish characters are accepted
 \selectlanguage{spanish}
