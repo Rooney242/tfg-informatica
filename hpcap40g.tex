@@ -1,5 +1,7 @@
 \documentclass[oneside]{epstfg}
 
+\usepackage{lipsum}
+
 \title[spa]{Monitorización, captura y almacenamiento inteligente de tráfico de red a 40Gbps}
 \title[eng]{Monitoring, capture and smart storage of network traffic at 40 Gbps}
 \author{Guillermo Julián Moreno}
@@ -11,8 +13,19 @@
 \department[spa]{Departamento}
 \department[eng]{Department}
 
-
 \setdegreeDouble
+
+\begin{abstract}[spa]
+\lipsum[1]
+\end{abstract}
+
+\begin{abstract}[eng]
+\lipsum[2]
+\end{abstract}
+
+\keywords[spa]{keyword, comma, separated, list}
+\keywords[eng]{keyword, comma, separated, engl}
+
 
 \begin{document}
 
@@ -21,5 +34,20 @@
 
 \makeinnertitle[spa]
 \makeinnertitle[eng]
+
+\makeabstract[spa]
+\makeabstract[eng]
+
+\chapter{Test}
+\section{Section}
+\subsection{Subsection}
+\subsubsection{Subsubsection}
+\paragraph{Paragraph}
+
+\lipsum[2]
+
+\subparagraph{Subparagarph}
+
+\lipsum[1]
 
 \end{document}

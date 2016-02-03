@@ -50,10 +50,22 @@
 \RequirePackage[utf8x]{inputenc}
 \RequirePackage{graphicx}
 \RequirePackage{setspace}
+\RequirePackage{collect}
 
 \PrerenderUnicode{ÁáÉéÍíÓóÚúÑñ} % Ensure spanish characters are accepted
 \selectlanguage{spanish}
 \strictpagecheck
+
+% Division styling
+\headstyles{memman}
+\chapterstyle{pedersen}
+
+\renewcommand{\chaptitlefont}{\itshape\HUGE}
+\renewcommand{\afterchapskip}{200pt}
+\setsecheadstyle{\large\scshape}
+
+\setsecnumdepth{subsection}
+\setcounter{tocdepth}{3}
 
 % Constants
 \def\@theuniversity{Universidad Aut\'onoma de Madrid}
@@ -71,6 +83,8 @@
 \deftranslation{tutor}{Tutor}{Tutor}
 \deftranslation{ponent}{Ponente}{Ponent}
 \deftranslation{author}{Autor}{Author}
+\deftranslation{abstract}{Resumen}{Abstract}
+\deftranslation{keywords}{Palabras clave}{Keywords}
 
 % Attributes
 \def\setdegreeDouble{
@@ -109,7 +123,7 @@
 \let\maketitle\relax
 \newcommand{\maketitle}[1][spa]{
 	\thispagestyle{empty}
-	\centering
+	\begin{center}
 	\textsc{\LARGE\@theuniversity}
 	\vspace{15pt}
 	\par{\Large\@thecenter}
@@ -147,10 +161,12 @@
 	\if@twoside
 		\null\thispagestyle{empty}\newpage % Blank page after in twoside mode
 	\fi
+	\end{center}
 }
 
 \newcommand{\makeinnertitle}[1][spa]{ % For second (internal) titles
 	\thispagestyle{empty}
+	\begin{center}
 	\centering
 	\vspace{30pt}
 	\textsc{\LARGE\begin{OnehalfSpace}\@nameuse{title-#1}\end{OnehalfSpace}}
@@ -177,5 +193,35 @@
 	\if@twoside
 		\null\thispagestyle{empty}\newpage % Blank page after in twoside mode
 	\fi
+	\end{center}
 }
+
+%% Abstract and keywords
+
+\definecollection{abstract-contents-spa}
+\definecollection{abstract-contents-eng}
+\let\abstract\@undefined
+\let\endabstract\@undefined
+\newenvironment{abstract}[1][spa]
+{
+	\@nameuse{collect}{abstract-contents-#1}{}{}{}{}
+}
+{\@nameuse{endcollect}}
+
+\newif\if@keywordspresent
+\newcommand{\keywords}[2][spa]{\@namedef{keywords-contents-#1}{#2}\@keywordspresenttrue}
+
+\newcommand{\makeabstract}[1][spa]{
+	\chapter*{\@nameuse{abstract-#1}}
+
+	\paragraph{\bfseries\@nameuse{abstract-#1}}
+	\includecollection{abstract-contents-#1}
+
+	\par\vspace{10pt}
+	\if@keywordspresent
+		\paragraph{\bfseries\@nameuse{keywords-#1}}
+		\@nameuse{keywords-contents-#1}
+	\fi
+}
+
 
