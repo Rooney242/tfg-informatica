@@ -95,6 +95,12 @@
 
 \renewcommand{\chaptitlefont}{\itshape\HUGE}
 \renewcommand{\afterchapskip}{200pt}
+
+\renewcommand*{\printchapternum}{% Align baselines with the chapter title
+    \sidebar{\raisebox{-1.2\baselineskip}[0pt][0pt]{\makebox[0pt][l]{%
+      \resizebox{!}{\midchapskip}{\chapnumfont\thechapter}}}}}
+
+
 \setsecheadstyle{\large\scshape}
 
 \setsecnumdepth{subsection}
