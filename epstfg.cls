@@ -63,6 +63,7 @@
 \RequirePackage{imakeidx}
 
 \makeindex[intoc]
+\indexsetup{firstpagestyle = chapter}
 
 \PrerenderUnicode{ÁáÉéÍíÓóÚúÑñ} % Ensure spanish characters are accepted
 \selectlanguage{spanish}
@@ -92,9 +93,27 @@
 \def\titlefootstyle{\itshape\footnotesize}
 \def\pagenumberstyle{\small}
 
-\makeoddfoot{ruled}{}{\titlefootstyle\@nameuse{title-spa}}{\pagenumberstyle\thepage}
-\makeevenfoot{ruled}{\pagenumberstyle\thepage}{\titlefootstyle\@nameuse{title-eng}}{}
+\makeoddfoot{ruled}
+	{\ifdraftdoc\textit{\tiny\@nameuse{draft-spa}}\fi}
+	{\titlefootstyle\@nameuse{title-spa}}
+	{\pagenumberstyle\thepage}
+
+\makeevenfoot{ruled}
+	{\pagenumberstyle\thepage}
+	{\titlefootstyle\@nameuse{title-eng}}
+	{\ifdraftdoc\textit{\tiny\@nameuse{draft-eng}}\fi}
+
 \makefootrule{ruled}{\textwidth}{0.7pt}{2pt}
+
+% Fix styling in chapter pages
+\copypagestyle{chapter}{plain}
+
+\makeoddfoot{chapter}
+	{\ifdraftdoc\textit{\tiny\@nameuse{draft-spa}}\fi}
+	{\titlefootstyle\@nameuse{title-spa}}
+	{\pagenumberstyle\thepage}
+
+\makefootrule{chapter}{\textwidth}{0.7pt}{2pt}
 
 \let\@internal@frontmatter\frontmatter
 \def\frontmatter{\@internal@frontmatter\pagenumbering{Roman}}
