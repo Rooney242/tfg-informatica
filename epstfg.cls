@@ -120,6 +120,11 @@
 \let\@internal@mainmatter\mainmatter
 \def\mainmatter{\@internal@mainmatter\@fixchapterstyle}
 
+\if@twoside
+	\let\clearsidepage\cleardoublepage
+\else
+	\let\clearsidepage\clearpage
+\fi
 
 \let\@internal@frontmatter\frontmatter
 \def\frontmatter{\@internal@frontmatter\pagenumbering{Roman}}
