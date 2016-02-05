@@ -29,9 +29,13 @@
 	\@twosidetrue
 }
 
+\newif\if@draftbanner
+\DeclareOption{draftbanner}{\@draftbannertrue}
+\DeclareOption{nodraftbanner}{\@draftbannerfalse}
+
 \DeclareOption*{\PassOptionsToClass{\CurrentOption}{memoir}}
 
-\ExecuteOptions{palatino, twoside}
+\ExecuteOptions{palatino,twoside,draftbanner}
 \ProcessOptions\relax
 
 \PassOptionsToClass{\@fontsizeopt}{memoir}
@@ -52,7 +56,7 @@
 \RequirePackage[pdfencoding=auto,psdextra]{hyperref}
 \RequirePackage[T1]{fontenc}
 \RequirePackage[utf8x]{inputenc}
-\RequirePackage{graphicx}
+\RequirePackage[final]{graphicx}
 \RequirePackage{setspace}
 \RequirePackage{collect}
 \RequirePackage{lastpage}
@@ -62,6 +66,12 @@
 
 \PrerenderUnicode{ÁáÉéÍíÓóÚúÑñ} % Ensure spanish characters are accepted
 \selectlanguage{spanish}
+
+\ifdraftdoc\else
+	\@draftbannerfalse
+\fi
+
+\colorlet{bannercolor}{Bittersweet}
 
 % Glossary and acronyms
 \setacronymstyle{long-short}
@@ -126,6 +136,7 @@
 \deftranslation{keywords}{Palabras clave}{Keywords}
 \deftranslation{glossary}{Glosario}{Glossary}
 \deftranslation{acronyms}{Acr\'onimos}{Acronyms}
+\deftranslation{draft}{Borrador}{Draft}
 
 % Attributes
 \def\setdegreeDouble{
@@ -187,6 +198,21 @@
 	\textsc{\Large\begin{OnehalfSpace}\@nameuse{title-#1}\end{OnehalfSpace}}
 
 	\vfill
+
+	\if@draftbanner
+		\begingroup
+		\color{bannercolor}
+		\noindent\makebox[\linewidth]{\rule{1.1\paperwidth}{2pt}}
+		\vspace{-6pt}
+
+		\textit{\Large\@nameuse{draft-#1}}
+
+		\noindent\makebox[\linewidth]{\rule{1.1\paperwidth}{2pt}}
+
+		\vspace{50pt}
+		\endgroup
+	\fi
+
 	{\large
 		\theauthor
 		\vspace{5pt}
@@ -211,6 +237,7 @@
 	\begin{center}
 	\centering
 	\vspace{30pt}
+	\ifdraftdoc\textit{\Large\@nameuse{draft-#1} - \today}\par\fi
 	\textsc{\LARGE\begin{OnehalfSpace}\@nameuse{title-#1}\end{OnehalfSpace}}
 
 	\vspace{150pt}
