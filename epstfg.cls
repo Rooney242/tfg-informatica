@@ -105,15 +105,21 @@
 
 \makefootrule{ruled}{\textwidth}{0.7pt}{2pt}
 
-% Fix styling in chapter pages
 \copypagestyle{chapter}{plain}
 
-\makeoddfoot{chapter}
-	{\ifdraftdoc\textit{\tiny\@nameuse{draft-spa}}\fi}
-	{\titlefootstyle\@nameuse{title-spa}}
-	{\pagenumberstyle\thepage}
+% Fix styling in chapter pages
+\def\@fixchapterstyle{
+	\makeoddfoot{chapter}
+		{\ifdraftdoc\textit{\tiny\@nameuse{draft-spa}}\fi}
+		{\titlefootstyle\@nameuse{title-spa}}
+		{\pagenumberstyle\thepage}
 
-\makefootrule{chapter}{\textwidth}{0.7pt}{2pt}
+	\makefootrule{chapter}{\textwidth}{0.7pt}{2pt}
+}
+
+\let\@internal@mainmatter\mainmatter
+\def\mainmatter{\@internal@mainmatter\@fixchapterstyle}
+
 
 \let\@internal@frontmatter\frontmatter
 \def\frontmatter{\@internal@frontmatter\pagenumbering{Roman}}
@@ -193,6 +199,11 @@
 % Title page
 \let\maketitle\relax
 \newcommand{\maketitle}[1][spa]{
+	\if@twoside
+		\cleardoublepage
+	\else
+		\clearpage
+	\fi
 	\thispagestyle{empty}
 	\begin{center}
 	\textsc{\LARGE\@theuniversity}
@@ -243,15 +254,17 @@
 	\vspace{10pt}
 	\@nameuse{date-#1}
 
-	\newpage
-	\if@twoside
-		\null\thispagestyle{empty}\newpage % Blank page after in twoside mode
-	\fi
 	\end{center}
+	\newpage
 	\setcounter{page}{0}
 }
 
 \newcommand{\makeinnertitle}[1][spa]{ % For second (internal) titles
+	\if@twoside
+		\cleardoublepage
+	\else
+		\clearpage
+	\fi
 	\thispagestyle{empty}
 	\begin{center}
 	\centering
@@ -277,11 +290,8 @@
 		\@nameuse{date-#1}
 	}
 
-	\newpage
-	\if@twoside
-		\null\thispagestyle{empty}\newpage % Blank page after in twoside mode
-	\fi
 	\end{center}
+	\newpage
 	\setcounter{page}{0}
 }
 
@@ -301,6 +311,11 @@
 \newcommand{\keywords}[2][spa]{\@namedef{keywords-contents-#1}{#2}\@keywordspresenttrue}
 
 \newcommand{\makeabstract}[1][spa]{
+	\if@twoside
+		\cleardoublepage
+	\else
+		\clearpage
+	\fi
 	\chapter*{\@nameuse{abstract-#1}}
 
 	\paragraph{\bfseries\@nameuse{abstract-#1}}
@@ -311,8 +326,7 @@
 		\paragraph{\bfseries\@nameuse{keywords-#1}}
 		\@nameuse{keywords-contents-#1}
 	\fi
-
-	\clearpage
+	\newpage
 }
 
 
