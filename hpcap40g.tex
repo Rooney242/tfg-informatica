@@ -1,4 +1,4 @@
-\documentclass[draft, oneside]{epstfg}
+\documentclass[oneside, draft]{epstfg}
 
 \usepackage{lipsum}
 \usepackage[numbers]{natbib}
@@ -58,15 +58,56 @@
 
 \chapter{Introducción y motivación}
 
+\section{Funcionamiento de un driver de red: ¿Qué hay que cambiar para alto rendimiento?}
+
 \chapter{Estado del arte}
+
+HPCAP, artículo de Javier de 40Gbps.
 
 \chapter{Desarrollo e implementación}
 
+\section{Arquitectura}
+
+\subsection{Hilos}
+
+Varias posibilidades:
+
+\begin{enumerate}
+\item Separación del \textit{buffer} de la tarjeta en $n$ partes, cada hilo sólo se preocupa de una de esas partes. La tasa efectiva se reduce a $40 / n$ Gbps por hilo. El problema es que el anillo de la tarjeta se separa en paquetes y el buffer de HPCAP en bytes, así que un segmento de la tarjeta no tiene por qué corresponderse con otro segmento en el buffer.
+\item Múltiples hilos escribiendo en el mismo buffer y leyendo del mismo anillo(s). Aquí habría que investigar una forma de sincronización eficiente, usando colas sin bloqueos. Un ejemplo interesante a leer es \href{http://disruptor.googlecode.com/files/Disruptor-1.0.pdf}{Disruptor}. Habría que investigar más bibliografía.
+\item Como variación del anterior, múltiples hilos escribiendo en el mismo buffer pero leyendo de segmentos separados del anillo. Así quizás podemos evitar problemas de concurrencia a tasas bajas.
+\end{enumerate}
+
+Relacionado con las tasas bajas, una posibilidad con prioridad muy baja es mirar si se puede plantear creación dinámica de hilos según la tasa de recepción, de tal forma que entre el buffer y la creación dinámica se puedan ahorrar recursos en instalaciones con tasa suficientemente baja y sólo con picos de 40Gbps.
+
+\subsection{Filtrado}
+
+Estudiar filtros hardware y posibilidad de filtros software para reducir la tasa de tráfico recibida por la aplicación en espacio de usuario.
+
+\subsection{Almacenamiento y selección de información}
+
+Realizar un estudio teórico de necesidades de almacenamiento según tasa a la que queramos almacenar, viendo productos existentes en el mercado y calculando coste del sistema.
+
+Estudiar si el driver puede realizar un prefiltrado de información en tiempo de recepción, extrayendo sólo ciertos campos de cada paquete. La extracción no debe de ser muy compleja y probablemente tenga que limitarse a extraer ciertos rangos fijos de bytes.
+
+\section{Herramientas adicionales}
+
+\textit{hpcap-test}.
+
 \chapter{Pruebas}
 
-\chapter{Conclusiones}
+\section{Caso base: ¿hasta dónde llega la arquitectura básica?}
 
-\index{A} \gls{test} \gls{svm} Test
+Arquitectura básica: un anillo RX de la tarjeta y un hilo en HPCAP para tener una idea de cuánto por detrás estamos del objetivo de 40 Gbps.
+
+\begin{enumerate}
+\item Capacidad máxima de la arquitectura básica (una cola, un hilo) para establecer un \textit{baseline} con el que comparar.
+\item Comprobación de tasa máxima de recepción de arquitectura básica sin realizar ningún proceso (esto es, simplemente sacando los paquetes del anillo de la tarjeta). Importante para comprobar si un único anillo de recepción nos basta o no. En caso de no ser suficiente, probablemente sea imposible mantener orden en la captura final.
+\item Comprobación de las capacidades de \textit{timestamp} por hardware en la tarjeta, para saber si podemos ahorrarnos las marcas de tiempo puestas en software.
+\end{enumerate}
+
+
+\chapter{Conclusiones}
 
 \appendix
 

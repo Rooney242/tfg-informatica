@@ -146,6 +146,12 @@
 \setsecnumdepth{subsection}
 \setcounter{tocdepth}{3}
 
+% Useful commands
+\newcommand{\todo}[1]{
+	\textcolor{red}{#1}
+	\marginpar{\textcolor{red}{\textit{\hspace{4pt}TODO}}}
+}
+
 % Constants
 \def\@theuniversity{Universidad Aut\'onoma de Madrid}
 \def\@thecenter{Escuela Polit\'ecnica Superior}
