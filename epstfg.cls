@@ -53,7 +53,7 @@
 \RequirePackage{amssymb}
 \RequirePackage{framed}
 \RequirePackage{mdframed}
-\RequirePackage[pdfencoding=auto,psdextra]{hyperref}
+\RequirePackage[pdfencoding=auto,psdextra,final]{hyperref}
 \RequirePackage[T1]{fontenc}
 \RequirePackage[utf8x]{inputenc}
 \RequirePackage[final]{graphicx}
