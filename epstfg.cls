@@ -153,26 +153,6 @@
 	\marginpar{\textcolor{red}{\textit{\hspace{4pt}TODO}}}
 }
 
-% Undefine memoir's title and date so we can redefine them
-\let\title\relax
-\let\date\relax
-\newcommand{\title}[2][spa]{\@namedef{title-#1}{#2}}
-\newcommand{\date}[2][spa]{\@namedef{date-#1}{#2}}
-
-\newif\if@tutorpresent
-\def\thetutor{}
-\newcommand{\tutor}[1]{\def\thetutor{#1}\@tutorpresenttrue}
-
-\newif\if@ponentpresent
-\def\theponent{}
-\newcommand{\ponent}[1]{\def\thetutor{#1}\@ponentpresenttrue}
-
-\newif\if@grouppresent
-\newcommand{\group}[2][spa]{\@namedef{group-#1}{#2}\@grouppresenttrue}
-
-\newif\if@departmentpresent
-\newcommand{\department}[2][spa]{\@namedef{department-#1}{#2}\@departmentpresenttrue}
-
 % Title page
 \let\maketitle\relax
 \newcommand{\maketitle}[1][spa]{

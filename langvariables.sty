@@ -8,7 +8,7 @@
 \def\@theuniversitylogo{img/logo_uam.png}
 
 % Language-dependent strings
-\newcommand{\deftranslation}[3]{\@namedef{#1-spa}{#2}\@namedef{#1-eng}{#3}}
+\newcommand{\@lv@deftranslation}[3]{\@namedef{#1-spa}{#2}\@namedef{#1-eng}{#3}}
 
 \@namedef{eng}{english}
 \@namedef{spa}{spanish}
@@ -20,25 +20,45 @@
 	\def\@default@lang{#1}
 } % Allow setting language from commands
 
-\deftranslation{endofdegree}{Trabajo de Fin de Grado}{Bachelor Work}
-\deftranslation{tutor}{Tutor}{Tutor}
-\deftranslation{ponent}{Ponente}{Ponent}
-\deftranslation{author}{Autor}{Author}
-\deftranslation{abstract}{Resumen}{Abstract}
-\deftranslation{keywords}{Palabras clave}{Keywords}
-\deftranslation{glossary}{Glosario}{Glossary}
-\deftranslation{acronyms}{Acr\'onimos}{Acronyms}
-\deftranslation{draft}{Borrador}{Draft}
+\@lv@deftranslation{endofdegree}{Trabajo de Fin de Grado}{Bachelor Work}
+\@lv@deftranslation{tutor}{Tutor}{Tutor}
+\@lv@deftranslation{ponent}{Ponente}{Ponent}
+\@lv@deftranslation{author}{Autor}{Author}
+\@lv@deftranslation{abstract}{Resumen}{Abstract}
+\@lv@deftranslation{keywords}{Palabras clave}{Keywords}
+\@lv@deftranslation{glossary}{Glosario}{Glossary}
+\@lv@deftranslation{acronyms}{Acr\'onimos}{Acronyms}
+\@lv@deftranslation{draft}{Borrador}{Draft}
 
 % Attributes
 \def\setdegreeDouble{
-	\deftranslation{degree}
+	\@lv@deftranslation{degree}
 		{Doble Grado en Ingenier\'ia Inform\'atica y Matem\'aticas}
 		{Double Degreee in Computer Engineering and Mathematics}
 }
 
 \def\setdegreeCompSci{
-	\deftranslation{degree}
+	\@lv@deftranslation{degree}
 		{Grado en Ingenier\'ia Inform\'atica}
 		{Degreee in Computer Engineering}
 }
+
+% Undefine memoir's title and date so we can redefine them
+\let\title\relax
+\let\date\relax
+\newcommand{\title}[2][\@default@lang]{\@namedef{title-#1}{#2}}
+\newcommand{\date}[2][\@default@lang]{\@namedef{date-#1}{#2}}
+
+\newif\if@tutorpresent
+\def\thetutor{}
+\newcommand{\tutor}[1]{\def\thetutor{#1}\@tutorpresenttrue}
+
+\newif\if@ponentpresent
+\def\theponent{}
+\newcommand{\ponent}[1]{\def\thetutor{#1}\@ponentpresenttrue}
+
+\newif\if@grouppresent
+\newcommand{\group}[2][\@default@lang]{\@namedef{group-#1}{#2}\@grouppresenttrue}
+
+\newif\if@departmentpresent
+\newcommand{\department}[2][\@default@lang]{\@namedef{department-#1}{#2}\@departmentpresenttrue}
