@@ -61,6 +61,7 @@
 \RequirePackage{collect}
 \RequirePackage{lastpage}
 \RequirePackage{imakeidx}
+\RequirePackage{langvariables}
 
 \makeindex[intoc]
 \indexsetup{firstpagestyle = chapter}
@@ -150,41 +151,6 @@
 \newcommand{\todo}[1]{
 	\textcolor{red}{#1}
 	\marginpar{\textcolor{red}{\textit{\hspace{4pt}TODO}}}
-}
-
-% Constants
-\def\@theuniversity{Universidad Aut\'onoma de Madrid}
-\def\@thecenter{Escuela Polit\'ecnica Superior}
-\def\@thecenterlogo{img/logo_eps.png}
-\def\@theuniversitylogo{img/logo_uam.png}
-
-% Language-dependent strings
-\newcommand{\deftranslation}[3]{\@namedef{#1-spa}{#2}\@namedef{#1-eng}{#3}}
-
-\@namedef{eng}{english}\@namedef{spa}{spanish}
-\newcommand{\selectlang}[1]{\selectlanguage{\@nameuse{#1}}} % Allow setting language from commands
-
-\deftranslation{endofdegree}{Trabajo de Fin de Grado}{Bachelor Work}
-\deftranslation{tutor}{Tutor}{Tutor}
-\deftranslation{ponent}{Ponente}{Ponent}
-\deftranslation{author}{Autor}{Author}
-\deftranslation{abstract}{Resumen}{Abstract}
-\deftranslation{keywords}{Palabras clave}{Keywords}
-\deftranslation{glossary}{Glosario}{Glossary}
-\deftranslation{acronyms}{Acr\'onimos}{Acronyms}
-\deftranslation{draft}{Borrador}{Draft}
-
-% Attributes
-\def\setdegreeDouble{
-	\deftranslation{degree}
-		{Doble Grado en Ingenier\'ia Inform\'atica y Matem\'aticas}
-		{Double Degreee in Computer Engineering and Mathematics}
-}
-
-\def\setdegreeCompSci{
-	\deftranslation{degree}
-		{Grado en Ingenier\'ia Inform\'atica}
-		{Degreee in Computer Engineering}
 }
 
 % Undefine memoir's title and date so we can redefine them

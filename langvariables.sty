@@ -1,0 +1,44 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{langvariables}[2016/02/20 Language variables for epstfg.cls]
+
+% Constants
+\def\@theuniversity{Universidad Aut\'onoma de Madrid}
+\def\@thecenter{Escuela Polit\'ecnica Superior}
+\def\@thecenterlogo{img/logo_eps.png}
+\def\@theuniversitylogo{img/logo_uam.png}
+
+% Language-dependent strings
+\newcommand{\deftranslation}[3]{\@namedef{#1-spa}{#2}\@namedef{#1-eng}{#3}}
+
+\@namedef{eng}{english}
+\@namedef{spa}{spanish}
+
+\def\@default@lang{spa}
+
+\newcommand{\selectlang}[1]{
+	\selectlanguage{\@nameuse{#1}}
+	\def\@default@lang{#1}
+} % Allow setting language from commands
+
+\deftranslation{endofdegree}{Trabajo de Fin de Grado}{Bachelor Work}
+\deftranslation{tutor}{Tutor}{Tutor}
+\deftranslation{ponent}{Ponente}{Ponent}
+\deftranslation{author}{Autor}{Author}
+\deftranslation{abstract}{Resumen}{Abstract}
+\deftranslation{keywords}{Palabras clave}{Keywords}
+\deftranslation{glossary}{Glosario}{Glossary}
+\deftranslation{acronyms}{Acr\'onimos}{Acronyms}
+\deftranslation{draft}{Borrador}{Draft}
+
+% Attributes
+\def\setdegreeDouble{
+	\deftranslation{degree}
+		{Doble Grado en Ingenier\'ia Inform\'atica y Matem\'aticas}
+		{Double Degreee in Computer Engineering and Mathematics}
+}
+
+\def\setdegreeCompSci{
+	\deftranslation{degree}
+		{Grado en Ingenier\'ia Inform\'atica}
+		{Degreee in Computer Engineering}
+}
