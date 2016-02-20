@@ -156,7 +156,7 @@
 \def\@theuniversity{Universidad Aut\'onoma de Madrid}
 \def\@thecenter{Escuela Polit\'ecnica Superior}
 \def\@thecenterlogo{img/logo_eps.png}
-\def\@theuniversitylogo{img/logo_uam.jpg}
+\def\@theuniversitylogo{img/logo_uam.png}
 
 % Language-dependent strings
 \newcommand{\deftranslation}[3]{\@namedef{#1-spa}{#2}\@namedef{#1-eng}{#3}}
