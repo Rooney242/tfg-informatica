@@ -63,6 +63,10 @@ HPCAP, artículo de Javier de 40Gbps. DPDK, sockets de acceso directo (PF\_LINUX
 
 \chapter{Desarrollo e implementación}
 
+\section{Arquitectura Mellanox}
+
+cq (completion queue?), rx rings.
+
 \section{Arquitectura}
 
 \subsection{Hilos}
@@ -98,7 +102,7 @@ Estudiar si el driver puede realizar un prefiltrado de información en tiempo de
 Arquitectura básica: un anillo RX de la tarjeta y un hilo en HPCAP para tener una idea de cuánto por detrás estamos del objetivo de 40 Gbps.
 
 \begin{enumerate}
-\item Capacidad máxima de la arquitectura básica (una cola, un hilo) para establecer un \textit{baseline} con el que comparar.
+\item Capacidad máxima de la arquitectura básica (una cola, un hilo) para establecer un \textit{baseline} con el que comparar. \textbf{Llega hasta 16 Gbps}.
 \item Comprobación de tasa máxima de recepción de arquitectura básica sin realizar ningún proceso (esto es, simplemente sacando los paquetes del anillo de la tarjeta). Importante para comprobar si un único anillo de recepción nos basta o no. En caso de no ser suficiente, probablemente sea imposible mantener orden en la captura final.
 \item Comprobación de las capacidades de \textit{timestamp} por hardware en la tarjeta, para saber si podemos ahorrarnos las marcas de tiempo puestas en software.
 \end{enumerate}
