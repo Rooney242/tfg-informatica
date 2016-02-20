@@ -8,7 +8,10 @@
 \def\@theuniversitylogo{img/logo_uam.png}
 
 % Language-dependent strings
-\newcommand{\@lv@deftranslation}[3]{\@namedef{#1-spa}{#2}\@namedef{#1-eng}{#3}}
+\newcommand{\@lv@deftranslation}[3]{
+	\global\@namedef{#1-spa}{#2}
+	\global\@namedef{#1-eng}{#3}
+}
 
 \@namedef{eng}{english}
 \@namedef{spa}{spanish}
