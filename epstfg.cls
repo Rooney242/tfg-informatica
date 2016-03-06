@@ -46,7 +46,7 @@
 \RequirePackage[left=3cm,right=3cm,top=3cm,bottom=2cm]{geometry}
 \RequirePackage{imakeidx} % Correct index creation
 \RequirePackage[acronym, toc]{glossaries}
-\RequirePackage[spanish,es-noquoting,es-noshorthands,english]{babel}
+\RequirePackage[spanish,es-noquoting,es-noshorthands,es-tabla,english]{babel}
 \RequirePackage{amsthm}
 \RequirePackage{amsmath}
 \RequirePackage{amsfonts}
@@ -62,6 +62,7 @@
 \RequirePackage{lastpage}
 \RequirePackage{imakeidx}
 \RequirePackage{langvariables}
+\RequirePackage{lato}
 
 \makeindex[intoc]
 \indexsetup{firstpagestyle = chapter}
@@ -73,7 +74,10 @@
 	\@draftbannerfalse
 \fi
 
+% Some color definitions
 \colorlet{bannercolor}{Bittersweet}
+\colorlet{linkcolor}{blue!50!black}
+\definecolor[named]{chapnumcolor}{HTML}{86001a}
 
 % Glossary and acronyms
 \setacronymstyle{long-short}
@@ -84,14 +88,14 @@
 % Hyperref settings
 \hypersetup{
 	hyperindex,
-    colorlinks,
-    allcolors=blue!50!black
+	colorlinks,
+	allcolors = linkcolor
 }
 
 % Page styling
 \pagestyle{ruled}
 
-\def\titlefootstyle{\itshape\footnotesize}
+\def\titlefootstyle{\footnotesize}
 \def\pagenumberstyle{\small}
 
 \makeoddfoot{ruled}
@@ -134,15 +138,19 @@
 \headstyles{memman}
 \chapterstyle{pedersen}
 
-\renewcommand{\chaptitlefont}{\itshape\HUGE}
+\renewcommand{\chaptitlefont}{\HUGE\fontfamily{fla}\selectfont\scshape}
 \renewcommand{\afterchapskip}{200pt}
 
 \renewcommand*{\printchapternum}{% Align baselines with the chapter title
-    \sidebar{\raisebox{-1.2\baselineskip}[0pt][0pt]{\makebox[0pt][l]{%
-      \resizebox{!}{\midchapskip}{\chapnumfont\thechapter}}}}}
+\sidebar{
+	\raisebox{-1.2\baselineskip}[0pt][0pt]{
+	\makebox[0pt][l]{
+	\resizebox{!}{\midchapskip}{
+		\color{chapnumcolor}\chapnumfont\thechapter
+}}}}}
 
-
-\setsecheadstyle{\large\scshape}
+\setsecheadstyle{\Large\itshape}
+\setsubsecheadstyle{\large\bfseries}
 
 \setsecnumdepth{subsection}
 \setcounter{tocdepth}{3}
