@@ -63,6 +63,7 @@
 \RequirePackage{imakeidx}
 \RequirePackage{langvariables}
 \RequirePackage{lato}
+\RequirePackage{caption}
 
 \makeindex[intoc]
 \indexsetup{firstpagestyle = chapter}
@@ -164,6 +165,10 @@
 
 \setsecnumdepth{subsection}
 \setcounter{tocdepth}{3}
+
+% Caption setups
+\captionsetup[figure]{font = {small}, labelfont = {bf}}
+\captionsetup[table]{font = {small}, labelfont = {bf}}
 
 % Useful commands
 \newcommand{\todo}[1]{
