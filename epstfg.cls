@@ -5,7 +5,7 @@
 
 \DeclareOption{palatino}{%
 	\renewcommand{\rmdefault}{ppl}
-	\renewcommand{\sfdefault}{lmss}
+	\renewcommand{\sfdefault}{fla}
 	\renewcommand{\ttdefault}{lmtt}
 	\renewcommand*{\familydefault}{\rmdefault}
 	\def\@fontsizeopt{11pt}
@@ -110,14 +110,14 @@
 	{\ifdraftdoc\textit{\tiny\@nameuse{draft-eng}}\fi}
 
 \makeevenhead{ruled}
-	{\fontfamily{fla}\selectfont\scshape\leftmark}
+	{\sffamily\scshape\leftmark}
 	{}
 	{}
 
 \makeoddhead{ruled}
 	{}
 	{}
-	{\fontfamily{fla}\selectfont\small\rightmark}
+	{\sffamily\small\rightmark}
 
 \makefootrule{ruled}{\textwidth}{0.7pt}{2pt}
 
@@ -149,7 +149,7 @@
 \headstyles{memman}
 \chapterstyle{pedersen}
 
-\renewcommand{\chaptitlefont}{\HUGE\fontfamily{fla}\selectfont\scshape}
+\renewcommand{\chaptitlefont}{\HUGE\sffamily\scshape}
 \renewcommand{\afterchapskip}{200pt}
 
 \renewcommand*{\printchapternum}{% Align baselines with the chapter title
@@ -160,20 +160,28 @@
 		\color{chapnumcolor}\chapnumfont\thechapter
 }}}}}
 
-\setsecheadstyle{\fontfamily{fla}\selectfont\Large}
-\setsubsecheadstyle{\fontfamily{fla}\selectfont\bfseries}
+\setsecheadstyle{\sffamily\Large}
+\setsubsecheadstyle{\sffamily\bfseries}
 
 \setsecnumdepth{subsection}
 \setcounter{tocdepth}{3}
 
 % Caption setups
-\captionsetup[figure]{font = {small}, labelfont = {bf}}
-\captionsetup[table]{font = {small}, labelfont = {bf}}
+\captionsetup[figure]{font = {small, sf}, labelfont = {bf}}
+\captionsetup[table]{font = {small, sf}, labelfont = {bf}}
 
 % Useful commands
 \newcommand{\todo}[1]{
 	\textcolor{red}{#1}
 	\marginpar{\textcolor{red}{\textit{\hspace{4pt}TODO}}}
+}
+
+\newcommand{\inputgnuplot}[2][1]{
+	\resizebox{#1\linewidth}{!}{
+		\fontsize{7pt}{7pt}\fontfamily{ppl}\selectfont
+		\input{#2.tex}
+	}
+	\vspace{-15pt} % Adjust for font size
 }
 
 % Title page

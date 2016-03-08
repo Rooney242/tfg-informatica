@@ -66,3 +66,6 @@ tikzgen/*
 *~
 *.sublime-project
 *.zip
+
+gnuplot/*
+!gnuplot/*.gpi

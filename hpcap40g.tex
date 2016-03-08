@@ -83,10 +83,6 @@ Relacionado con las tasas bajas, una posibilidad con prioridad muy baja es mirar
 
 \subsection{Filtrado}
 
-\begin{figure}
-\caption{A sample caption for testing things.}
-\end{figure}
-
 Estudiar filtros hardware y posibilidad de filtros software para reducir la tasa de tráfico recibida por la aplicación en espacio de usuario.
 
 \subsection{Almacenamiento y selección de información}
@@ -95,8 +91,6 @@ Realizar un estudio teórico de necesidades de almacenamiento según tasa a la q
 
 Estudiar si el driver puede realizar un prefiltrado de información en tiempo de recepción, extrayendo sólo ciertos campos de cada paquete. La extracción no debe de ser muy compleja y probablemente tenga que limitarse a extraer ciertos rangos fijos de bytes.
 
-\lipsum[2-20]
-
 \section{Herramientas adicionales}
 
 \textit{hpcap-test, hpcap-benchmark}.
@@ -104,6 +98,12 @@ Estudiar si el driver puede realizar un prefiltrado de información en tiempo de
 \chapter{Pruebas}
 
 \section{Caso base: ¿hasta dónde llega la arquitectura básica?}
+
+\begin{figure}[btp]
+\inputgnuplot{gnuplot/simple-arch-max-rate}
+\caption{Una medida de la capacidad base de la tarjeta: tasa máxima que se alcanza sin perder paquetes en función del tamaño de paquetes.}
+\label{fig:SimpleArch:MaxRate}
+\end{figure}
 
 Arquitectura básica: un anillo RX de la tarjeta y un hilo en HPCAP para tener una idea de cuánto por detrás estamos del objetivo de 40 Gbps.
 

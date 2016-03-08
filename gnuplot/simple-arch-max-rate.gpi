@@ -1,0 +1,14 @@
+#!/usr/bin/gnuplot
+
+load 'gnuplot/config.gpi'
+
+set term cairolatex color size 4.7in,3in font ",10" dashed transparent
+set output 'gnuplot/simple-arch-max-rate.tex'
+
+set title 'Capacidad máxima - Hilo único'
+
+set grid x y
+set xlabel 'Tamaño de paquete'
+set ylabel 'Tasa máxima (Gbps)'
+
+plot 'data/simple-arch-max-rate-hwtstamp.dat' using 1:2 w l ls 1 lw 3 title 'Con timestamp hardware'
