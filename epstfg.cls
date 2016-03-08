@@ -108,6 +108,16 @@
 	{\titlefootstyle\@nameuse{title-eng}}
 	{\ifdraftdoc\textit{\tiny\@nameuse{draft-eng}}\fi}
 
+\makeevenhead{ruled}
+	{\fontfamily{fla}\selectfont\scshape\leftmark}
+	{}
+	{}
+
+\makeoddhead{ruled}
+	{}
+	{}
+	{\fontfamily{fla}\selectfont\small\rightmark}
+
 \makefootrule{ruled}{\textwidth}{0.7pt}{2pt}
 
 \copypagestyle{chapter}{plain}
@@ -149,8 +159,8 @@
 		\color{chapnumcolor}\chapnumfont\thechapter
 }}}}}
 
-\setsecheadstyle{\Large\itshape}
-\setsubsecheadstyle{\large\bfseries}
+\setsecheadstyle{\fontfamily{fla}\selectfont\Large}
+\setsubsecheadstyle{\fontfamily{fla}\selectfont\bfseries}
 
 \setsecnumdepth{subsection}
 \setcounter{tocdepth}{3}
