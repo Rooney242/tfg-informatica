@@ -184,10 +184,10 @@
 	\end{minipage}
 
 	\vspace{100pt}
-	\textbf{\@nameuse{degree-#1}}
+	{\fontfamily{fla}\selectfont\textbf{\@nameuse{degree-#1}}}
 
 	\vspace{15pt}
-	\textbf{\MakeUppercase{\Huge\@nameuse{endofdegree-#1}}}
+	{\fontfamily{fla}\selectfont\textbf{\MakeUppercase{\Huge\@nameuse{endofdegree-#1}}}}
 
 	\vspace{30pt}
 	\textsc{\Large\begin{OnehalfSpace}\@nameuse{title-#1}\end{OnehalfSpace}}
