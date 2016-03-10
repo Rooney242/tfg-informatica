@@ -133,8 +133,27 @@
 	\makefootrule{chapter}{\textwidth}{0.7pt}{2pt}
 }
 
+% TOC fixes
+\setlength{\cftbeforechapterskip}{2pt} % No separation between chapters in the
+									   % frontmatter (e.g., table of contents, list of
+									   % figures/tables).
+
+\def\@mainmattertocsettings{
+	\addtocontents{toc}{
+		\setlength{\cftbeforechapterskip}{10pt}
+	} % Restore separation between chapters in TOC.
+	\addtocontents{toc}{
+		\vspace{10pt}
+	}	% Extra separation between frontmatter and mainmatter chapters in TOC.
+}
+
+% Patch \mainmatter to introduce fixes in chapter styling, toc and more.
 \let\@internal@mainmatter\mainmatter
-\def\mainmatter{\@internal@mainmatter\@fixchapterstyle}
+\def\mainmatter{
+	\@internal@mainmatter
+	\@fixchapterstyle
+	\@mainmattertocsettings
+}
 
 \if@twoside
 	\let\clearsidepage\cleardoublepage
