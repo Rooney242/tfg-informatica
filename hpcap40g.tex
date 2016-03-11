@@ -2,6 +2,7 @@
 
 \usepackage{lipsum}
 \usepackage[numbers]{natbib}
+\usepackage{fancysprefs}
 
 \bibliographystyle{abbrv}
 
@@ -70,6 +71,7 @@ cq (completion queue?), rx rings.
 \section{Arquitectura}
 
 \subsection{Hilos}
+\label{sec:Hilos}
 
 Varias posibilidades:
 
@@ -105,13 +107,11 @@ Estudiar si el driver puede realizar un prefiltrado de información en tiempo de
 \label{fig:SimpleArch:MaxRate}
 \end{figure}
 
-Arquitectura básica: un anillo RX de la tarjeta y un hilo en HPCAP para tener una idea de cuánto por detrás estamos del objetivo de 40 Gbps.
+Dadas las limitaciones del \textit{hardware}, está claro que un único hilo de recepción no será suficiente para hacer la recepción a 40 Gbps. Aun así, es necesario realizar las pruebas en esta arquitectura simple para establecer una base sobre la que comparar y medir mejoras.
 
-\begin{enumerate}
-\item Capacidad máxima de la arquitectura básica (una cola, un hilo) para establecer un \textit{baseline} con el que comparar. \textbf{Llega hasta 16 Gbps}.
-\item Comprobación de tasa máxima de recepción de arquitectura básica sin realizar ningún proceso (esto es, simplemente sacando los paquetes del anillo de la tarjeta). Importante para comprobar si un único anillo de recepción nos basta o no. En caso de no ser suficiente, probablemente sea imposible mantener orden en la captura final.
-\item Comprobación de las capacidades de \textit{timestamp} por hardware en la tarjeta, para saber si podemos ahorrarnos las marcas de tiempo puestas en software.
-\end{enumerate}
+Tal y como se ve en la \fref{fig:SimpleArch:MaxRate}, sólo se llega a la tasa máxima de captura a partir de los 1250 bytes de tamaño de paquete. Para tamaños pequeños se observa el mismo comportamiento que con la versión original de HPCAP \citep{MorenoTFM2012}, donde para tamaños cercanos al mínimo (64 bytes) no se llegaba a la tasa máxima de 10 Gbps. En nuestro caso, para ese mismo tamaño se llega a una tasa de 7.6 Gbps.
+
+Así mismo, sobre esta arquitectura básica se ha comprobado el efecto de las marcas de tiempo (\textit{timestamp}) obtenidas a través de la tarjeta o a través del reloj \textit{software} del \textit{kernel} Linux. El rendimiento en ambos casos es prácticamente el mismo.
 
 
 \chapter{Conclusiones}
