@@ -43,8 +43,7 @@ set grid front
 set xlabel ''
 set ylabel ''
 
-unset mytics
-unset mxtics
+set mytics 2
 
 set xrange [60:200]
 
