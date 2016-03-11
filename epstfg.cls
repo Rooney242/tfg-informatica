@@ -75,6 +75,9 @@
 	\@draftbannerfalse
 \fi
 
+% Paragraph formatting
+\setlength{\parskip}{5pt}
+
 % Some color definitions
 \colorlet{bannercolor}{Bittersweet}
 \colorlet{linkcolor}{blue!50!black}
@@ -195,6 +198,7 @@
 	\marginpar{\textcolor{red}{\textit{\hspace{4pt}TODO}}}
 }
 
+% For input of gnuplot files. Automatically resizes the image based on linewidth.
 \newcommand{\inputgnuplot}[2][1]{
 	\resizebox{#1\linewidth}{!}{
 		\fontsize{7pt}{7pt}\fontfamily{ppl}\selectfont
