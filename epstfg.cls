@@ -200,6 +200,7 @@
 
 % For input of gnuplot files. Automatically resizes the image based on linewidth.
 \newcommand{\inputgnuplot}[2][1]{
+	\vspace{-15pt}
 	\resizebox{#1\linewidth}{!}{
 		\fontsize{7pt}{7pt}\fontfamily{ppl}\selectfont
 		\input{#2.tex}
