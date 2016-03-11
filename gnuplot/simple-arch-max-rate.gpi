@@ -7,8 +7,45 @@ set output 'gnuplot/simple-arch-max-rate.tex'
 
 set title 'Capacidad máxima - Hilo único'
 
+set multiplot
+
+
 set grid x y
 set xlabel 'Tamaño de paquete'
 set ylabel 'Tasa máxima (Gbps)'
 
-plot 'data/simple-arch-max-rate-hwtstamp.dat' using 1:2 w l ls 1 lw 3 title 'Con timestamp hardware'
+set key top left box
+
+set pointintervalbox 0.5
+
+set object 2 rectangle from first 50, first 7 to first 210, first 19 fc rgb 'white' fs transparent solid 0.5 border lc '#E6AB02' lw 2 behind
+
+set arrow 3 from first 210, first 19 to screen 0.45, screen 0.65 nohead lw 2 lc rgb '#E6AB02'
+set arrow 4 from first 210, first 7 to screen 0.45, screen 0.13 nohead lw 2 lc rgb '#E6AB02'
+
+plot 'data/simple-arch-max-rate.dat' using 1:($2/1024) w linespoints ls 1 lw 3 title 'Con timestamp hardware'
+
+set object 1 rectangle from screen 0.45, screen 0.13 to screen 0.95, screen 0.65 fc rgb 'white' fs transparent solid 1 border lc '#E6AB02' lw 2 behind
+
+unset object 2
+unset arrow 3
+unset arrow 4
+
+set size 0.5,0.52
+set origin 0.45,0.13
+set title ''
+set key off
+
+set rmargin 2
+
+set grid front
+
+set xlabel ''
+set ylabel ''
+
+unset mytics
+unset mxtics
+
+set xrange [60:200]
+
+plot 'data/simple-arch-max-rate.dat' using 1:($2/1024) w linespoints ls 1 lw 3 title 'Con timestamp hardware'
