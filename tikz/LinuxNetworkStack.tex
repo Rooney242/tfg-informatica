@@ -1,0 +1,55 @@
+\begin{tikzpicture}[font = {\fontsize{8pt}{12}\selectfont}, scale = 0.8]
+\begin{scope}[yshift = 4cm]
+\draw[fill = green!60!black, fill opacity = 0.3] (-0.1, 1.2) -- (0, 1.2) -- (0,-0.3) -- (0,0) -- (0.7,0) -- (0.7,-0.15) -- (1.7, -0.15) -- (1.7, 0) -- (1.8, 0) -- (1.8, -0.15) -- (2, -0.15) -- (2,0) -- (2.3, 0) -- (2.3, 1) -- (0,1) -- (0, 1.2) -- cycle ;
+
+\node[rectangle, minimum width = 2.3cm, minimum height = 1cm] (NIC) at (1.15, 0.5) {NIC};
+\end{scope}
+
+\draw[blue!80!black, fill = blue!80!black, fill opacity = 0.1] (7, 5.3) rectangle (16.5, -2);
+\node[blue!80!black] at (15.8, 5.6) {Kernel};
+
+
+\node[draw, fill = red!80!black!30!white, align = center] (IRQ) at (8, 4.5) {Gestor \\ IRQ};
+\node[draw, fill = blue!80!black!30!white, minimum height = 4.1cm, minimum width = 1.5cm, align = center] (KRN) at (15, 1.5) {Pila de red \\ Linux};
+\node[draw, align = center, fill = red!80!black!30!white] (POLL) at (8.1, -1.25) {Funci\'on \\ RX};
+
+\node[draw, orange!70!black, align = center, inner sep = 5pt] (APP) at (8, -4.5) {Aplicaci\'on \\ cliente};
+
+\coordinate (KRN-Mid) at ($(KRN.west)!0.5!(KRN.south west)$);
+
+\begin{scope}[xshift = 1.15cm, yshift = -1.25cm, rotate = 90]
+\fill[gray!20!white] (0,0) -- (0,1) arc (90:0:1cm) -- cycle;
+\foreach \x in {0, 30, ..., 360}
+	\draw ({cos(\x)}, {sin(\x)}) -- ({-cos(\x)}, {-sin(\x)});
+\draw (0,0) circle [radius = 1cm];
+\draw[black, fill = white] (0,0) circle [radius = 0.5cm]; % Poor man's \clip for intersecting regions
+\node[circle, inner sep = 0.45cm] (RNG) at (0,0) {Rx};
+\end{scope}
+
+\draw[->] (NIC) --
+	node[midway, above, align = center, sloped] {1. Interrupci\'on \\ nuevos paquetes}
+	(IRQ);
+
+\draw[->] (IRQ) --
+	node[midway, above, sloped, align = center] {2. Programaci\'on \\ NAPI poll}
+	(KRN);
+
+\draw[->] (KRN) --
+	node[midway, above, sloped, align = center] {3. Petici\'on de lectura \\ $n$ bytes m\'ax.}
+	(POLL.north);
+
+\draw[<->, shorten <= 0.15cm] (NIC) --
+	node[midway, right, align = left] {Transferencia DMA \\ Actualizaci\'on de punteros}
+	(RNG);
+
+\draw[<->] (POLL) -- node[midway, above, align = center, sloped] {4. Lectura de paquetes}
+	(RNG);
+
+\draw[->] (POLL) --
+	node[midway, below, align = center, sloped] {5. Copia de \\ nuevos paquetes}
+	(KRN-Mid);
+
+\draw[<-, orange!70!black] (APP) --
+	node[midway, below, sloped, align = center] {6. Copia de  \\ nuevos paquetes}
+	(KRN.south);
+\end{tikzpicture}

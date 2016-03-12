@@ -76,7 +76,7 @@
 \fi
 
 % Paragraph formatting
-\setlength{\parskip}{\baselineskip}
+\setlength{\parskip}{0.5\baselineskip}
 
 % Some color definitions
 \colorlet{bannercolor}{Bittersweet}

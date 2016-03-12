@@ -1,8 +1,18 @@
-\documentclass[twoside, draft]{epstfg}
+\documentclass[oneside, draft]{epstfg}
 
 \usepackage{lipsum}
 \usepackage[numbers]{natbib}
 \usepackage{fancysprefs}
+
+\usepackage{tikz}
+
+\usetikzlibrary{arrows}
+\usetikzlibrary{patterns}
+\usetikzlibrary{intersections}
+\usetikzlibrary{calc}
+\usetikzlibrary{fadings}
+
+\tikzset{>=latex }
 
 \bibliographystyle{abbrv}
 
@@ -30,6 +40,14 @@
 \keywords[spa]{keyword, comma, separated, list}
 \keywords[eng]{keyword, comma, separated, engl}
 
+\newacronym[longplural = {Centros de Proceso de Datos}]{cpd}{CPD}{Centro de Proceso de Datos}
+\newacronym{gbps}{Gbps}{Gigabits por segundo}
+\newacronym{nic}{NIC}{Tarjeta de Interfaz de Red}
+\newacronym{irq}{IRQ}{petición de interrupción}
+
+\newglossaryentry{10gbe}{name = {10 GbE}, description = {Estándares de transmisión de datos sobre Ethernet a 10 gigabits por segundo}}
+\newglossaryentry{NAPI}{name = {NAPI}, description = {``New API'', una API de Linux desarrollada para mitigar interrupciones en \textit{drivers} de red y mejorar el rendimiento bajo condiciones de alta carga}}
+
 \begin{document}
 
 \selectlanguage{spanish}
@@ -56,11 +74,46 @@
 
 \chapter{Introducción y motivación}
 
-\section{Funcionamiento de un driver de red: ¿Qué hay que cambiar para alto rendimiento?}
+Durante los últimos años, las necesidades de ancho de banda de Internet se han ido multiplicando a una velocidad difícil de imaginar en su momento. Muchos \glspl{cpd} ya han desplegado redes \gls{10gbe}, y los dispositivos capaces de funcionar a 40 \gls{gbps} o incluso a 100 \gls{gbps} ya están disponibles comercialmente.
+
+Por supuesto, junto con las nuevas redes de alta velocidad llega la necesidad de monitorizarlas, ya sea para diagnosticar problemas, detectar intrusiones o asegurar un nivel de calidad de servicio. Sin embargo, los sistemas operativos modernos no están totalmente preparados para el manejo de estas velocidades. Incluso para \gls{10gbe} se hacen necesarias configuraciones específicas \cite{leitao2009tuning} que permitan al sistema alcanzar las tasas que ofrece el \textit{hardware}.
+
+Para sortear las limitaciones de los sistemas operativos en este sentido son necesarias soluciones específicas y dedicadas.
+
+\todo{Pequeño overview del estado del arte.}
+
+Dos aspectos que muchas soluciones de monitorización no contemplan es el de marcado de paquetes o \textit{timestamping} y el del orden de captura. A 40 Gbps, el tiempo entre paquetes puede llegar a ser de 13 nanosegundos\footnote{Tomando paquetes de tamaño mínimo, 64 bytes, y añadiendo el \textit{interframe gap} de 8 bits.}. Una recepción desordenada o imprecisiones mínimas en las marcas de tiempo pueden ser decisivas para que una herramienta de análisis detecte o ignore anomalías en el tráfico; o para que dé falsos positivos a raíz de fallos en la captura. Teniendo en cuenta que estos problemas ya los introducen las propias redes y sistemas a monitorizar, es necesario reducirlos todo lo posible en el lado de la captura.
+
+\section{Objetivos}
+
+Este trabajo se plantea resolver el problema de la monitorización de tráfico en redes 40 GbE, ampliando el sistema de captura HPCAP \cite{MorenoTFM2012}, de Víctor Moreno. Para ello, los \todo{focos?} serán los siguientes:
+
+\begin{itemize}
+\item Estudiar los límites de la arquitectura ya existente de HPCAP e identificar los puntos de mejora.
+\item Plantear una solución que permita la captura de tráfico a tasa de línea junto con marcas de tiempo precisas.
+\item Desarrollar métodos que hagan posible el almacenamiento de información sobre el tráfico que pueda ser analizada posteriormente.
+\end{itemize}
 
 \chapter{Estado del arte}
 
 HPCAP, artículo de Javier de 40Gbps. DPDK, sockets de acceso directo (PF\_LINUX?).
+
+\section{Funcionamiento de un driver de red: ¿Qué hay que cambiar para alto rendimiento?}
+
+\begin{figure}[hbtp]
+\centering
+\input{tikz/LinuxNetworkStack.tex}
+\caption[Funcionamiento de un \textit{driver} de red en Linux]{Esquema del funcionamiento de un \textit{driver} de red en Linux. En rojo, las funciones pertenecientes al \textit{driver}.}
+\label{fig:LinuxNetworkStack}
+\end{figure}
+
+A grandes rasgos, el funcionamiento de un \textit{driver} de red en Linux es el que aparece en la \fref{fig:LinuxNetworkStack}. Cuando la \gls{nic} recibe nuevos paquetes, emite una \gls{irq} que es recibida por la función correspondiente configurada por el \textit{driver}. Éste se comunica con la pila de red del \textit{kernel} de Linux, más concretamente con el subsistema \gls{NAPI} \cite{NAPI}, avisando de la disponibilidad de nuevos paquetes. Además, desactivará las interrupciones de la tarjeta hasta que no se hayan leído todos los paquetes pendientes, para mejorar así el rendimiento.
+
+El subsistema \gls{NAPI} programará una llamada a la función de recepción del \textit{driver} en función de la carga del sistema, pidiendo la lectura de hasta un cierto máximo de bytes. Cuando esa llamada se realice, el \textit{driver} leerá de una región de memoria los paquetes que la tarjeta haya copiado a través de transferencias DMA, y los transferirá a la pila de red de Linux, que a su vez los gestionará y distribuirá a las aplicaciones cliente correspondientes.
+
+Si bien esta arquitectura es muy efectiva para un sistema de propósito general, tiene varias desventajas como sistema de captura de alto rendimiento. Por un lado, se introduce una cierta latencia al tener que esperar a la primera interrupción y a la llamada correspondiente del subsistema NAPI para empezar a leer los paquetes del anillo de recepción de la tarjeta. Por otra, se realizan dos copias redundantes: del anillo de recepción a la pila de red de Linux y de ésta a la aplicación cliente.
+
+\subsection{HPCAP}
 
 \chapter{Desarrollo e implementación}
 
@@ -103,7 +156,7 @@ Estudiar si el driver puede realizar un prefiltrado de información en tiempo de
 
 \begin{figure}[btp]
 \inputgnuplot{gnuplot/simple-arch-max-rate}
-\caption{Una medida de la capacidad base de la tarjeta: tasa máxima que se alcanza sin perder paquetes en función del tamaño de paquetes.}
+\caption[Capacidad de una arquitectura básica de captura]{Una medida de la capacidad base de la tarjeta: tasa máxima que se alcanza sin perder paquetes en función del tamaño de paquetes.}
 \label{fig:SimpleArch:MaxRate}
 \end{figure}
 
