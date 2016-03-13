@@ -54,6 +54,22 @@
 
 \frontmatter
 
+\maketitle[spa]
+\maketitle[eng]
+
+\makeinnertitle[spa]
+\makeinnertitle[eng]
+
+\makeabstract[spa]
+\makeabstract[eng]
+
+\tableofcontents
+\clearsidepage
+\listoftables
+\clearsidepage
+\listoffigures
+\clearsidepage
+
 \mainmatter
 
 \chapter{Introducción y motivación}
@@ -139,7 +155,7 @@ Estudiar si el driver puede realizar un prefiltrado de información en tiempo de
 \section{Caso base: ¿hasta dónde llega la arquitectura básica?}
 
 \begin{figure}[btp]
-%\inputgnuplot{gnuplot/simple-arch-max-rate}
+\inputgnuplot{gnuplot/simple-arch-max-rate}
 \caption[Capacidad de una arquitectura básica de captura]{Una medida de la capacidad base de la tarjeta: tasa máxima que se alcanza sin perder paquetes en función del tamaño de paquetes.}
 \label{fig:SimpleArch:MaxRate}
 \end{figure}
