@@ -207,7 +207,7 @@
 			\input{#2.tex}
 			\vspace{-15pt} % Adjust for font size
 		}{
-			\PackageWarning{epstfg}{File `#2.tex' not found.}
+			%\PackageWarning{epstfg}{File `#2.tex' not found.}
 			\fbox{Gnuplot not found.\begin{minipage}{4.7in}\hfill\vspace{3in}\end{minipage}}
 		}
 	}
