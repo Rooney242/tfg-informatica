@@ -68,4 +68,5 @@ tikzgen/*
 *.zip
 
 gnuplot/*
-!gnuplot/*.gpi
+!gnuplot/*.gp
+*.psd
