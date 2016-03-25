@@ -3,6 +3,9 @@
 \usepackage{lipsum}
 \usepackage[numbers]{natbib}
 \usepackage{fancysprefs}
+\usepackage{booktabs}
+\usepackage{wrapfig}
+\usepackage{enumitem}
 
 \usepackage{tikz}
 
@@ -12,7 +15,9 @@
 \usetikzlibrary{calc}
 \usetikzlibrary{fadings}
 
-\tikzset{>=latex }
+\tikzstyle{vnlin}=[rectangle, inner sep=0pt, minimum height=6pt, minimum width=0pt, draw, fill=black]
+\tikzstyle{hnlin}=[rectangle, inner sep=0pt, minimum height=0pt, minimum width=6pt, draw, fill=black]
+\tikzset{>=latex}
 
 \bibliographystyle{abbrv}
 
@@ -47,6 +52,21 @@
 
 \newglossaryentry{10gbe}{name = {10 GbE}, description = {Estándares de transmisión de datos sobre Ethernet a 10 gigabits por segundo}}
 \newglossaryentry{NAPI}{name = {NAPI}, description = {``New API'', una API de Linux desarrollada para mitigar interrupciones en \textit{drivers} de red y mejorar el rendimiento bajo condiciones de alta carga}}
+
+\newglossaryentry{driver}{
+	name = {Driver},
+	text ={\textit{driver}},
+	description = {También llamado controlador de dispositivo, es un programa que permite al sistema operativo interactuar con un periférico \textit{hardware}}}
+
+\newglossaryentry{jumbo}{
+	name = {Paquete jumbo},
+	text={paquete jumbo},
+	description = {Paquetes Ethernet de tamaño superior a 1500 bytes}}
+
+\newglossaryentry{DMA}{
+	name = {DMA},
+	description = {Direct Memory Access, un sistema que permite a los periféricos acceder directamente a la memoria del sistema}
+}
 
 \begin{document}
 
@@ -98,18 +118,19 @@ Este trabajo se plantea resolver el problema de la monitorización de tráfico e
 
 HPCAP, artículo de Javier de 40Gbps. DPDK, sockets de acceso directo (PF\_LINUX?).
 
-\section{Funcionamiento de un driver de red: ¿Qué hay que cambiar para alto rendimiento?}
+\section{Funcionamiento de un \textit{driver} de red: ¿Qué hay que cambiar para alto rendimiento?}
+\label{sec:EstadoArte:Funcionamiento}
 
 \begin{figure}[hbtp]
 \centering
 \input{tikz/LinuxNetworkStack.tex}
-\caption[Funcionamiento de un \textit{driver} de red en Linux]{Esquema del funcionamiento de un \textit{driver} de red en Linux. En rojo, las funciones pertenecientes al \textit{driver}.}
+\caption[Funcionamiento de un \textit{driver} de red en Linux]{Esquema del funcionamiento de un \gls{driver} de red en Linux. En rojo, las funciones pertenecientes al \gls{driver}.}
 \label{fig:LinuxNetworkStack}
 \end{figure}
 
-A grandes rasgos, el funcionamiento de un \textit{driver} de red en Linux es el que aparece en la \fref{fig:LinuxNetworkStack}. Cuando la \gls{nic} recibe nuevos paquetes, emite una \gls{irq} que es recibida por la función correspondiente configurada por el \textit{driver}. Éste se comunica con la pila de red del \textit{kernel} de Linux, más concretamente con el subsistema \gls{NAPI} \cite{NAPI}, avisando de la disponibilidad de nuevos paquetes. Además, desactivará las interrupciones de la tarjeta hasta que no se hayan leído todos los paquetes pendientes, para mejorar así el rendimiento.
+A grandes rasgos, el funcionamiento de un \textit{\gls{driver}} de red en Linux es el que aparece en la \fref{fig:LinuxNetworkStack}. Cuando la \gls{nic} recibe nuevos paquetes, emite una \gls{irq} que es recibida por la función correspondiente configurada por el \gls{driver}. Éste se comunica con la pila de red del \textit{kernel} de Linux, más concretamente con el subsistema \gls{NAPI} \cite{NAPI}, avisando de la disponibilidad de nuevos paquetes. Además, desactivará las interrupciones de la tarjeta hasta que no se hayan leído todos los paquetes pendientes, para mejorar así el rendimiento.
 
-El subsistema \gls{NAPI} programará una llamada a la función de recepción del \textit{driver} en función de la carga del sistema, pidiendo la lectura de hasta un cierto máximo de bytes. Cuando esa llamada se realice, el \textit{driver} leerá de una región de memoria los paquetes que la tarjeta haya copiado a través de transferencias DMA, y los transferirá a la pila de red de Linux, que a su vez los gestionará y distribuirá a las aplicaciones cliente correspondientes.
+El subsistema \gls{NAPI} programará una llamada a la función de recepción del \gls{driver} en función de la carga del sistema, pidiendo la lectura de hasta un cierto máximo de bytes. Cuando esa llamada se realice, el \gls{driver} leerá de una región de memoria los paquetes que la tarjeta haya copiado a través de transferencias DMA, y los transferirá a la pila de red de Linux, que a su vez los gestionará y distribuirá a las aplicaciones cliente correspondientes.
 
 Si bien esta arquitectura es muy efectiva para un sistema de propósito general, tiene varias desventajas como sistema de captura de alto rendimiento. Por un lado, se introduce una cierta latencia al tener que esperar a la primera interrupción y a la llamada correspondiente del subsistema NAPI para empezar a leer los paquetes del anillo de recepción de la tarjeta. Por otra, se realizan dos copias redundantes: del anillo de recepción a la pila de red de Linux y de ésta a la aplicación cliente.
 
@@ -117,11 +138,61 @@ Si bien esta arquitectura es muy efectiva para un sistema de propósito general,
 
 \chapter{Desarrollo e implementación}
 
-\section{Arquitectura Mellanox}
+\section{Arquitectura de los \textit{drivers} originales}
 
-cq (completion queue?), rx rings.
+\begin{figure}[btp]
+\centering
+\input{tikz/DriverRings.tex}
+\caption[Esquema del anillo de descriptores para recepción de paquetes]{Esquema del anillo de descriptores para la recepción de paquetes. Cada descriptor tiene un puntero a los datos del paquete recibido y un campo que marca si el descriptor tiene o no datos. En gris, los datos y descriptores listos para ser leídos por el \gls{driver}.}
+\label{fig:DriverRings}
+\end{figure}
 
-\section{Arquitectura}
+Para poder adaptar HPCAP a las \glspl{nic} de 40 Gbps de Intel y Mellanox es necesario utilizar los \glspl{driver} originales de los fabricantes y modificarlos para que sea el código de HPCAP el encargado de la recepción. Esto implica conocer su funcionamiento no sólo a grandes rasgos (\fref{sec:EstadoArte:Funcionamiento}), sino también las rutinas de comunicación con el \textit{hardware} y de reserva de recursos de esos \glspl{driver} originales.
+
+A pesar de ser de fabricantes distintos, los dos \glspl{driver} siguen el mismo proceso para inicializarse y para la recepción de paquetes. Cuando el \gls{driver} se inserta en el sistema Linux, lee los parámetros de configuración de la línea de comandos y empieza a reservar recursos acorde a esos parámetros. Entre esos recursos están las regiones de memoria de los anillos de recepción, donde la \gls{nic} escribirá los paquetes recibidos; y estructuras en memoria compartida entre \textit{software} y \textit{hardware}, de donde se leerán datos como los descriptores de paquetes y los punteros de cabecera y cola del anillo.
+
+El anillo de descriptores es la estructura de datos que permite la transferencia de paquetes desde la \gls{nic} al \gls{driver}. Cada descriptor de paquete es una estructura de tamaño fijo que contiene una variable con el estado del descriptor, con los marcadores que determinan si tiene datos, si ha tenido algún error o si es parte de un \gls{jumbo}; y un puntero a los datos del paquete de red correspondiente, que han sido copiados a la memoria del sistema por la \gls{nic}.
+
+Este anillo se comporta como una cola, aunque el acceso se realiza de manera distinta. El puntero de cabecera, \textit{head}, que marca hasta dónde hay paquetes pendientes de leer, no se actualiza por la \gls{nic} al enviar nuevos paquetes al sistema. En su lugar, para comprobar si hay o no nuevos paquetes por leer, el \gls{driver} simplemente lee el campo de estado del siguiente descriptor de paquete para saber si tiene datos o no.
+
+La rutina de recepción, llamada por el subsistema \gls{NAPI}, va leyendo ese anillo de descriptores y enviando los nuevos paquetes que encuentra al sistema operativo, que se encargará de repatirlos a su destino correspondiente.
+
+Una vez que los paquetes se han leído, no sólo hay que actualizar el puntero de cola, sino también notificar al sistema \gls{DMA} de que la memoria que usaban queda libre para su uso por la tarjeta. Realizar esta operación paquete por paquete introduce un coste adicional que se puede ahorrar acumulando varias operaciones que se realizan de una vez, aunque no deben acumularse demasiadas para evitar que la \gls{nic} se quede sin descriptores donde copiar nuevos paquetes y los descarte.
+
+Por lo tanto, para que HPCAP funcione con estos \glspl{driver}, la principal modificación a hacer es sustituir la rutina de recepción original. Para ello, se evita el registro de la interfaz en el subsistema \gls{NAPI}, se desactivan las interrupciones de la \gls{nic}, y se lanzan los hilos de recepción de HPCAP cuando el resto del \gls{driver} se haya inicializado correctamente.
+
+\section{Recepción a 40 Gbps}
+
+Tal y como se comentaba en la introducción, la recepción a 40 Gbps es un desafío importante por las restricciones de tiempo. A esta tasa, los paquetes pueden llegar cada 13 nanosegundos, lo que en un procesador de gama alta a 3,40 GHz apenas significan 44 ciclos.
+
+\begin{wraptable}[8]{l}[1.5cm]{0.35\textwidth}
+\vspace{-15pt}
+\begin{tabular}{l|c}
+\textbf{Operación} & \textbf{Ciclos} \\ \toprule
+Acceso caché L1 & 4 \\
+Acceso caché L2 & 12 \\
+Acceso caché L3 & 44 \\
+\textit{Branch mispredict} & 16 \\ \bottomrule
+\end{tabular}
+\caption{Latencias en CPUs Intel con arquitectura Skylake \cite{intelOptimization}.}
+\label{tab:LatenciaIntelSkylake}
+\end{wraptable}
+
+Esta restricción de tiempo hace imposible que un único hilo pueda soportar toda la carga de tráfico. Un fallo de caché o del predictor de ramas \todo{¿Seguro que se dice así en castellano?} puede consumir un cuarto del tiempo disponible para el procesado de un paquete, de tal forma que es prácticamente imposible procesar los paquetes a esa tasa incluso aunque no hubiese que copiarlos después a un \textit{buffer} intermedio.
+
+Así, se hace necesario el uso de varios hilos de lectura que sí puedan soportar conjuntamente estas altas tasas de tráfico. El problema a resolver será el de la concurrencia y sincronización entre hilos en tres puntos clave:
+
+\begin{enumerate}[itemsep=0pt, topsep = 0pt]
+\item Lectura de paquetes del anillo de recepción.
+\item Devolución ordenada de los paquetes leídos a la tarjeta.
+\item Copia al \textit{buffer} intermedio de HPCAP.
+\end{enumerate}
+
+Por supuesto, todas las operaciones de sincronización tendrán que hacerse sin mecanismos de bloqueo, que son demasiado lentos para el procesado a tasa de 40 Gbps. A priori, la solución sería la implementación de una cola sin bloqueos (por ejemplo, \cite{krizhanovsky2013lock}). Sin embargo, esta situación específica y las características de los lectores y de los clientes que accederán al \textit{buffer} intermedio de HPCAP permitirán la simplificación de las operaciones y la reducción de los mecanismos de concurrencia necesarios.
+
+\subsection{Lectura del anillo de recepción}
+
+
 
 \subsection{Hilos}
 \label{sec:Hilos}

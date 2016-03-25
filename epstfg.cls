@@ -45,6 +45,7 @@
 \RequirePackage[usenames,dvipsnames]{xcolor}
 \RequirePackage[left=3cm,right=3cm,top=3cm,bottom=2cm]{geometry}
 \RequirePackage{imakeidx} % Correct index creation
+\RequirePackage[pdfencoding=auto,psdextra,final]{hyperref}
 \RequirePackage[acronym, toc]{glossaries}
 \RequirePackage[spanish,es-noquoting,es-noshorthands,es-tabla,english]{babel}
 \RequirePackage{amsthm}
@@ -53,7 +54,6 @@
 \RequirePackage{amssymb}
 \RequirePackage{framed}
 \RequirePackage{mdframed}
-\RequirePackage[pdfencoding=auto,psdextra,final]{hyperref}
 \RequirePackage[T1]{fontenc}
 \RequirePackage[utf8x]{inputenc}
 \RequirePackage[final]{graphicx}
