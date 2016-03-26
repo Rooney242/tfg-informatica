@@ -7,6 +7,7 @@
 \usepackage{wrapfig}
 \usepackage{enumitem}
 
+
 \usepackage{tikz}
 
 \usetikzlibrary{arrows}
@@ -14,6 +15,15 @@
 \usetikzlibrary{intersections}
 \usetikzlibrary{calc}
 \usetikzlibrary{fadings}
+
+\definecolor{palette1}{HTML}{1B9E77}
+\definecolor{palette2}{HTML}{D95F02}
+\definecolor{palette3}{HTML}{7570B3}
+\definecolor{palette4}{HTML}{E7298A}
+\definecolor{palette5}{HTML}{66A61E}
+\definecolor{palette6}{HTML}{E6AB02}
+\definecolor{palette7}{HTML}{A6761D}
+\definecolor{palette8}{HTML}{666666}
 
 \tikzstyle{vnlin}=[rectangle, inner sep=0pt, minimum height=6pt, minimum width=0pt, draw, fill=black]
 \tikzstyle{hnlin}=[rectangle, inner sep=0pt, minimum height=0pt, minimum width=6pt, draw, fill=black]
@@ -139,6 +149,7 @@ Si bien esta arquitectura es muy efectiva para un sistema de propósito general,
 \chapter{Desarrollo e implementación}
 
 \section{Arquitectura de los \textit{drivers} originales}
+\label{sec:ArquitecturaOriginal}
 
 \begin{figure}[btp]
 \centering
@@ -184,7 +195,7 @@ Así, se hace necesario el uso de varios hilos de lectura que sí puedan soporta
 
 \begin{enumerate}[itemsep=0pt, topsep = 0pt]
 \item Lectura de paquetes del anillo de recepción.
-\item Devolución ordenada de los paquetes leídos a la tarjeta.
+\item Devolución ordenada de los descriptores leídos a la tarjeta.
 \item Copia al \textit{buffer} intermedio de HPCAP.
 \end{enumerate}
 
@@ -192,7 +203,58 @@ Por supuesto, todas las operaciones de sincronización tendrán que hacerse sin 
 
 \subsection{Lectura del anillo de recepción}
 
+A la hora de la lectura, un problema a tener en cuenta es el de la caché. Un fallo de caché puede provocar una latencia de muchos ciclos de reloj (\fref{tab:LatenciaIntelSkylake}), y con ello la pérdida de paquetes. Si todos los hilos de recepción tratan de leer todos los paquetes del anillo de recepción, los patrones de acceso no van a ser predecibles. Cuando un hilo acceda a un descriptor, el sistema cargaría en la caché de su núcleo descriptores cercanos para un acceso más rápido. Ahora bien, es posible que el resto de hilos consuman esos paquetes, de tal forma que el siguiente paquete disponible ya no estaría cargado en caché y habría una latencia adicional al acceder a él.
 
+\begin{wrapfigure}[8]{R}{0.3\textwidth}
+\centering
+\vspace{-20pt}
+\input{tikz/RingAssignment.tex}
+\caption{División del anillo de recepción en cuatro segmentos fijos para los hilos.}
+\label{fig:RingAssignment}
+\end{wrapfigure}
+
+Para evitar este problema, a cada hilo de lectura se le asigna un segmento fijo del anillo de recepción como en la \fref{fig:RingAssignment}. De esta forma cada hilo siempre accederá a los mismos descriptores, lo que permitirá incluir instrucciones de \textit{prefetch} para garantizar en la medida de lo posible que los datos a acceder estén siempre en la caché.
+
+Esta asignación fija de segmentos del anillo también evita problemas de concurrencia, ya que no hay competición por acceso a los mismos recursos.
+
+Por último, se minimiza el desorden en la lectura. Si todos los hilos leyesen los mismos descriptores, lo más probable es que los paquetes se copien en un orden distinto al que tenían cuando llegaron a la tarjeta. Sin embargo, de esta forma los hilos copian secuencialmente la mayor parte de los paquetes, y sólo se produciría desorden cuando haya dos o más hilos con paquetes pendientes al mismo tiempo. Con tasas bajas de paquetes por segundo, esto apenas ocurrirá durante pequeños intervalos de tiempo.
+
+\subsection{Devolución ordenada de los descriptores leídos}
+
+El siguiente problema a resolver es el de la devolución ordenada de los descriptores ya leídos y de las regiones de memoria correspondiente a la tarjeta, para que ésta los pueda reutilizar para los nuevos paquetes que lleguen. Es importante que esta devolución se realice por lotes al ser más eficiente. Además, ha de ser secuencial: no se pueden dejar atrás descriptores sin devolver ya que pueden provocar fallos de segmentación o la tarjeta los puede sobreescribir antes de tiempo.
+
+Al segmentar el anillo de recepción, esta tarea se simplifica considerablemente y no son necesarios mecanismos de sincronización complejos. Cada hilo puede liberar los descriptores de su segmento por lotes sin problemas: la única restricción es que ya se hayan liberado todos los descriptores del segmento anterior.
+
+La solución implementada es la siguiente. A cada hilo se le asignan dos variables, \texttt{can\_free} y \texttt{freed\_last\_rxd}. La primera variable indica si el hilo puede liberar sus descriptores, y la segunda si ya ha liberado el último de los descriptores de su segmento. A la hora de liberar los descriptores, se hace la primera comprobación sobre \texttt{can\_free}: si es 1, se liberan sin problemas. Además, si se llega al último descriptor, \texttt{freed\_last\_rxd} se pone a 1 y \texttt{can\_free} a 0 (hay que esperar, de nuevo, a que el segmento anterior libere sus descriptores).
+
+Si, por otra parte, \texttt{can\_free} es 0, se lee la variable \texttt{freed\_last\_rxd} del segmento previo. Si es 1, indica que ya se pueden liberar los descriptores del segmento actual, así que se resetea su valor a 0 y \texttt{can\_free} se pone a 1. Es necesario que esta comprobación se haga sólo cuando \texttt{can\_free} sea 0. El pseudocódigo de este procedimiento se puede ver en el \fref{lst:AlgoritmoDescriptores}.
+
+\begin{algorithm}[hbtp]
+\begin{algorithmic}
+\Function{free\_descriptors}{thread, descr}
+\State prev $\gets$ previous\_thread\_of(thread)
+	\If{can\_free[thread] == 0 \&\& freed\_last\_rxd[prev] == 1}
+		\State freed\_last\_rxd[prev] $\gets$ 0
+		\State can\_free[thread] $\gets$ 1
+	\EndIf
+
+	\If{can\_free[thread] == 1}
+		\State release\_to\_NIC(descr)
+
+		\If{is\_last\_in\_segment(descr, thread)}
+			\State freed\_last\_rxd[prev] $\gets$ 1
+			\State can\_free[thread] $\gets$ 0
+		\EndIf
+	\EndIf
+\EndFunction
+\end{algorithmic}
+\caption{Algoritmo de liberación de descriptores}
+\label{lst:AlgoritmoDescriptores}
+\end{algorithm}
+
+La única técnica de concurrencia usada es que la variable \texttt{freed\_last\_rxd} ha de ser atómica, de tal forma que su valor está constantemente sincronizado entre todos los hilos y no hay posibilidad de que un hilo la lea mientras otro está escribiendo su valor.
+
+\subsection{Copia al \textit{buffer} intermedio de HPCAP}
 
 \subsection{Hilos}
 \label{sec:Hilos}
@@ -207,11 +269,11 @@ Varias posibilidades:
 
 Relacionado con las tasas bajas, una posibilidad con prioridad muy baja es mirar si se puede plantear creación dinámica de hilos según la tasa de recepción, de tal forma que entre el buffer y la creación dinámica se puedan ahorrar recursos en instalaciones con tasa suficientemente baja y sólo con picos de 40Gbps.
 
-\subsection{Filtrado}
+\section{Filtrado}
 
 Estudiar filtros hardware y posibilidad de filtros software para reducir la tasa de tráfico recibida por la aplicación en espacio de usuario.
 
-\subsection{Almacenamiento y selección de información}
+\section{Almacenamiento y selección de información}
 
 Realizar un estudio teórico de necesidades de almacenamiento según tasa a la que queramos almacenar, viendo productos existentes en el mercado y calculando coste del sistema.
 

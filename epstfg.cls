@@ -64,6 +64,11 @@
 \RequirePackage{langvariables}
 \RequirePackage{lato}
 \RequirePackage{caption}
+\RequirePackage{algpseudocode}
+\RequirePackage{float}
+
+\newfloat{algorithm}{t}{lop}[chapter]
+\floatname{algorithm}{Algoritmo}
 
 \makeindex[intoc]
 \indexsetup{firstpagestyle = chapter}
@@ -191,6 +196,7 @@
 % Caption setups
 \captionsetup[figure]{font = {small, sf}, labelfont = {bf}}
 \captionsetup[table]{font = {small, sf}, labelfont = {bf}}
+\captionsetup[algorithm]{font = {small, sf}, labelfont = {bf}}
 
 % Useful commands
 \newcommand{\todo}[1]{
