@@ -67,6 +67,7 @@
 \RequirePackage{algpseudocode}
 \RequirePackage{float}
 
+% Algorithm floats
 \newfloat{algorithm}{t}{lop}[chapter]
 \floatname{algorithm}{Algoritmo}
 
@@ -189,6 +190,9 @@
 
 \setsecheadstyle{\sffamily\Large}
 \setsubsecheadstyle{\sffamily\bfseries}
+
+\renewcommand{\beforesecskip}{15pt}
+\renewcommand{\beforesubsecskip}{10pt}
 
 \setsecnumdepth{subsection}
 \setcounter{tocdepth}{3}
