@@ -29,13 +29,16 @@
 	\@twosidetrue
 }
 
+\DeclareOption{spanish}{\def\@use@lang{spa}}
+\DeclareOption{english}{\def\@use@lang{eng}}
+
 \newif\if@draftbanner
 \DeclareOption{draftbanner}{\@draftbannertrue}
 \DeclareOption{nodraftbanner}{\@draftbannerfalse}
 
 \DeclareOption*{\PassOptionsToClass{\CurrentOption}{memoir}}
 
-\ExecuteOptions{palatino,twoside,draftbanner}
+\ExecuteOptions{palatino,twoside,draftbanner,spanish}
 \ProcessOptions\relax
 
 \PassOptionsToClass{\@fontsizeopt}{memoir}
@@ -69,13 +72,14 @@
 
 % Algorithm floats
 \newfloat{algorithm}{t}{lop}[chapter]
-\floatname{algorithm}{Algoritmo}
+\floatname{algorithm}{\@nameuse{algorithm-\@default@lang}}
 
 \makeindex[intoc]
 \indexsetup{firstpagestyle = chapter}
 
 \PrerenderUnicode{ÁáÉéÍíÓóÚúÑñ} % Ensure spanish characters are accepted
-\selectlanguage{spanish}
+
+\selectlang{\@use@lang}
 
 \ifdraftdoc\else
 	\@draftbannerfalse
@@ -92,7 +96,7 @@
 % Glossary and acronyms
 \setacronymstyle{long-short}
 \makenoidxglossaries
-\renewcommand{\acronymname}{Acr\'onimos}
+\renewcommand{\acronymname}{\@nameuse{acronyms-\@default@lang}}
 \glsdisablehyper % glossaries hyperlinks don't work correctly.
 
 % Hyperref settings

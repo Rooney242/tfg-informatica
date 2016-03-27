@@ -1,6 +1,8 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesPackage{langvariables}[2016/02/20 Language variables for epstfg.cls]
 
+\RequirePackage{ifthen}
+
 % Constants
 \def\@theuniversity{Universidad Aut\'onoma de Madrid}
 \def\@thecenter{Escuela Polit\'ecnica Superior}
@@ -19,7 +21,9 @@
 \def\@default@lang{spa}
 
 \newcommand{\selectlang}[1]{
-	\selectlanguage{\@nameuse{#1}}
+	\ifthenelse{\equal{#1}{spa}}
+		{\selectlanguage{spanish}}
+		{\selectlanguage{english}}
 	\def\@default@lang{#1}
 } % Allow setting language from commands
 
@@ -32,6 +36,7 @@
 \@lv@deftranslation{glossary}{Glosario}{Glossary}
 \@lv@deftranslation{acronyms}{Acr\'onimos}{Acronyms}
 \@lv@deftranslation{draft}{Borrador}{Draft}
+\@lv@deftranslation{algorithm}{Algoritmo}{Algorithm}
 
 % Attributes
 \def\setdegreeDouble{
