@@ -45,7 +45,7 @@ set ylabel ''
 
 set mytics 2
 
-set xrange [60:200]
+set xrange [60:210]
 
 plot 'data/simple-arch-max-rate.dat' using 1:($2/1024) w linespoints ls 1 lw 3 title 'Timestamp hardware', \
 	'data/simple-arch-max-rate.dat' using 1:($3/1024) w linespoints ls 2 lw 3 title 'Timestamp software'
