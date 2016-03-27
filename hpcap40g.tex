@@ -78,6 +78,17 @@
 	description = {Direct Memory Access, un sistema que permite a los periféricos acceder directamente a la memoria del sistema}
 }
 
+\newglossaryentry{padding}{
+	name = {Padding},
+	text = {\textit{padding}},
+	description = {Datos ``de relleno'' que se añaden a una estructura de datos para alinearla a un tamaño concreto}
+}
+
+\newglossaryentry{RAID}{
+	name = {RAID},
+	description = {\textit{Redundat Array of Independent Disks}, una tecnología de virtualización de almacenamiento de datos que combina múltiples discos en una única unidad virtual, mejorando rendimiento y/o redundancia}
+}
+
 \begin{document}
 
 \selectlanguage{spanish}
@@ -256,18 +267,19 @@ La única técnica de concurrencia usada es que la variable \texttt{freed\_last\
 
 \subsection{Copia al \textit{buffer} intermedio de HPCAP}
 
-\subsection{Hilos}
-\label{sec:Hilos}
+El último problema a resolver es el de la copia al \textit{buffer} intermedio de HPCAP, de donde leerán después los clientes. Además de las copias concurrentes, hay que tener en cuenta que el principal propósito de HPCAP es la captura y guardado en disco de los paquetes, y este es el principal caso de uso a optimizar.
 
-Varias posibilidades:
+Precisamente para facilitar esas copias, HPCAP implementa un \gls{padding} \cite{MorenoTFM2012} de tal forma que la aplicación cliente siempre pueda copiar un número entero de paquetes en archivos con un tamaño exacto de 2 GB, sin dejar paquetes cortados entre fichero y fichero. Esto permite maximizar el rendimiento del \gls{RAID} y del acceso a memoria (las lecturas y escrituras siempre están alineadas a tamaño de bloque) y usar ciertas opciones que mejoran el rendimiento.
 
-\begin{enumerate}
-\item Separación del \textit{buffer} de la tarjeta en $n$ partes, cada hilo sólo se preocupa de una de esas partes. La tasa efectiva se reduce a $40 / n$ Gbps por hilo. El problema es que el anillo de la tarjeta se separa en paquetes y el buffer de HPCAP en bytes, así que un segmento de la tarjeta no tiene por qué corresponderse con otro segmento en el buffer.
-\item Múltiples hilos escribiendo en el mismo buffer y leyendo del mismo anillo(s). Aquí habría que investigar una forma de sincronización eficiente, usando colas sin bloqueos. Un ejemplo interesante a leer es \href{http://disruptor.googlecode.com/files/Disruptor-1.0.pdf}{Disruptor}. Habría que investigar más bibliografía.
-\item Como variación del anterior, múltiples hilos escribiendo en el mismo buffer pero leyendo de segmentos separados del anillo. Así quizás podemos evitar problemas de concurrencia a tasas bajas.
-\end{enumerate}
+En esta versión, por lo tanto, hay que asegurar el acceso concurrente a memoria y además hay que mantener el \gls{padding}. Para lo primero, se empleará una variable atómica que marque la siguiente posición de escritura en el \textit{buffer}. Cuando un hilo quiera escribir un nuevo paquete, aumentará esa variable en el tamaño del paquete más la cabecera correspondiente, reservando ese espacio a la vista del resto de hilos. Una vez hecha esa reserva, escribirá los datos y continuará con el siguiente paquete.
 
-Relacionado con las tasas bajas, una posibilidad con prioridad muy baja es mirar si se puede plantear creación dinámica de hilos según la tasa de recepción, de tal forma que entre el buffer y la creación dinámica se puedan ahorrar recursos en instalaciones con tasa suficientemente baja y sólo con picos de 40Gbps.
+En un principio, habría que asegurar que esta variable se mantuviese entre 0 y el tamaño del \textit{buffer} de escritura, pero esto implicaría no una operación atómica (sumar un valor y leer el resultado) sino varias, ya que habría que calcular el módulo si el valor obtenido supera el tamaño del \textit{buffer}. Esto implicaría más mecanismos de sincronización y por lo tanto un rendimiento menor.
+
+Por suerte, se puede aprovechar el desbordamiento de enteros de C para hacer ese módulo implícitamente. Por el diseño de HPCAP, el tamaño del \textit{buffer} intermedio es siempre una potencia de 2, luego se puede dejar que la variable atómica desborde normalmente y después calcular el módulo tamaño del \textit{buffer} para obtener la posición real, ya que $(x \mod 2^{32}) \mod 2^n = x \mod 2^n$, donde $2^n$ es el tamaño del \textit{buffer} con $n ≤ 32$.
+
+El siguiente paso es notificar a los clientes que hay nuevos datos disponibles para leer. De nuevo, se pueden aprovechar cuestiones de diseño de HPCAP para evitar mecanismos extra de concurrencia. En una cola sin bloqueos habría que evitar de alguna forma que los clientes puedan leer datos que no se han terminado de escribir. Sin embargo, en HPCAP los clientes están en espacio de usuario, y eso induce un retardo que hace innecesarios más mecanismos de sincronización.
+
+El peor caso ocurriría cuando un hilo actualiza la variable reservando espacio para un nuevo paquete, y justo en el ciclo siguiente se lee esa variable en otro hilo desde una llamada \texttt{ioctl}. Ahora bien, para que ese valor leído llegue a espacio de usuario primero ha de realizarse una copia a la memoria de espacio de usuario y se tiene que hacer un cambio del modo \textit{kernel} a modo espacio de usuario para que la aplicación cliente retome el control de la ejecución, lo que habitualmente lleva más de 50 nanosegundos, unos 170 ciclos de reloj a 3,40 GHz. En ese tiempo se asegura que la copia se ha realizado correctamente, y dado que los hilos de lectura no interrumpen su ejecución. Así, incluso en el caso en el que menos tiempo pasaría desde la reserva del espacio de escritura hasta que la aplicación cliente lea esos datos queda garantizado que la copia se realiza correctamente.
 
 \section{Filtrado}
 
