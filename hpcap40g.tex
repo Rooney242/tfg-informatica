@@ -283,14 +283,14 @@ Precisamente para facilitar esas copias, HPCAP implementa un \gls{padding} \cite
 
 En esta versión, por lo tanto, hay que seguir manteniendo el \gls{padding} para que las copias a disco sigan siendo óptimas, aunque el método para insertarlo tiene que cambiar. La implementación original mantenía un desplazamiento dentro del fichero, que se actualizaba cada vez que se copiaba un paquete. En el momento de la copia, comprobaba primero si el paquete a copiar entraba dentro del tamaño de fichero. Si no lo hacía, se incluía una cabecera marcando la longitud del \gls{padding} reiniciando el desplazamiento dentro del fichero a cero, y a continuación copiando el paquete.
 
-Tal y como se ha diseñado la escritura concurrente, es imposible implementar el \gls{padding} de la misma forma, ya que siempre se reserva el tamaño del paquete tanto si cabe en el fichero actual como si no. La solución al problema será llenar ese espacio ya reservado con \gls{padding}, teniendo en cuenta que es posible que no haya espacio para la cabecera completa al principio o al final del fichero. Una vez terminada esa escritura, se reservará de nuevo espacio para copiar el paquete que se iba a copiar en un principio y se continuará normalmente con el proceso.
-
 \begin{figure}[bp]
 \centering
 \input{tikz/BufferPadding.tex}
 \caption[Esquema de implementación del \textit{padding} en el \textit{buffer} intermedio]{Esquema de implementación de \textit{padding}. En el primer caso, el mismo hilo escribe el \gls{padding} a principio y final de fichero. En el segundo y tercer no tiene espacio para escribirlo al principio, por lo que se completa al escribir otro paquete.}
 \label{fig:BufferPadding}
 \end{figure}
+
+Tal y como se ha diseñado la escritura concurrente, es imposible implementar el \gls{padding} de la misma forma, ya que siempre se reserva el tamaño del paquete tanto si cabe en el fichero actual como si no. La solución al problema será llenar ese espacio ya reservado con \gls{padding}, teniendo en cuenta que es posible que no haya espacio para la cabecera completa al principio o al final del fichero. Una vez terminada esa escritura, se reservará de nuevo espacio para copiar el paquete que se iba a copiar en un principio y se continuará normalmente con el proceso.
 
 Dado que el desplazamiento dentro del \textit{buffer} se guarda sin hacer el módulo, no hace falta mantener otro contador separado para el desplazamiento dentro del fichero. Para obtenerlo, sólo es necesario calcular ese desplazamiento módulo el tamaño del fichero. La única precaución a tener es que el tamaño del fichero ha de ser divisor del máximo valor de la variable ($2^{32}$ bytes, 4 GB).
 

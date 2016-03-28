@@ -75,6 +75,11 @@
 \clubpenalty10000
 \raggedbottom
 
+% Try to remove hyphenation as much as possible
+\pretolerance=9000
+\tolerance=2000
+\emergencystretch=2pt
+
 % Algorithm floats
 \newfloat{algorithm}{t}{lop}[chapter]
 \floatname{algorithm}{\@nameuse{algorithm-\@default@lang}}
