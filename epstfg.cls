@@ -70,6 +70,11 @@
 \RequirePackage{algpseudocode}
 \RequirePackage{float}
 
+% Avoid widow/orphan lines
+\widowpenalty10000
+\clubpenalty10000
+\raggedbottom
+
 % Algorithm floats
 \newfloat{algorithm}{t}{lop}[chapter]
 \floatname{algorithm}{\@nameuse{algorithm-\@default@lang}}
@@ -194,6 +199,7 @@
 
 \setsecheadstyle{\sffamily\Large}
 \setsubsecheadstyle{\sffamily\bfseries}
+\setparaheadstyle{\sffamily\bfseries}
 
 \renewcommand{\beforesecskip}{15pt}
 \renewcommand{\beforesubsecskip}{10pt}
