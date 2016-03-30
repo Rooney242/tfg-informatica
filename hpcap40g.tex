@@ -200,7 +200,7 @@ Acceso caché L3 & 44 \\
 \label{tab:LatenciaIntelSkylake}
 \end{wraptable}
 
-Esta restricción de tiempo hace imposible que un único hilo pueda soportar toda la carga de tráfico. Un fallo de caché o del predictor de ramas \todo{¿Seguro que se dice así en castellano?} puede consumir un cuarto del tiempo disponible para el procesado de un paquete, de tal forma que es prácticamente imposible procesar los paquetes a esa tasa incluso aunque no hubiese que copiarlos después a un \textit{buffer} intermedio.
+Esta restricción de tiempo hace imposible que un único hilo pueda soportar toda la carga de tráfico. Un fallo de caché o del predictor de saltos puede consumir un cuarto del tiempo disponible para el procesado de un paquete, de tal forma que es prácticamente imposible procesar los paquetes a esa tasa incluso aunque no hubiese que copiarlos después a un \textit{buffer} intermedio.
 
 Así, se hace necesario el uso de varios hilos de lectura que sí puedan soportar conjuntamente estas altas tasas de tráfico. El problema a resolver será el de la concurrencia y sincronización entre hilos en tres puntos clave:
 
