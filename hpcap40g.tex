@@ -58,15 +58,21 @@
 \newacronym[longplural = {Centros de Proceso de Datos}]{cpd}{CPD}{Centro de Proceso de Datos}
 \newacronym{gbps}{Gbps}{Gigabits por segundo}
 \newacronym{nic}{NIC}{Tarjeta de Interfaz de Red}
-\newacronym{irq}{IRQ}{petición de interrupción}
+\newacronym{irq}{IRQ}{Petición de interrupción}
+\newacronym{api}{API}{\textit{Application Programming Interface}, interfaz de programación de aplicaciones.}
 
-\newglossaryentry{10gbe}{name = {10 GbE}, description = {Estándares de transmisión de datos sobre Ethernet a 10 gigabits por segundo}}
-\newglossaryentry{NAPI}{name = {NAPI}, description = {``New API'', una API de Linux desarrollada para mitigar interrupciones en \textit{drivers} de red y mejorar el rendimiento bajo condiciones de alta carga}}
+\newglossaryentry{10gbe}{
+	name = {10 GbE},
+	description = {Estándares de transmisión de datos sobre Ethernet a 10 gigabits por segundo}}
+
+\newglossaryentry{NAPI}{
+	name = {NAPI},
+	description = {``New API'', una API de Linux desarrollada para mitigar interrupciones en \textit{drivers} de red y mejorar el rendimiento bajo condiciones de alta carga}}
 
 \newglossaryentry{driver}{
 	name = {Driver},
 	text ={\textit{driver}},
-	description = {También llamado controlador de dispositivo, es un programa que permite al sistema operativo interactuar con un periférico \textit{hardware}}}
+	description = {También llamado controlador de dispositivo, es un programa que permite al sistema operativo interactuar con un periférico hardware}}
 
 \newglossaryentry{jumbo}{
 	name = {Paquete jumbo},
@@ -86,7 +92,7 @@
 
 \newglossaryentry{RAID}{
 	name = {RAID},
-	description = {\textit{Redundat Array of Independent Disks}, una tecnología de virtualización de almacenamiento de datos que combina múltiples discos en una única unidad virtual, mejorando rendimiento y/o redundancia}
+	description = {\textit{Redundant Array of Independent Disks}, una tecnología de virtualización de almacenamiento de datos que combina múltiples discos en una única unidad virtual, mejorando rendimiento y/o redundancia}
 }
 
 \begin{document}
@@ -117,17 +123,15 @@
 
 Durante los últimos años, las necesidades de ancho de banda de Internet se han ido multiplicando a una velocidad difícil de imaginar en su momento. Muchos \glspl{cpd} ya han desplegado redes \gls{10gbe}, y los dispositivos capaces de funcionar a 40 \gls{gbps} o incluso a 100 \gls{gbps} ya están disponibles comercialmente.
 
-Por supuesto, junto con las nuevas redes de alta velocidad llega la necesidad de monitorizarlas, ya sea para diagnosticar problemas, detectar intrusiones o asegurar un nivel de calidad de servicio. Sin embargo, los sistemas operativos modernos no están totalmente preparados para el manejo de estas velocidades. Incluso para \gls{10gbe} se hacen necesarias configuraciones específicas \cite{leitao2009tuning} que permitan al sistema alcanzar las tasas que ofrece el \textit{hardware}.
+Por supuesto, junto con las nuevas redes de alta velocidad llega la necesidad de monitorizarlas, ya sea para diagnosticar problemas, detectar intrusiones o asegurar un nivel de calidad de servicio. Sin embargo, los sistemas operativos modernos no están totalmente preparados para el manejo de estas velocidades. Incluso para \gls{10gbe} se hacen necesarias configuraciones específicas \cite{leitao2009tuning} que permitan al sistema alcanzar las tasas que ofrece el hardware.
 
-Para sortear las limitaciones de los sistemas operativos en este sentido son necesarias soluciones específicas y dedicadas.
+Para sortear las limitaciones de los sistemas operativos en este sentido son necesarias soluciones específicas y dedicadas. En muchos casos se emplean sistemas o tarjetas de red diseñadas a tal efecto, aunque el coste es mayor que soluciones software basadas en sistemas y tarjetas estándar.
 
-\todo{Pequeño overview del estado del arte.}
-
-Dos aspectos que muchas soluciones de monitorización no contemplan es el de marcado de paquetes o \textit{timestamping} y el del orden de captura. A 40 Gbps, el tiempo entre paquetes puede llegar a ser de 13 nanosegundos\footnote{Tomando paquetes de tamaño mínimo, 64 bytes, y añadiendo el \textit{interframe gap} de 8 bits.}. Una recepción desordenada o imprecisiones mínimas en las marcas de tiempo pueden ser decisivas para que una herramienta de análisis detecte o ignore anomalías en el tráfico; o para que dé falsos positivos a raíz de fallos en la captura. Teniendo en cuenta que estos problemas ya los introducen las propias redes y sistemas a monitorizar, es necesario reducirlos todo lo posible en el lado de la captura.
+Dentro de las soluciones de monitorización por software hay dos aspectos que muchas  no contemplan: el de marcado de paquetes o \textit{timestamping} y el del orden de captura. A 40 Gbps, el tiempo entre paquetes puede llegar a ser de 13 nanosegundos\footnote{Tomando paquetes de tamaño mínimo, 64 bytes, y añadiendo el \textit{interframe gap} de 8 bits.}. Una recepción desordenada o imprecisiones mínimas en las marcas de tiempo pueden ser decisivas para que una herramienta de análisis detecte o ignore anomalías en el tráfico; o para que dé falsos positivos a raíz de fallos en la captura. Teniendo en cuenta que estos problemas ya los introducen las propias redes y sistemas a monitorizar, es necesario reducirlos todo lo posible en el lado de la captura.
 
 \section{Objetivos}
 
-Este trabajo se plantea resolver el problema de la monitorización de tráfico en redes 40 GbE, ampliando el sistema de captura HPCAP \cite{MorenoTFM2012}, de Víctor Moreno. Para ello, los \todo{focos?} serán los siguientes:
+Este trabajo se plantea resolver el problema de la monitorización de tráfico en redes 40 GbE, ampliando el sistema de captura HPCAP \cite{victorPhD}, de Víctor Moreno. Para ello, los \todo{focos?} serán los siguientes:
 
 \begin{itemize}
 \item Estudiar los límites de la arquitectura ya existente de HPCAP e identificar los puntos de mejora.
@@ -137,9 +141,9 @@ Este trabajo se plantea resolver el problema de la monitorización de tráfico e
 
 \chapter{Estado del arte}
 
-HPCAP, artículo de Javier de 40Gbps. DPDK, sockets de acceso directo (PF\_LINUX?).
+A lo largo de esta sección se estudiarán las soluciones actuales de captura de tráfico a alta velocidad, empezando antes con una introducción al funcionamiento de \textit{drivers} de red que permita identificar los cuellos de botella que los sistemas de monitorización deberán evitar.
 
-\section{Funcionamiento de un \textit{driver} de red: ¿Qué hay que cambiar para alto rendimiento?}
+\section{Funcionamiento y cuellos de botella de un \textit{driver} de red}
 \label{sec:EstadoArte:Funcionamiento}
 
 \begin{figure}[hbtp]
@@ -155,7 +159,31 @@ El subsistema \gls{NAPI} programará una llamada a la función de recepción del
 
 Si bien esta arquitectura es muy efectiva para un sistema de propósito general, tiene varias desventajas como sistema de captura de alto rendimiento. Por un lado, se introduce una cierta latencia al tener que esperar a la primera interrupción y a la llamada correspondiente del subsistema NAPI para empezar a leer los paquetes del anillo de recepción de la tarjeta. Por otra, se realizan dos copias redundantes: del anillo de recepción a la pila de red de Linux y de ésta a la aplicación cliente.
 
+\section{Sistemas de captura de tráfico}
+
+\subsection{Linux sockets acceso directo}
+
+No recuerdo muy bien cómo se llamaba esto. \todo{Preguntar a Rafa.}
+
+\subsection{PF\_RING ZC}
+
+PF\_RING ZC (\textit{Zero Copy}) es la versión modificada de PF\_RING DNA \cite{rizzo201210}. Se trata de un sistema comercial de captura de tráfico a 10 Gbps preparado para procesar y reenviar paquetes copiando sólo los datos de la \gls{nic} a la memoria de sistema, saltándose la pila de red del sistema. Una de sus principales fortalezas es la virtualización: PF\_RING ZC permite a máquinas virtuales sobre Linux acceder al tráfico a 10 Gbps, e incluso realiazr operaciones sin copias de memoria entre esas máquinas virtuales para mejorar el rendmiento.
+
+Sin embargo, todavía no ofrece captura a 40 Gbps, marcado de tiempo preciso o soporte para NICs distintas de las de Intel.
+
+\subsection{DPDK}
+
+Desarrollado por --- entre otros --- Intel, DPDK (\textit{Data Plane Development Kit}) \cite{IntelDPDK} es un conjunto de librerías y \textit{drivers} para el envío y procesado de paquetes a alta velocidad. Soporta tarjetas de múltiples fabricantes, incluyendo Mellanox e Intel; y permite captura a 40 Gbps con \glspl{nic} apropiadas.
+
+DPDK expone una \gls{api} que permite a las aplicaciones configurar el sistema de captura y recibir tráfico. También se pueden usar herramientas ya desarrolladas, como MoonGen \cite{emmerich2015moongen} que permite generar y recibir paquetes usando programas Lua interpretados en tiempo real.
+
+La principal desventaja de DPDK es que obliga al programador a realizar cualquier tarea adicional a la captura en espacio de usuario, de tal forma que resulta difícil aplicar marcas de tiempo precisas al no poder detectar el momento exacto en el que llega cada paquete.
+
 \subsection{HPCAP}
+
+HPCAP \cite{victorPhD} es un sistema de captura desarrollado por Víctor Moreno en la Escuela Politécnica Superior, que permite la captura de tráfico a alta velocidad con marcado de tiempo preciso; y que además está optimizado para permitir el almacenamiento de ese tráfico en disco para su posterior análisis.
+
+El sistema consiste en la modificación del \gls{driver} original de Intel para tarjetas \gls{10gbe}, de tal forma que los paquetes capturados no pasan por la pila de red del sistema sino que se guardan en un \textit{buffer} intermedio en memoria del sistema. Las aplicaciones cliente podrán leerlos y procesarlos a través de la \gls{api} que expone HPCAP, o realizar un guardado directo a disco sin copias adicionales.
 
 \chapter{Desarrollo e implementación}
 
@@ -169,9 +197,9 @@ Si bien esta arquitectura es muy efectiva para un sistema de propósito general,
 \label{fig:DriverRings}
 \end{figure}
 
-Para poder adaptar HPCAP a las \glspl{nic} de 40 Gbps de Intel y Mellanox es necesario utilizar los \glspl{driver} originales de los fabricantes y modificarlos para que sea el código de HPCAP el encargado de la recepción. Esto implica conocer su funcionamiento no sólo a grandes rasgos (\fref{sec:EstadoArte:Funcionamiento}), sino también las rutinas de comunicación con el \textit{hardware} y de reserva de recursos de esos \glspl{driver} originales.
+Para poder adaptar HPCAP a las \glspl{nic} de 40 Gbps de Intel y Mellanox es necesario utilizar los \glspl{driver} originales de los fabricantes y modificarlos para que sea el código de HPCAP el encargado de la recepción. Esto implica conocer su funcionamiento no sólo a grandes rasgos (\fref{sec:EstadoArte:Funcionamiento}), sino también las rutinas de comunicación con el hardware y de reserva de recursos de esos \glspl{driver} originales.
 
-A pesar de ser de fabricantes distintos, los dos \glspl{driver} siguen el mismo proceso para inicializarse y para la recepción de paquetes. Cuando el \gls{driver} se inserta en el sistema Linux, lee los parámetros de configuración de la línea de comandos y empieza a reservar recursos acorde a esos parámetros. Entre esos recursos están las regiones de memoria de los anillos de recepción, donde la \gls{nic} escribirá los paquetes recibidos; y estructuras en memoria compartida entre \textit{software} y \textit{hardware}, de donde se leerán datos como los descriptores de paquetes y los punteros de cabecera y cola del anillo.
+A pesar de ser de fabricantes distintos, los dos \glspl{driver} siguen el mismo proceso para inicializarse y para la recepción de paquetes. Cuando el \gls{driver} se inserta en el sistema Linux, lee los parámetros de configuración de la línea de comandos y empieza a reservar recursos acorde a esos parámetros. Entre esos recursos están las regiones de memoria de los anillos de recepción, donde la \gls{nic} escribirá los paquetes recibidos; y estructuras en memoria compartida entre \textit{software} y hardware, de donde se leerán datos como los descriptores de paquetes y los punteros de cabecera y cola del anillo.
 
 El anillo de descriptores es la estructura de datos que permite la transferencia de paquetes desde la \gls{nic} al \gls{driver}. Cada descriptor de paquete es una estructura de tamaño fijo que contiene una variable con el estado del descriptor, con los marcadores que determinan si tiene datos, si ha tenido algún error o si es parte de un \gls{jumbo}; y un puntero a los datos del paquete de red correspondiente, que han sido copiados a la memoria del sistema por la \gls{nic}.
 
@@ -330,7 +358,7 @@ Estudiar si el driver puede realizar un prefiltrado de información en tiempo de
 \label{fig:SimpleArch:MaxRate}
 \end{figure}
 
-Dadas las limitaciones del \textit{hardware}, está claro que un único hilo de recepción no será suficiente para hacer la recepción a 40 Gbps. Aun así, es necesario realizar las pruebas en esta arquitectura simple para establecer una base sobre la que comparar y medir mejoras.
+Dadas las limitaciones del hardware, está claro que un único hilo de recepción no será suficiente para hacer la recepción a 40 Gbps. Aun así, es necesario realizar las pruebas en esta arquitectura simple para establecer una base sobre la que comparar y medir mejoras.
 
 Tal y como se ve en la \fref{fig:SimpleArch:MaxRate}, sólo se llega a la tasa máxima de captura a partir de los 1250 bytes de tamaño de paquete. Para tamaños pequeños se observa el mismo comportamiento que con la versión original de HPCAP \citep{MorenoTFM2012}, donde para tamaños cercanos al mínimo (64 bytes) no se llegaba a la tasa máxima de 10 Gbps. En nuestro caso, para ese mismo tamaño se llega a una tasa de 7.6 Gbps.
 
