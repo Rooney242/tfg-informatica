@@ -156,9 +156,14 @@
 }
 
 % TOC fixes
-\setlength{\cftbeforechapterskip}{2pt} % No separation between chapters in the
-									   % frontmatter (e.g., table of contents, list of
-									   % figures/tables).
+\newlength{\extratocentriesskip}
+\setlength{\extratocentriesskip}{2pt}
+
+% No separation between chapters in the
+% frontmatter (e.g., table of contents, list of
+% figures/tables).
+\setlength{\cftbeforechapterskip}{\extratocentriesskip}
+
 
 \def\@mainmattertocsettings{
 	\addtocontents{toc}{
@@ -175,6 +180,16 @@
 	\@internal@mainmatter
 	\@fixchapterstyle
 	\@mainmattertocsettings
+}
+
+% Same with \backmatter, patch to fix ToC.
+\let\@internal@backmatter\backmatter
+\def\backmatter{
+	\addtocontents{toc}{
+		\vspace{10pt}
+		\setlength{\cftbeforechapterskip}{\extratocentriesskip}
+	}
+	\@internal@backmatter
 }
 
 \if@twoside
