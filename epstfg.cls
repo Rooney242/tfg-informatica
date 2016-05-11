@@ -8,13 +8,13 @@
 	\renewcommand{\sfdefault}{fla}
 	\renewcommand{\ttdefault}{lmtt}
 	\renewcommand*{\familydefault}{\rmdefault}
-	\def\@fontsizeopt{11pt}
+	\PassOptionsToClass{11pt}{memoir}
 	\message{Loading Palatino fonts}
 }
 
 \DeclareOption{sansserif}{
 	\renewcommand*{\familydefault}{\sfdefault}
-	\def\@fontsizeopt{12pt}
+	\PassOptionsToClass{12pt}{memoir}
 	\message{Loading Sans-Serif fonts}
 }
 
@@ -41,7 +41,6 @@
 \ExecuteOptions{palatino,twoside,draftbanner,spanish}
 \ProcessOptions\relax
 
-\PassOptionsToClass{\@fontsizeopt}{memoir}
 \LoadClass[a4paper]{memoir}
 
 %% Load packages
