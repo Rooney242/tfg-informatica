@@ -95,6 +95,16 @@
 	description = {\textit{Redundant Array of Independent Disks}, una tecnología de virtualización de almacenamiento de datos que combina múltiples discos en una única unidad virtual, mejorando rendimiento y/o redundancia}
 }
 
+\newglossaryentry{RSS}{
+	name = {RSS},
+	description = {\textit{Receive Side Scaling}, una tecnología para \textit{drivers} de red que permite distribuir de forma eficiente los paquetes recibidos entre varias CPUs}
+}
+
+\newglossaryentry{RoCE}{
+	name = {RoCE},
+	description = {\textit{RDMA over Converged Ethernet}, tecnología de Mellanox para permitir acceso directo a memoria remota (RDMA) a través de redes Ethernet}
+}
+
 \begin{document}
 
 \selectlanguage{spanish}
@@ -244,7 +254,7 @@ Por supuesto, todas las operaciones de sincronización tendrán que hacerse sin 
 
 A la hora de la lectura, un problema a tener en cuenta es el de la caché. Un fallo de caché puede provocar una latencia de muchos ciclos de reloj (\fref{tab:LatenciaIntelSkylake}), y con ello la pérdida de paquetes. Si todos los hilos de recepción tratan de leer todos los paquetes del anillo de recepción, los patrones de acceso no van a ser predecibles. Cuando un hilo acceda a un descriptor, el sistema cargaría en la caché de su núcleo descriptores cercanos para un acceso más rápido. Ahora bien, es posible que el resto de hilos consuman esos paquetes, de tal forma que el siguiente paquete disponible ya no estaría cargado en caché y habría una latencia adicional al acceder a él.
 
-\begin{wrapfigure}[8]{R}{0.3\textwidth}
+\begin{wrapfigure}[9]{R}{0.3\textwidth}
 \centering
 \vspace{-20pt}
 \input{tikz/RingAssignment.tex}
@@ -271,16 +281,18 @@ Si, por otra parte, \texttt{can\_free} es 0, se lee la variable \texttt{freed\_l
 \begin{algorithm}[hbtp]
 \begin{algorithmic}
 \Function{free\_descriptors}{thread, descr}
-\State prev $\gets$ previous\_thread\_of(thread)
+\State prev $\gets$ \Call{previous\_thread\_of}{thread}
 	\If{can\_free[thread] == 0 \&\& freed\_last\_rxd[prev] == 1}
 		\State freed\_last\_rxd[prev] $\gets$ 0
 		\State can\_free[thread] $\gets$ 1
+		\State \Call{read\_barrier}{\ }
 	\EndIf
 
 	\If{can\_free[thread] == 1}
-		\State release\_to\_NIC(descr)
+		\State \Call{release\_to\_nic}{descr}
 
-		\If{is\_last\_in\_segment(descr, thread)}
+		\If{\Call{is\_last\_in\_segment}{descr, thread}}
+			\State \Call{write\_barrier}{\ }
 			\State freed\_last\_rxd[prev] $\gets$ 1
 			\State can\_free[thread] $\gets$ 0
 		\EndIf
@@ -291,7 +303,7 @@ Si, por otra parte, \texttt{can\_free} es 0, se lee la variable \texttt{freed\_l
 \label{lst:AlgoritmoDescriptores}
 \end{algorithm}
 
-La única técnica de concurrencia usada es que la variable \texttt{freed\_last\_rxd} ha de ser atómica, de tal forma que su valor está constantemente sincronizado entre todos los hilos y no hay posibilidad de que un hilo la lea mientras otro está escribiendo su valor.
+La única técnica de concurrencia usada es que la variable \texttt{freed\_last\_rxd} ha de ser atómica, de tal forma que su valor está constantemente sincronizado entre todos los hilos y no hay posibilidad de que un hilo la lea mientras otro está escribiendo su valor. Además, para mantener un orden estricto en la lectura y escritura de las estructuras de datos.
 
 \subsection{Copia al \textit{buffer} intermedio de HPCAP}
 
@@ -333,6 +345,19 @@ Ese desplazamiento permitirá al \gls{driver} detectar cuándo, una vez reservad
 Si no hay espacio suficiente, se introduce una cabecera con los marcadores de tiempo a 0 y que indique la longitud del \gls{padding}, en este caso, hasta el final de fichero. Además, se comprueba si desde el principio del fichero hasta la última posición reservada ($w_1$ en la \fref{fig:BufferPadding}) hay espacio suficiente para incluir otra cabecera de \gls{padding}. Si lo hay, ese mismo hilo escribirá la cabecera y después se continuará la escritura de paquetes con normalidad.
 
 Si por el contrario no se puede incluir la cabecera a comienzo de fichero, la siguiente escritura (que puede ser realizada por ese mismo hilo o por otro cualquiera, es indiferente) se encargará de hacerlo. Para ello, se comprueba si la diferencia entre el inicio del fichero y la primera posición en la que hay que escribir ($w_1$) es menor que la longitud de cabecera, en cuyo caso se introduce ese \gls{padding} a comienzo de fichero, que llegará hasta la última posición que se había reservado ($w_2$ en la \fref{fig:BufferPadding}).
+
+\subsection{Ajustes del hardware y configuración}
+
+Además de la arquitectura de hilos para alto rendimiento, es necesario cambiar la configuración de la tarjeta para optimizar la tasa de recepción. Por defecto, las tarjetas están preparadas para recepción con múltiples anillos (tecnología \gls{RSS}), distribuyendo los paquetes o incluso realizando operaciones como la eliminación de cabeceras VLAN.
+
+Ahora bien, todas estas características no son necesarias si el objetivo es capturar todo el tráfico usando la menor cantidad de recursos posible. Esas operaciones adicionales bajan el rendimiento y es necesario desactivarlas. En particular, se realizan las siguientes modificaciones:
+
+\begin{itemize}[itemsep = 0pt]
+\item Se desactiva \gls{RSS} para paquetes UDP.
+\item Se reduce el número de colas \gls{RSS} a 1, y se configura la función más rápida (\textit{XOR}) para la distribución.
+\item Se desactivan los modos \gls{RoCE} y de descarga de VLAN.
+\item Se activa el modo de \gls{RSS} estático, que da mejor rendimiento a costa de menor flexibilidad en las reglas de distribución.
+\end{itemize}
 
 \section{Filtrado}
 
