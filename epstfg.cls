@@ -155,6 +155,13 @@
 	\makefootrule{chapter}{\textwidth}{0.7pt}{2pt}
 }
 
+% Fix styling (footer, header) in frontmatter
+\copypagestyle{frontmatterstyle}{plain}
+
+\makeoddfoot{frontmatterstyle}{}{\pagenumberstyle\thepage}{}
+\makeevenfoot{frontmatterstyle}{}{\pagenumberstyle\thepage}{}
+
+
 % TOC fixes
 \newlength{\extratocentriesskip}
 \setlength{\extratocentriesskip}{2pt}
@@ -177,6 +184,7 @@
 % Patch \mainmatter to introduce fixes in chapter styling, toc and more.
 \let\@internal@mainmatter\mainmatter
 \def\mainmatter{
+	\pagestyle{ruled}
 	\@internal@mainmatter
 	\@fixchapterstyle
 	\@mainmattertocsettings
@@ -199,7 +207,11 @@
 \fi
 
 \let\@internal@frontmatter\frontmatter
-\def\frontmatter{\@internal@frontmatter\pagenumbering{Roman}}
+\def\frontmatter{
+	\@internal@frontmatter
+	\pagenumbering{Roman}
+	\pagestyle{frontmatterstyle}
+}
 
 % Division styling
 \headstyles{memman}
