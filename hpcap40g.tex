@@ -60,6 +60,7 @@
 \newacronym{nic}{NIC}{Tarjeta de Interfaz de Red}
 \newacronym{irq}{IRQ}{Petición de interrupción}
 \newacronym{api}{API}{\textit{Application Programming Interface}, interfaz de programación de aplicaciones.}
+\newacronym{SPAN}{SPAN}{\textit{Switched Port ANalyzer}}
 
 \newglossaryentry{10gbe}{
 	name = {10 GbE},
@@ -209,7 +210,7 @@ El sistema consiste en la modificación del \gls{driver} original de Intel para 
 
 Para poder adaptar HPCAP a las \glspl{nic} de 40 Gbps de Intel y Mellanox es necesario utilizar los \glspl{driver} originales de los fabricantes y modificarlos para que sea el código de HPCAP el encargado de la recepción. Esto implica conocer su funcionamiento no sólo a grandes rasgos (\fref{sec:EstadoArte:Funcionamiento}), sino también las rutinas de comunicación con el hardware y de reserva de recursos de esos \glspl{driver} originales.
 
-A pesar de ser de fabricantes distintos, los dos \glspl{driver} siguen el mismo proceso para inicializarse y para la recepción de paquetes. Cuando el \gls{driver} se inserta en el sistema Linux, lee los parámetros de configuración de la línea de comandos y empieza a reservar recursos acorde a esos parámetros. Entre esos recursos están las regiones de memoria de los anillos de recepción, donde la \gls{nic} escribirá los paquetes recibidos; y estructuras en memoria compartida entre \textit{software} y hardware, de donde se leerán datos como los descriptores de paquetes y los punteros de cabecera y cola del anillo.
+A pesar de ser de fabricantes distintos, los dos \glspl{driver} siguen el mismo proceso para inicializarse y para la recepción de paquetes. Cuando el \gls{driver} se inserta en el sistema Linux, lee los parámetros de configuración de la línea de comandos y empieza a reservar recursos acorde a esos parámetros. Entre esos recursos están las regiones de memoria de los anillos de recepción, donde la \gls{nic} escribirá los paquetes recibidos; y estructuras en memoria compartida entre software y hardware, de donde se leerán datos como los descriptores de paquetes y los punteros de cabecera y cola del anillo.
 
 El anillo de descriptores es la estructura de datos que permite la transferencia de paquetes desde la \gls{nic} al \gls{driver}. Cada descriptor de paquete es una estructura de tamaño fijo que contiene una variable con el estado del descriptor, con los marcadores que determinan si tiene datos, si ha tenido algún error o si es parte de un \gls{jumbo}; y un puntero a los datos del paquete de red correspondiente, que han sido copiados a la memoria del sistema por la \gls{nic}.
 
@@ -222,13 +223,15 @@ Una vez que los paquetes se han leído, no sólo hay que actualizar el puntero d
 Por lo tanto, para que HPCAP funcione con estos \glspl{driver}, la principal modificación a hacer es sustituir la rutina de recepción original. Para ello, se evita el registro de la interfaz en el subsistema \gls{NAPI}, se desactivan las interrupciones de la \gls{nic}, y se lanzan los hilos de recepción de HPCAP cuando el resto del \gls{driver} se haya inicializado correctamente.
 
 \section{Recepción a 40 Gbps}
+\label{sec:Desarrollo:Recepcion40Gbps}
 
 Tal y como se comentaba en la introducción, la recepción a 40 Gbps es un desafío importante por las restricciones de tiempo. A esta tasa, los paquetes pueden llegar cada 13 nanosegundos, lo que en un procesador de gama alta a 3,40 GHz apenas significan 44 ciclos.
 
 \begin{wraptable}[8]{l}[1.5cm]{0.35\textwidth}
 \vspace{-15pt}
-\begin{tabular}{l|c}
-\textbf{Operación} & \textbf{Ciclos} \\ \toprule
+\begin{tabular}{lc}
+\toprule
+\textbf{Operación} & \textbf{Ciclos} \\ \midrule
 Acceso caché L1 & 4 \\
 Acceso caché L2 & 12 \\
 Acceso caché L3 & 44 \\
@@ -359,15 +362,25 @@ Ahora bien, todas estas características no son necesarias si el objetivo es cap
 \item Se activa el modo de \gls{RSS} estático, que da mejor rendimiento a costa de menor flexibilidad en las reglas de distribución.
 \end{itemize}
 
-\section{Filtrado}
+\section{Almacenamiento del tráfico: filtrado y guardado selectivo}
 
-Estudiar filtros hardware y posibilidad de filtros software para reducir la tasa de tráfico recibida por la aplicación en espacio de usuario.
+En la sección anterior se ha expuesto un diseño para la recepción de tráfico a 40 Gbps, pero falta considerar las opciones disponibles para poder almacenar todo ese tráfico para su posterior análisis.
 
-\section{Almacenamiento y selección de información}
+La opción directa, el almacenamiento de todo el tráfico, no es factible si se quieren mantener unos costes bajos. Como se puede ver en la \fref{tab:Desarrollo:CosteAlmacenamiento}, incluso para un entorno de captura conservador \todo{Definir bien el entorno de captura} los costes son excesivamente altos. Se hace necesario por lo tanto desarrollar sistemas que permitan filtrar el tráfico recibido o guardar sólo la información estrictamente necesaria de cada paquete.
 
-Realizar un estudio teórico de necesidades de almacenamiento según tasa a la que queramos almacenar, viendo productos existentes en el mercado y calculando coste del sistema.
+\begin{table}[btp]
+\centering
+\begin{tabular}{ccccc}
+\toprule
+\textbf{Modelo} & \textbf{Tasa escritura (MB/s)} & \textbf{Capacidad (TB)} & \textbf{Discos necesarios} & \textbf{Coste (\texteuro)} \\ \midrule
+SSD & 520 & 1 & 211 & 147,000 \texteuro \\
+Mec. & 200 & 8 & 27 & 16,200 \texteuro \\ \bottomrule
+\end{tabular}
+\caption{Estimaciones de coste de los discos necesarios para un sistema de captura de 12 horas de tráfico a 20 Gbps.}
+\label{tab:Desarrollo:CosteAlmacenamiento}
+\end{table}
 
-Estudiar si el driver puede realizar un prefiltrado de información en tiempo de recepción, extrayendo sólo ciertos campos de cada paquete. La extracción no debe de ser muy compleja y probablemente tenga que limitarse a extraer ciertos rangos fijos de bytes.
+Mencionar aquí ASCII, filtrado MAC, IP, protocolo, extracción de información (rangos de bytes)...
 
 \section{Herramientas adicionales}
 
@@ -375,26 +388,53 @@ Estudiar si el driver puede realizar un prefiltrado de información en tiempo de
 
 \chapter{Validación experimental}
 
-\section{Caso base: ¿hasta dónde llega la arquitectura básica?}
+\section{Recepción de tráfico}
+
+\subsection{Arquitectura básica: capacidades y limitaciones}
 
 \begin{figure}[btp]
 \inputgnuplot{gnuplot/simple-arch-max-rate}
 \caption[Capacidad de una arquitectura básica de captura]{Una medida de la capacidad base de la tarjeta: tasa máxima que se alcanza sin perder paquetes en función del tamaño de paquetes.}
-\label{fig:SimpleArch:MaxRate}
+\label{fig:Validacion:SimpleArchRate}
 \end{figure}
 
 Dadas las limitaciones del hardware, está claro que un único hilo de recepción no será suficiente para hacer la recepción a 40 Gbps. Aun así, es necesario realizar las pruebas en esta arquitectura simple para establecer una base sobre la que comparar y medir mejoras.
 
-Tal y como se ve en la \fref{fig:SimpleArch:MaxRate}, sólo se llega a la tasa máxima de captura a partir de los 1250 bytes de tamaño de paquete. Para tamaños pequeños se observa el mismo comportamiento que con la versión original de HPCAP \citep{MorenoTFM2012}, donde para tamaños cercanos al mínimo (64 bytes) no se llegaba a la tasa máxima de 10 Gbps. En nuestro caso, para ese mismo tamaño se llega a una tasa de 7.6 Gbps.
+Para la prueba, se utilizan dos servidores conectados directamente con un cable de 40 Gbps. En uno de ellos (sistema con Intel Xeon \todo{N cores a 20Ghz, 128GB RAM y una tarjeta Mellanox ConnectX-3}) se instala HPCAP, y en el otro se usa \textit{pktgen-DPDK} para generar tráfico a la tasa deseada. La tasa de envío se incrementa gradualmente hasta llegar al máximo que HPCAP es capaz de recibir sin perder ningún paquete.
 
-Así mismo, sobre esta arquitectura básica se ha comprobado el efecto de las marcas de tiempo (\textit{timestamp}) obtenidas a través de la tarjeta o a través del reloj \textit{software} del \textit{kernel} Linux. El rendimiento en ambos casos es prácticamente el mismo.
+Tal y como se ve en la \fref{fig:Validacion:SimpleArchRate}, sólo se llega a la tasa máxima de captura a partir de los 1250 bytes de tamaño de paquete. Para tamaños pequeños se observa el mismo comportamiento que con la versión original de HPCAP \citep{MorenoTFM2012}, donde para tamaños cercanos al mínimo (64 bytes) no se llegaba a la tasa máxima de 10 Gbps. En nuestro caso, para ese mismo tamaño se llega a una tasa de 7.6 Gbps.
 
-\begin{figure}[btp]
+Así mismo, sobre esta arquitectura básica se ha comprobado el efecto de las marcas de tiempo (\textit{timestamp}) obtenidas a través de la tarjeta o a través del reloj software del \textit{kernel} Linux. El rendimiento en ambos casos es prácticamente el mismo, lo que permite relajar los requisitos de ordenación de paquetes al poder confiar en la tarjeta para realizar el marcado.
+
+En cualquiera de los dos casos, se observa que un hilo no es suficiente para conseguir una tasa aceptable de tráfico, por lo que es necesario diseñar un sistema de recepción distinto que pasamos a probar a continuación.
+
+\subsection{Arquitectura con múltiples hilos}
+
+A lo largo de esta sección se valida la arquitectura diseñada en la \fref{sec:Desarrollo:Recepcion40Gbps}, comprobando que efectivamente es capaz de recibir a una tasa de tráfico suficiente y minimizando el desorden de paquetes.
+
+El primer resultado es el del tráfico máximo que el sistema es capaz de recibir sin perder ningún paquete. Las pruebas se realizan exactamente igual que como se hicieron en la sección anterior.
+
+Como se puede ver en la \fref{fig:Validacion:MulticoreMaxRate}, el sistema es capaz de recibir a tasa máxima (40 Gbps) con 4 hilos paquetes de 600 bytes\todo{Comprobar que efectivamente sale este número y rellenar el gráfico}, y con 2 hilos paquetes de \todo{XXX} bytes. Algunas conclusiones por aquí...
+
+\begin{figure}[hbtp]
 \inputgnuplot{gnuplot/multicore-max-rate}
-\caption[Capacidad de una arquitectura básica de captura]{Una medida de la capacidad base de la tarjeta: tasa máxima que se alcanza sin perder paquetes en función del tamaño de paquetes.}
-\label{fig:MultiCore:MaxRate}
+\caption[Capacidad del diseño de recepción a 40 Gbps]{Tráfico máximo soportado por la el diseño de recepción a 40Gbps según el número de hilos empleados.}
+\label{fig:Validacion:MulticoreMaxRate}
 \end{figure}
 
+Además, se comprueba que la arquitectura no introduce un desorden excesivo. Cierto desorden en la captura es aceptable, ya que este se puede corregir usando las marcas de tiempo precisas que pone la tarjeta a cada paquete de llegada, aunque para facilitar los análisises preferible que ese desorden no sea demasiado alto.
+
+Para realizar las pruebas, se configuraron dos servidores de la misma forma que en secciones anteriores y se configuró \textit{pktgen-DPDK} para marcar su orden de salida. En el servidor de captura se usó el driver HPCAP configurado para capturar únicamente los campos correspondientes de cada paquete, de tal forma que se pueda guardar en disco la información necesaria sin pérdidas.
+
+\begin{figure}[hbtp]
+\inputgnuplot{gnuplot/multicore-ordering}
+\caption[Desorden de paquetes inducido por el sistema de captura]{Porcentaje sobre el total de paquetes recibidos que se desordenan al pasar por el sistema de captura. Las barras de error muestran la variación de resultados al cambiar la velocidad y tamaño de paquete manteniendo el mismo \textit{ratio} de paquetes por segundo.}
+\label{fig:Validacion:Ordering}
+\end{figure}
+
+Los resultados se pueden ver en la \fref{fig:Validacion:Ordering}, que muestra el porcentaje de paquetes desordenados según el tráfico, medido en millones de paquetes por segundo. \todo{Completar el gráfico y poner qué pasa.}
+
+\section{Captura y guardado de tráfico}
 
 \chapter{Conclusiones}
 

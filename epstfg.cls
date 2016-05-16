@@ -251,7 +251,7 @@
 
 % For input of gnuplot files. Automatically resizes the image based on linewidth.
 \newcommand{\inputgnuplot}[2][1]{
-	\vspace{-15pt}
+	\vspace{-2ex}
 	\resizebox{#1\linewidth}{!}{
 		\IfFileExists{#2.tex}{
 			\fontsize{7pt}{7pt}\fontfamily{ppl}\selectfont
@@ -262,6 +262,7 @@
 			\fbox{Gnuplot not found.\begin{minipage}{4.7in}\hfill\vspace{3in}\end{minipage}}
 		}
 	}
+	\vspace{-3ex}
 }
 
 % Title page
