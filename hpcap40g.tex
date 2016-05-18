@@ -60,8 +60,9 @@
 \newacronym{gbps}{Gbps}{Gigabits por segundo}
 \newacronym{nic}{NIC}{Tarjeta de Interfaz de Red}
 \newacronym{irq}{IRQ}{Petición de interrupción}
-\newacronym{api}{API}{\textit{Application Programming Interface}, interfaz de programación de aplicaciones.}
+\newacronym{api}{API}{\textit{Application Programming Interface}}
 \newacronym{SPAN}{SPAN}{\textit{Switched Port ANalyzer}}
+\newacronym{BPF}{BPF}{\textit{Berkeley Packet Filter}}
 
 \newglossaryentry{10gbe}{
 	name = {10 GbE},
@@ -143,12 +144,13 @@ Dentro de las soluciones de monitorización por software hay dos aspectos que mu
 
 \section{Objetivos}
 
-Este trabajo se plantea resolver el problema de la monitorización de tráfico en redes 40 GbE, ampliando el sistema de captura HPCAP \cite{victorPhD}, de Víctor Moreno. Para ello, los objetivos a cumplir serán los siguientes:
+Este trabajo se plantea resolver el problema de la monitorización de tráfico en redes 40 GbE, ampliando el sistema de captura HPCAP \cite{victorPhD}, desarrollado en el grupo de investigación HPCN (Escuela Politécnica Superior, UAM) por Víctor Moreno. Para ello, los objetivos a cumplir serán los siguientes:
 
 \begin{itemize}[itemsep=0pt]
 \item Estudiar los límites de la arquitectura ya existente de HPCAP e identificar los puntos de mejora.
 \item Plantear una solución que permita la captura de tráfico a tasa de línea junto con marcas de tiempo precisas.
 \item Desarrollar métodos que hagan posible el almacenamiento de información sobre el tráfico que pueda ser analizada posteriormente.
+\item Crear un entorno de pruebas que permita verificar y probar el rendimiento de sistemas de captura de tráfico de alta velocidad.
 \end{itemize}
 
 \chapter{Estado del arte}
@@ -370,7 +372,7 @@ En la sección anterior se ha expuesto un diseño para la recepción de tráfico
 
 La opción directa, el almacenamiento de todo el tráfico, no es factible si se quieren mantener unos costes bajos. Como se puede ver en la \fref{tab:Desarrollo:CosteAlmacenamiento}, incluso para un entorno de captura conservador (24 horas de tráfico almacenado a 20 Gbps) los costes son excesivamente altos. La única opción factible serían discos mecánicos, y aún faltaría tener en cuenta el coste del sistema RAID que soporte como mínimo 36 discos.
 
-\begin{table}[btp]
+\begin{table}[b!tp]
 \centering
 \begin{tabular}{cl cccc}
 \toprule
@@ -389,9 +391,29 @@ La opción directa, el almacenamiento de todo el tráfico, no es factible si se 
 \label{tab:Desarrollo:CosteAlmacenamiento}
 \end{table}
 
-Se hace necesario por lo tanto desarrollar sistemas que permitan filtrar el tráfico recibido o guardar sólo la información estrictamente necesaria de cada paquete.
+Se hace necesario por lo tanto desarrollar sistemas que permitan filtrar el tráfico recibido o guardar sólo la información estrictamente necesaria de cada paquete. A lo largo de esta sección se planteará el diseño de estas soluciones para el filtrado.
 
-Mencionar aquí ASCII, filtrado MAC, IP, protocolo, extracción de información (rangos de bytes)...
+\subsection{Filtrado de paquetes}
+
+Dado que el filtrado ha de hacerse en el bucle de recepción, es necesario que el sistema sea simple y se puedan evaluar los filtros rápidamente. Para ello, se traslada toda la complejidad al espacio de usuario, donde se traducirán los filtros deseados a una estructura de datos que simplifique el análisis.
+
+Esta estructura será una lista de cadenas y su correspondiente posición de inicio en el paquete. Un elemento de esa lista podría ser, por ejemplo, la cadena que contenga la dirección MAC \texttt{AA:BB:CC:DD:EE:FF} y la posición de inicio 0, de tal forma que el filtro aceptaría sólo paquetes con esa MAC destino.
+
+Además, se podrá configurar el filtrado para que sólo se acepte un paquete si todas las cadenas coinciden, o configurar cadenas con coincidencia inversa (esto es, que se rechace un paquete si la cadena coincide). De esta forma se pueden implementar numerosos filtros comunes, como filtrado por destino/origen (incluyendo puertos TCP/UDP) o incluso protocolo de la capa de aplicación.
+
+La principal ventaja de este diseño es su simplicidad y su buen rendimiento, como se verá en la sección de validación experimental. Ahora bien, es un sistema poco flexible y los filtros pueden no ser correctos cuando las cabeceras de los paquetes varíen de tamaño: por ejemplo, no se podría hacer un filtro capaz de aceptar paquetes TCP con y sin cabecera VLAN (la cabecera VLAN añade bytes extra antes de la cabecera TCP).
+
+Una posible solución a esa falta de flexibilidad sería permitir la creación de filtros anidados, de tal forma que se pueda implementar cualquier combinación lógica deseada. Sin embargo, eso implicaría una complejidad mayor en el bucle de recepción y por lo tanto un peor rendimiento. Además, sería más difícil traducir los filtros deseados a la combinación de cadenas y configuración necesarias para llevarlos a cabo.
+
+La otra solución sería integrar el \textit{driver} con los filtros \gls{BPF} integrados en el \textit{kernel} Linux. Estos filtros se programan usando una sintaxis específica (por ejemplo, \texttt{host 192.168.1.1}) que se traduce a un lenguaje máquina específico. El código resultante se ejecuta en un intérprete optimizado dentro del \textit{kernel}. Si bien es un sistema complejo para filtros sencillos, es apropiado para casos más genéricos al tener un lenguaje máquina fácilmente interpretable y además el compilador ya está preparado para los distintos protocolos y cabeceras de tamaño variable que puedan encontrarse.
+
+\paragraph{Configuración de filtros ``en vivo''}
+
+Para evitar paradas innecesarias en la captura, el diseño del sistema de filtros permite la configuración ``en vivo'', esto es, sin dejar en ningún momento de capturar paquetes. Tal y como se comentaba en secciones anteriores, las necesidades de rendimiento del bucle de recepción impiden técnicas de sincronización especialmente complejas.
+
+La activación de los filtros se controlará así con una variable atómica. Para activar los filtros, primero se rellenarán las estructuras correspondientes a través de una llamada \texttt{ioctl}, y después se pondrá a 1 la variable de control, de tal forma que los hilos sólo entren en el filtro cuando ya está listo para ser ejecutado.
+
+Si el filtro ya se encuentra activado, primero se desactiva la variable de control y se esperan 1000 nanosegundos, para dar tiempo suficiente a todos los hilos a salir de la rutina de comprobación de filtros. Una vez pasado ese tiempo, se modifican los filtros y se reactivará la variable de control tal y como se ha descrito anteriormente.
 
 \section{Herramientas adicionales}
 
@@ -452,6 +474,12 @@ Los resultados de la prueba completa se pueden ver en la \fref{fig:Validacion:Or
 También se puede observar que, tal y como se esperaba dado el diseño del sistema, el porcentaje de desorden aumenta al aumentar el tamaño de hilos.
 
 \section{Captura y guardado de tráfico}
+
+\subsection{Filtrado}
+
+Manteniendo el mismo entorno que en las pruebas de recepción, se configura un número de filtros determinado por cada ejecución con un tamaño fijo. Después se genera tráfico a diferentes tasas y tamaños de paquete, comprobando que la tasa de pérdidas no varíe con respecto al sistema sin filtros activados.
+
+En esas pruebas no se han encontrado diferencias significativas de rendimiento: la variación de paquetes perdidos y tasa máxima de recepción es mínima y prácticamente inapreciable teniendo en cuenta la propia variabilidad de ambas medidas.
 
 \chapter{Conclusiones}
 
