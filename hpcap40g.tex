@@ -7,6 +7,7 @@
 \usepackage{wrapfig}
 \usepackage{enumitem}
 \usepackage{xfrac}
+\usepackage{multirow}
 
 \usepackage{tikz}
 
@@ -192,7 +193,7 @@ La principal desventaja de DPDK es que obliga al programador a realizar cualquie
 
 \subsection{HPCAP}
 
-HPCAP \cite{victorPhD} es un sistema de captura desarrollado por Víctor Moreno en la Escuela Politécnica Superior, que permite la captura de tráfico a alta velocidad con marcado de tiempo preciso; y que además está optimizado para permitir el almacenamiento de ese tráfico en disco para su posterior análisis.
+HPCAP \cite{victorPhD} es un sistema de captura desarrollado en el grupo HPCN de la Escuela Politécnica Superior (UAM) por Víctor Moreno, que permite la captura de tráfico a alta velocidad con marcado de tiempo preciso; y que además está optimizado para permitir el almacenamiento de ese tráfico en disco para su posterior análisis.
 
 El sistema consiste en la modificación del \gls{driver} original de Intel para tarjetas \gls{10gbe}, de tal forma que los paquetes capturados no pasan por la pila de red del sistema sino que se guardan en un \textit{buffer} intermedio en memoria del sistema. Las aplicaciones cliente podrán leerlos y procesarlos a través de la \gls{api} que expone HPCAP, o realizar un guardado directo a disco sin copias adicionales.
 
@@ -367,19 +368,28 @@ Ahora bien, todas estas características no son necesarias si el objetivo es cap
 
 En la sección anterior se ha expuesto un diseño para la recepción de tráfico a 40 Gbps, pero falta considerar las opciones disponibles para poder almacenar todo ese tráfico para su posterior análisis.
 
-La opción directa, el almacenamiento de todo el tráfico, no es factible si se quieren mantener unos costes bajos. Como se puede ver en la \fref{tab:Desarrollo:CosteAlmacenamiento}, incluso para un entorno de captura conservador \todo{Definir bien el entorno de captura} los costes son excesivamente altos. Se hace necesario por lo tanto desarrollar sistemas que permitan filtrar el tráfico recibido o guardar sólo la información estrictamente necesaria de cada paquete.
+La opción directa, el almacenamiento de todo el tráfico, no es factible si se quieren mantener unos costes bajos. Como se puede ver en la \fref{tab:Desarrollo:CosteAlmacenamiento}, incluso para un entorno de captura conservador (24 horas de tráfico almacenado a 20 Gbps) los costes son excesivamente altos. La única opción factible serían discos mecánicos, y aún faltaría tener en cuenta el coste del sistema RAID que soporte como mínimo 36 discos.
 
 \begin{table}[btp]
 \centering
-\begin{tabular}{ccccc}
+\begin{tabular}{cl cccc}
 \toprule
-\textbf{Modelo} & \textbf{Tasa escritura (MB/s)} & \textbf{Capacidad (TB)} & \textbf{Discos necesarios} & \textbf{Coste (\texteuro)} \\ \midrule
-SSD & 520 & 1 & 211 & 147,000 \texteuro \\
-Mec. & 200 & 8 & 27 & 16,200 \texteuro \\ \bottomrule
+\textbf{Tipo} & \textbf{Modelo} & \textbf{Velocidad} & \textbf{Capacidad} & \textbf{Nº Discos} & \textbf{Coste} \\
+& & \textbf{(MB/s)} & \textbf{(TB)} & & \textbf{\texteuro} \\
+\midrule
+\multirow{2}{*}{SSD}
+	& Samsung 850 Pro 	& 520 & 2 	& 106 &  86,496 \texteuro \\[0.2em]
+	& Intel DC 3700 	& 970 & 1.6 & 132 & 158,400 \texteuro \\[0.4em]
+\multirow{2}{*}{Mecánico}
+	& HGST Ultrastar  	& 220 & 6 	&  36 &  21,600 \texteuro \\[0.2em]
+	& Seagate Entrp.	& 240 & 4   &  53 &  26,500 \texteuro \\[0.2em]
+\bottomrule
 \end{tabular}
-\caption{Estimaciones de coste de los discos necesarios para un sistema de captura de 12 horas de tráfico a 20 Gbps.}
+\caption{Estimaciones de coste de los discos necesarios para un sistema de captura de 24 horas de tráfico a 20 Gbps.}
 \label{tab:Desarrollo:CosteAlmacenamiento}
 \end{table}
+
+Se hace necesario por lo tanto desarrollar sistemas que permitan filtrar el tráfico recibido o guardar sólo la información estrictamente necesaria de cada paquete.
 
 Mencionar aquí ASCII, filtrado MAC, IP, protocolo, extracción de información (rangos de bytes)...
 
