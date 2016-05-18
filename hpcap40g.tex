@@ -415,6 +415,18 @@ La activación de los filtros se controlará así con una variable atómica. Par
 
 Si el filtro ya se encuentra activado, primero se desactiva la variable de control y se esperan 1000 nanosegundos, para dar tiempo suficiente a todos los hilos a salir de la rutina de comprobación de filtros. Una vez pasado ese tiempo, se modifican los filtros y se reactivará la variable de control tal y como se ha descrito anteriormente.
 
+\subsection{Almacenamiento selectivo}
+
+En combinación con el filtrado, se pueden seleccionar ciertos datos del paquete a guardar para reducir la tasa efectiva a procesar posteriormente. Un primer enfoque sería implementar una limitación del tamaño de paquete capturado, tal y como se hace en otras herramientas de captura. Así, sólo se guardarían como mucho los $n$ primeros bytes de cada paquete.
+
+\begin{figure}[btp]
+\inputgnuplot{gnuplot/caplen-effects}
+\caption[Tasa efectiva limitando el tamaño de paquete]{Tasa efectiva de recepción según el tamaño de paquete para distintos límites de tamaño de captura, incluyendo casos para capturar todas las cabeceras Ethernet o TCP/UDP.}
+\label{fig:Desarrollo:CaplenEffects}
+\end{figure}
+
+En la \fref{fig:Desarrollo:CaplenEffects} se puede ver el efecto que tendrían las limitaciones de tamaño en la tasa efectiva de recepción que tendrían que soportar los sistemas de almacenamiento o aplicaciones de usuario que reciban el tráfico. Por ejemplo, para una limitación de tamaño de 100 bytes, con la que se podría guardar gran parte de la carga útil de cada paquete, la tasa efectiva disminuye rápidamente y en entornos reales (con un tamaño medio de paquete alrededor de los 600 bytes) se podría estar capturando por debajo de los 10 Gbps.
+
 \section{Herramientas adicionales}
 
 \textit{hpcap-test, hpcap-benchmark}.

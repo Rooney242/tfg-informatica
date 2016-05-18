@@ -52,4 +52,5 @@ set grid ytics mytics ls 102, ls 103
 
 ## Functions
 max(x,y) = (x < y) ? y : x
+min(x,y) = (x < y) ? x : y
 
