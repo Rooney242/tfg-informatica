@@ -350,6 +350,7 @@ Si no hay espacio suficiente, se introduce una cabecera con los marcadores de ti
 Si por el contrario no se puede incluir la cabecera a comienzo de fichero, la siguiente escritura (que puede ser realizada por ese mismo hilo o por otro cualquiera, es indiferente) se encargará de hacerlo. Para ello, se comprueba si la diferencia entre el inicio del fichero y la primera posición en la que hay que escribir ($w_1$) es menor que la longitud de cabecera, en cuyo caso se introduce ese \gls{padding} a comienzo de fichero, que llegará hasta la última posición que se había reservado ($w_2$ en la \fref{fig:BufferPadding}).
 
 \subsection{Ajustes del hardware y configuración}
+\label{sec:Desarrollo:AjustesHardware}
 
 Además de la arquitectura de hilos para alto rendimiento, es necesario cambiar la configuración de la tarjeta para optimizar la tasa de recepción. Por defecto, las tarjetas están preparadas para recepción con múltiples anillos (tecnología \gls{RSS}), distribuyendo los paquetes o incluso realizando operaciones como la eliminación de cabeceras VLAN.
 
@@ -410,21 +411,25 @@ En cualquiera de los dos casos, se observa que un hilo no es suficiente para con
 
 \subsection{Arquitectura con múltiples hilos}
 
-A lo largo de esta sección se valida la arquitectura diseñada en la \fref{sec:Desarrollo:Recepcion40Gbps}, comprobando que efectivamente es capaz de recibir a una tasa de tráfico suficiente y minimizando el desorden de paquetes.
-
-El primer resultado es el del tráfico máximo que el sistema es capaz de recibir sin perder ningún paquete. Las pruebas se realizan exactamente igual que como se hicieron en la sección anterior.
-
-Como se puede ver en la \fref{fig:Validacion:MulticoreMaxRate}, el sistema es capaz de recibir a tasa máxima (40 Gbps) con 4 hilos paquetes de 600 bytes\todo{Comprobar que efectivamente sale este número y rellenar el gráfico}, y con 2 hilos paquetes de \todo{XXX} bytes. Algunas conclusiones por aquí...
-
-\begin{figure}[hbtp]
+\begin{figure}[b]
 \inputgnuplot{gnuplot/multicore-max-rate}
 \caption[Capacidad del diseño de recepción a 40 Gbps]{Tráfico máximo soportado por el diseño de recepción a 40Gbps según el número de hilos empleados.}
 \label{fig:Validacion:MulticoreMaxRate}
 \end{figure}
 
-Además, se comprueba que la arquitectura no introduce un desorden excesivo. Cierto desorden en la captura es aceptable, ya que este se puede corregir usando las marcas de tiempo precisas que pone la tarjeta a cada paquete de llegada, aunque para facilitar los análisises preferible que ese desorden no sea demasiado alto.
+A lo largo de esta sección se valida la arquitectura diseñada en la \fref{sec:Desarrollo:Recepcion40Gbps}, comprobando que efectivamente es capaz de recibir a una tasa de tráfico suficiente y minimizando el desorden de paquetes.
+
+El primer resultado es el del tráfico máximo que el sistema es capaz de recibir sin perder ningún paquete. El entorno de pruebas es el mismo que el descrito en la sección anterior.
+
+Como se puede ver en la \fref{fig:Validacion:MulticoreMaxRate}, el sistema alcanza la tasa teórica de 40 GbE a partir de los 600 bytes de tamaño, un resultado aceptable ya que el tamaño medio de paquete se encuentra en el entorno de los 600 bytes \cite{john2007analysis}.
+
+La prueba se ha realizado con dos y con cuatro hilos de recepción, lo que nos permite observar que la tarjeta Mellanox no es capaz de dar el total de la capacidad del enlace con un único anillo de recepción. Esta hipótesis está soportada porque durante el desarrollo no se consiguió una mejora de velocidad con múltiples hilos hasta que no se configuró apropiadamente la tarjeta de red (ver \fref{sec:Desarrollo:AjustesHardware} para los ajustes concretos).
+
+Además, se comprueba que la arquitectura no introduce un desorden excesivo. Cierto desorden en la captura es aceptable, ya que este se puede corregir usando las marcas de tiempo precisas que pone la tarjeta a cada paquete de llegada, aunque para facilitar los análisis es preferible que ese desorden no sea demasiado alto.
 
 Para realizar las pruebas, se configuraron dos servidores de la misma forma que en secciones anteriores y se configuró \textit{pktgen-DPDK} para marcar su orden de salida. En el servidor de captura se usó el driver HPCAP configurado para capturar únicamente los campos correspondientes de cada paquete, de tal forma que se pueda guardar en disco la información necesaria sin pérdidas.
+
+A modo de prueba base, primero se comprobó que con un único hilo se producía el comportamiento esperado, sin ningún tipo de desorden introducido. Esto permite confirmar la corrección de la implementación y asegurar que la tarjeta de red no introduce ningún desorden por sí misma.
 
 \begin{figure}[hbtp]
 \inputgnuplot{gnuplot/multicore-ordering}
@@ -432,7 +437,9 @@ Para realizar las pruebas, se configuraron dos servidores de la misma forma que 
 \label{fig:Validacion:Ordering}
 \end{figure}
 
-Los resultados se pueden ver en la \fref{fig:Validacion:Ordering}, que muestra el porcentaje de paquetes desordenados según el tráfico, medido en millones de paquetes por segundo. \todo{Completar el gráfico y poner qué pasa.}
+Los resultados de la prueba completa se pueden ver en la \fref{fig:Validacion:Ordering}, que muestra el porcentaje de paquetes desordenados según el tráfico, medido en millones de paquetes por segundo. El desorden se mantiene en valores aceptables para tasas de tráfico bajas y llega hasta el 30 \% con tasas altas; tasas que por otra parte sólo se alcanzan con paquetes pequeños, una situación poco frecuente en entornos de captura reales.
+
+También se puede observar que, tal y como se esperaba dado el diseño del sistema, el porcentaje de desorden aumenta al aumentar el tamaño de hilos.
 
 \section{Captura y guardado de tráfico}
 
