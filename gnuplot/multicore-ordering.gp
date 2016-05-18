@@ -12,9 +12,12 @@ set xlabel 'Tráfico (Mpps)'
 set ylabel 'Porcentaje de paquetes desordenados'
 
 set key bottom right
+set yrange [0:100]
 
 set pointintervalbox 0.5
 
 plot \
-	'data/multicore-ordering.dat' using 1:2:3 w yerrorbars ls 3 lw 2 notitle, \
-	'data/multicore-ordering.dat' using 1:2 w linespoints ls 3 lw 3 title '4 Hilos'
+	'data/multicore-ordering.dat' using 1:2:3 w yerrorbars ls 2 lw 2 notitle, \
+	'data/multicore-ordering.dat' using 1:2 w linespoints ls 2 lw 3 title '2 Hilos', \
+	'data/multicore-ordering.dat' using 1:4:5 w yerrorbars ls 3 lw 2 notitle, \
+	'data/multicore-ordering.dat' using 1:4 w linespoints ls 3 lw 3 title '4 Hilos'
