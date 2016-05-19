@@ -12,6 +12,7 @@ set xlabel 'Tamaño de paquete (bytes)'
 set ylabel 'Tasa máxima (Gbps)'
 
 set key bottom right
+
 set yrange [0:40]
 
 set pointintervalbox 0.5

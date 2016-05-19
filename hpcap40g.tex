@@ -425,7 +425,7 @@ En combinación con el filtrado, se pueden seleccionar ciertos datos del paquete
 \label{fig:Desarrollo:CaplenEffects}
 \end{figure}
 
-En la \fref{fig:Desarrollo:CaplenEffects} se puede ver el efecto que tendrían las limitaciones de tamaño en la tasa efectiva de recepción que tendrían que soportar los sistemas de almacenamiento o aplicaciones de usuario que reciban el tráfico. Por ejemplo, para una limitación de tamaño de 100 bytes, con la que se podría guardar gran parte de la carga útil de cada paquete, la tasa efectiva disminuye rápidamente y en entornos reales (con un tamaño medio de paquete alrededor de los 600 bytes) se podría estar capturando por debajo de los 10 Gbps.
+En la \fref{fig:Desarrollo:CaplenEffects} se puede ver el efecto que tendrían las limitaciones de tamaño en la tasa efectiva de recepción que tendrían que soportar los sistemas de almacenamiento o aplicaciones de usuario que reciban el tráfico. Por ejemplo, para una limitación de tamaño de 100 bytes, con la que se podría guardar gran parte de la carga útil de cada paquete, la tasa efectiva disminuye rápidamente y en entornos reales (con un tamaño medio de paquete alrededor de los 600 bytes) se podría estar guardando en disco a una tasa por debajo de los 10 Gbps.
 
 \section{Herramientas adicionales}
 
@@ -486,6 +486,18 @@ Los resultados de la prueba completa se pueden ver en la \fref{fig:Validacion:Or
 También se puede observar que, tal y como se esperaba dado el diseño del sistema, el porcentaje de desorden aumenta al aumentar el tamaño de hilos.
 
 \section{Captura y guardado de tráfico}
+
+Una vez comprobadas las capacidades del diseño para recibir datos de la tarjeta, la siguiente prueba medirá el rendimiento del sistema de escritura a memoria y la aplicación de guardado a disco.
+
+El entorno de pruebas es el mismo que el planteado en pruebas anteriores, y se compara el rendimiento del \textit{driver} al descartar los paquetes y al guardarlos en memoria RAM. De esta forma se mide el rendimiento del sistema de sincronización de hilos para guardar los datos en memoria y se aíslan los efectos de velocidad de disco, cuya medida queda fuera del alcance de este trabajo.
+
+
+\begin{figure}[hbtp]
+\inputgnuplot{gnuplot/multicore-disk-store}
+\caption{Comparación entre rendimiento descartando paquetes y guardándolos en RAM.}
+\label{fig:Validacion:DiskStore}
+\end{figure}
+
 
 \subsection{Filtrado}
 
