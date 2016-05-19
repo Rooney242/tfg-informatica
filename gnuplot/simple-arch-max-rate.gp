@@ -16,6 +16,7 @@ set ylabel 'Tasa máxima (Gbps)'
 set key top left
 
 set pointintervalbox 0.5
+set yrange [0:40]
 
 set object 2 rectangle from first 50, first 7 to first 210, first 19 fc rgb 'white' fs transparent solid 0.5 border lc '#E6AB02' lw 2 behind
 
@@ -46,6 +47,7 @@ set ylabel ''
 set mytics 2
 
 set xrange [60:210]
+set yrange [6:18]
 
 plot 'data/simple-arch-max-rate.dat' using 1:($2/1024) w linespoints ls 1 lw 3 title 'Timestamp hardware', \
 	'data/simple-arch-max-rate.dat' using 1:($3/1024) w linespoints ls 2 lw 3 title 'Timestamp software'
