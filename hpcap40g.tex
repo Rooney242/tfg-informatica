@@ -529,6 +529,12 @@ Para comprobar los efectos del almacenamiento selectivo, se realizan dos pruebas
 
 \chapter{Conclusiones}
 
+En este Trabajo de Fin de Grado se han identificado los puntos débiles de soluciones actuales de captura de tráfico y se han mejorado para lograr captura en enlaces de 40 Gbps. Para ello, se ha necesitado un diseño de concurrencia correcto y capaz de funcionar sin introducir retrasos excesivos en la ejecución, un aspecto crítico debido a las restricciones de tiempo existentes.
+
+Además, se ha desarrollado un entorno que permite realizar pruebas y validar experimentalmente el rendimiento de este sistema. Los resultados obtenidos son prometedores, logrando captura a 40 Gbps para paquetes de tamaño suficientemente alto, y mostrando que las características diseñadas para mejorar la efectividad de la captura (filtrado y almacenamiento selectivo) son factibles y mejoran el rendimiento.
+
+Como trabajo futuro, se podrían explorar más caminos para mejorar el filtrado y la selección de datos, como filtrado de paquetes ASCII \cite{ucedaselective} o limitación de tamaño dinámica que varíe según la tasa de recepción. También se podría comprobar si la implementación de \gls{BPF} para permitir filtros más complejos es práctica y no disminuye en exceso el rendimiento del \textit{driver}.
+
 \backmatter
 \appendix
 
