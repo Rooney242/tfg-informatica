@@ -435,13 +435,19 @@ En combinación con el filtrado, se pueden seleccionar ciertos datos del paquete
 \label{fig:Desarrollo:CaplenEffects}
 \end{figure}
 
-En la \fref{fig:Desarrollo:CaplenEffects} se puede ver el efecto que tendrían las limitaciones de tamaño en la tasa efectiva de recepción que tendrían que soportar los sistemas de almacenamiento o aplicaciones de usuario que reciban el tráfico. Por ejemplo, para una limitación de tamaño de 100 bytes, con la que se podría guardar gran parte de la carga útil de cada paquete, la tasa efectiva disminuye rápidamente y en entornos reales (con un tamaño medio de paquete alrededor de los 600 bytes) se podría estar guardando en disco a una tasa por debajo de los 10 Gbps.
+En la \fref{fig:Desarrollo:CaplenEffects} se puede ver el efecto que tendrían las limitaciones de tamaño en la tasa efectiva de recepción que tendrían que soportar los sistemas de almacenamiento o aplicaciones de usuario que reciban el tráfico. Por ejemplo, para una limitación de tamaño de 100 bytes, con la que se podría guardar gran parte de la carga útil de cada paquete, la tasa efectiva disminuye rápidamente y en entornos reales (con un tamaño medio de paquete alrededor de los 500-600 bytes) se podría estar guardando en disco a una tasa por debajo de los 10 Gbps.
 
 Una opción alternativa que permitiría guardar sólo la información más útil es un guardado únicamente de ciertos rangos de bytes de cada paquete. Así, podría extraerse la información necesaria para el programa que esté recibiendo tráfico y se aprovecharía al máximo la capacidad de la memoria y de los procesadores.
 
-\section{Herramientas adicionales}
+\section{Herramientas adicionales y entorno de pruebas}
 
-\textit{hpcap-test, hpcap-benchmark}.
+Para poder probar y medir el rendimiento de la implementación, se desarrollan algunas herramientas y módulos adicionales. En primer lugar, se crea un \textit{script} encargado de compilar e insertar el \textit{driver} en el sistema, comprobando que todos los parámetros y configuraciones se han cargado correctamente y que responde sin problemas.
+
+Las estadísticas de tasa de recepción y pérdidas se obtienen extrayendo los datos internos de la tarjeta, y añadiendo los provenientes del \textit{driver} (principalmente el número de paquetes descartados por espacio insuficiente en el \textit{buffer} de copia). Esto permite controlar y medir el rendimiento de sistema de captura.
+
+Por último, para facilitar el desarrollo, se incluye dentro del \textit{driver} un módulo de medición de rendimiento (\textit{profiling}) que mantiene estadísticas internas de funcionamiento, incluyendo los paquetes leídos del anillo de la tarjeta por cada llamada a la función de recepción, el número de veces que los hilos de recepción se encuentran con su segmento vacío, y la cantidad de descriptores devueltos en cada lote a la tarjeta.
+
+Este módulo de medición es especialmente relevante porque permite la identificación de los puntos débiles del diseño y los cuellos de botella sin influir notablemente en el rendimiento ni modificar el comportamiento del \textit{driver}. De hecho, fue muy útil para identificar problemas en la tarjeta de red y poder cambiar la configuración para optimizar la velocidad de recepción.
 
 \chapter{Validación experimental}
 
