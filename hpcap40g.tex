@@ -175,9 +175,13 @@ Si bien esta arquitectura es muy efectiva para un sistema de propósito general,
 
 \section{Sistemas de captura de tráfico}
 
-\subsection{Linux sockets acceso directo}
+Para el sistema operativo Linux se pueden encontrar multitud de sistemas de captura de tráfico. Entre los más conocidos se puede encontrar \textit{libpcap} y sistemas basados en él, como \textit{tcpdump} o \textit{Wireshark}. Ahora bien, estos sistemas no están preparados para la captura a altas tasas de tráfico, por lo que surgen nuevos sistemas más eficientes y con mejor rendimiento. A lo largo de esta sección revisaremos algunos de ellos.
 
-No recuerdo muy bien cómo se llamaba esto. \todo{Preguntar a Rafa.}
+\subsection{Linux PACKET\_MMAP}
+
+Una opción para captura de alto rendimiento integrada en el propio \textit{kernel} de Linux es la configuración llamada PACKET\_MMAP. Esta opción permite acceder directamente a los anillos de recepción del sistema desde espacio de usuario, de tal forma que no hay que realizar llamadas a sistema ni hacer copias adicionales para recibir cada paquete.
+
+Aunque es un método más eficiente que la captura paquete a paquete, se sigue usando la pila de red de Linux, lo que hace difícil la mejora y modificación para obtener mayor rendimento o poder usar los marcados de tiempo \textit{hardware} que ofrezca la tarjeta.
 
 \subsection{PF\_RING ZC}
 
@@ -351,6 +355,12 @@ Ese desplazamiento permitirá al \gls{driver} detectar cuándo, una vez reservad
 Si no hay espacio suficiente, se introduce una cabecera con los marcadores de tiempo a 0 y que indique la longitud del \gls{padding}, en este caso, hasta el final de fichero. Además, se comprueba si desde el principio del fichero hasta la última posición reservada ($w_1$ en la \fref{fig:BufferPadding}) hay espacio suficiente para incluir otra cabecera de \gls{padding}. Si lo hay, ese mismo hilo escribirá la cabecera y después se continuará la escritura de paquetes con normalidad.
 
 Si por el contrario no se puede incluir la cabecera a comienzo de fichero, la siguiente escritura (que puede ser realizada por ese mismo hilo o por otro cualquiera, es indiferente) se encargará de hacerlo. Para ello, se comprueba si la diferencia entre el inicio del fichero y la primera posición en la que hay que escribir ($w_1$) es menor que la longitud de cabecera, en cuyo caso se introduce ese \gls{padding} a comienzo de fichero, que llegará hasta la última posición que se había reservado ($w_2$ en la \fref{fig:BufferPadding}).
+
+\subsection{Marcas de tiempo}
+
+Dado que la tarjeta sobre la que se ha diseñado y probado el \textit{driver} ofrece marcado de todos los paquetes en el propio hardware, se puede evitar el marcado de tiempo software, que sería más impreciso al depender del rendimiento de cada hilo y su velocidad para leer descriptores de la tarjeta. Así también se evita marcar los paquetes de forma desordenada, ya que un hilo puede empezar a leer y marcar paquetes antes de que el hilo anterior haya podido acabar con todos los de su segmento.
+
+Para obtener las marcas de tiempo, durante la configuración inicial de la tarjeta se activa el filtrado hardware. En la recepción, cada descriptor incluirá un marcado de tiempo usando un reloj interno de la tarjeta, que después habrá que convertir a la hora local y guardar en la cabecera del paquete en un formato legible con toda la precisión posible, que en el caso de la tarjeta de Mellanox implica almacenarlo en nanosegundos.
 
 \subsection{Ajustes del hardware y configuración}
 \label{sec:Desarrollo:AjustesHardware}
