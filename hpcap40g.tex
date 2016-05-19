@@ -427,6 +427,8 @@ En combinación con el filtrado, se pueden seleccionar ciertos datos del paquete
 
 En la \fref{fig:Desarrollo:CaplenEffects} se puede ver el efecto que tendrían las limitaciones de tamaño en la tasa efectiva de recepción que tendrían que soportar los sistemas de almacenamiento o aplicaciones de usuario que reciban el tráfico. Por ejemplo, para una limitación de tamaño de 100 bytes, con la que se podría guardar gran parte de la carga útil de cada paquete, la tasa efectiva disminuye rápidamente y en entornos reales (con un tamaño medio de paquete alrededor de los 600 bytes) se podría estar guardando en disco a una tasa por debajo de los 10 Gbps.
 
+Una opción alternativa que permitiría guardar sólo la información más útil es un guardado únicamente de ciertos rangos de bytes de cada paquete. Así, podría extraerse la información necesaria para el programa que esté recibiendo tráfico y se aprovecharía al máximo la capacidad de la memoria y de los procesadores.
+
 \section{Herramientas adicionales}
 
 \textit{hpcap-test, hpcap-benchmark}.
@@ -489,21 +491,31 @@ También se puede observar que, tal y como se esperaba dado el diseño del siste
 
 Una vez comprobadas las capacidades del diseño para recibir datos de la tarjeta, la siguiente prueba medirá el rendimiento del sistema de escritura a memoria y la aplicación de guardado a disco.
 
-El entorno de pruebas es el mismo que el planteado en pruebas anteriores, y se compara el rendimiento del \textit{driver} al descartar los paquetes y al guardarlos en memoria RAM. De esta forma se mide el rendimiento del sistema de sincronización de hilos para guardar los datos en memoria y se aíslan los efectos de velocidad de disco, cuya medida queda fuera del alcance de este trabajo.
-
+El entorno de pruebas es el mismo que el planteado en pruebas anteriores, y se compara el rendimiento del \textit{driver} al descartar los paquetes y al guardarlos en memoria RAM, en un sistema de archivos \textit{tmpfs}. De esta forma se mide el rendimiento del sistema de sincronización de hilos para guardar los datos en memoria y se aíslan los efectos de velocidad de disco, cuya medida queda fuera del alcance de este trabajo.
 
 \begin{figure}[hbtp]
 \inputgnuplot{gnuplot/multicore-disk-store}
-\caption{Comparación entre rendimiento descartando paquetes y guardándolos en RAM.}
+\caption{Comparación entre rendimiento descartando paquetes y guardándolos en un sistema de archivos en RAM.}
 \label{fig:Validacion:DiskStore}
 \end{figure}
 
+Como era esperable, el rendimiento disminuye al guardar datos en el sistema de archivos en RAM, y de hecho no se llega a la tasa completa de 40 Gbps. Cabe destacar que la tasa obtenida es muy dependiente del tamaño del \textit{buffer} de HPCAP. En estas pruebas se usó un \textit{buffer} de 2 GB, que no se pudo ampliar debido a un \textit{bug} en el \textit{kernel} de Linux, concretamente en las rutinas encargadas de asignar direcciones virtuales a páginas de tipo \textit{huge}.\todo{¿Menciono aquí que hemos puesto un parche y lo hemos enviado?}.
 
 \subsection{Filtrado}
 
 Manteniendo el mismo entorno que en las pruebas de recepción, se configura un número de filtros determinado por cada ejecución con un tamaño fijo. Después se genera tráfico a diferentes tasas y tamaños de paquete, comprobando que la tasa de pérdidas no varíe con respecto al sistema sin filtros activados.
 
 En esas pruebas no se han encontrado diferencias significativas de rendimiento: la variación de paquetes perdidos y tasa máxima de recepción es mínima y prácticamente inapreciable teniendo en cuenta la propia variabilidad de ambas medidas.
+
+\subsection{Almacenamiento selectivo}
+
+\begin{figure}[hbtp]
+\inputgnuplot{gnuplot/caplen-effects-experimental}
+\caption[Tasa máxima experimental limitando el tamaño de paquete]{Tasa máxima de recepción guardando los datos en RAM y limitando el tamaño de paquete.}
+\label{fig:Validacion:CaplenEffects}
+\end{figure}
+
+Para comprobar los efectos del almacenamiento selectivo, se realizan dos pruebas de recepción limitando el tamaño de paquete a 18, 64 y 200 bytes. En la \fref{fig:Validacion:CaplenEffects} se puede observar que el rendimiento mejora y se alcanza la tasa máxima soportada por el \textit{driver} desarrollado.
 
 \chapter{Conclusiones}
 

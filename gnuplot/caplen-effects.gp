@@ -5,7 +5,7 @@ load 'gnuplot/config.gp'
 set term cairolatex color size 4.7in,3in font ",10" dashed transparent
 set output 'gnuplot/caplen-effects.tex'
 
-set title 'Tasa efectiva con limitación de tamaño de paquete'
+set title 'Tasa efectiva (teórica) con limitación de tamaño de paquete'
 
 set grid x y
 set xlabel 'Tamaño de paquete (bytes)'
