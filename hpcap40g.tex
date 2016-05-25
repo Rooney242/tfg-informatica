@@ -1,4 +1,4 @@
-\documentclass[oneside, draft]{epstfg}
+\documentclass[twoside, draft]{epstfg}
 
 \usepackage{lipsum}
 \usepackage[numbers]{natbib}
@@ -532,6 +532,14 @@ En esas pruebas no se han encontrado diferencias significativas de rendimiento: 
 \end{figure}
 
 Para comprobar los efectos del almacenamiento selectivo, se realizan dos pruebas de recepción limitando el tamaño de paquete a 18, 64 y 200 bytes. En la \fref{fig:Validacion:CaplenEffects} se puede observar que el rendimiento mejora y se alcanza la tasa máxima soportada por el \textit{driver} desarrollado.
+
+\section{Resultados Intel}
+
+\begin{figure}[hbtp]
+\inputgnuplot{gnuplot/intel-hpcapdd}
+\caption[Tasa para la tarjeta Intel]{Tasa intel HPCAPDD.}
+\label{fig:Validacion:IntelHpcapdd}
+\end{figure}
 
 \chapter{Conclusiones}
 
