@@ -5,12 +5,14 @@
 \node[rectangle, minimum width = 2.3cm, minimum height = 1cm] (NIC) at (1.15, 0.5) {NIC};
 \end{scope}
 
-\draw[blue!80!black, fill = blue!80!black, fill opacity = 0.1] (7, 5.3) rectangle (16.5, -2);
+\draw[blue!80!black, fill = blue!80!black, fill opacity = 0.1] (6.8, 5.8) rectangle (17, -2.5);
 \node[blue!80!black] at (15.8, 5.6) {Kernel};
 
+\draw[red!80!black, fill = red!80!black, fill opacity = 0.1] (7, 5.3) rectangle (9.2, -2);
+\node[red!80!black] at (8.1, 1.65) {Driver};
 
-\node[draw, fill = red!80!black!30!white, align = center] (IRQ) at (8, 4.5) {Gestor \\ IRQ};
-\node[draw, fill = blue!80!black!30!white, minimum height = 4.1cm, minimum width = 1.5cm, align = center] (KRN) at (15, 1.5) {Pila de red \\ Linux};
+\node[draw, fill = red!80!black!30!white, align = center] (IRQ) at (8.1, 4.5) {Gestor \\ IRQ};
+\node[draw, fill = blue!80!black!30!white, minimum height = 4.1cm, minimum width = 1.5cm, align = center] (KRN) at (15.5, 1.5) {Pila de red \\ Linux};
 \node[draw, align = center, fill = red!80!black!30!white] (POLL) at (8.1, -1.25) {Funci\'on \\ RX};
 
 \node[draw, orange!70!black, align = center, inner sep = 5pt] (APP) at (8, -4.5) {Aplicaci\'on \\ cliente};

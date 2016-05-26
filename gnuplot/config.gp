@@ -14,14 +14,14 @@ set style line 6 lt 1 lc rgb '#E6AB02' pt 7 pi -1 ps 0.2 # dark banana
 set style line 7 lt 1 lc rgb '#A6761D' pt 7 pi -1 ps 0.2 # dark tan
 set style line 8 lt 1 lc rgb '#666666' pt 7 pi -1 ps 0.2 # dark gray
 
-set style line 11 lt 2 pi -3 pt 4 lc rgb '#1B9E77' # dark teal
-set style line 12 lt 2 pi -3 pt 4 lc rgb '#D95F02' # dark orange
-set style line 13 lt 2 pi -3 pt 4 lc rgb '#7570B3' # dark lilac
-set style line 14 lt 2 pi -3 pt 4 lc rgb '#E7298A' # dark magenta
-set style line 15 lt 2 pi -3 pt 4 lc rgb '#66A61E' # dark lime green
-set style line 16 lt 2 pi -3 pt 4 lc rgb '#E6AB02' # dark banana
-set style line 17 lt 2 pi -3 pt 4 lc rgb '#A6761D' # dark tan
-set style line 18 lt 2 pi -3 pt 4 lc rgb '#666666' # dark gray
+set style line 11 lt 2 pt 7 pi -1 ps 0.2 dashtype 2 lc rgb '#1B9E77' # dark teal
+set style line 12 lt 2 pt 7 pi -1 ps 0.2 dashtype 2 lc rgb '#D95F02' # dark orange
+set style line 13 lt 2 pt 7 pi -1 ps 0.2 dashtype 2 lc rgb '#7570B3' # dark lilac
+set style line 14 lt 2 pt 7 pi -1 ps 0.2 dashtype 2 lc rgb '#E7298A' # dark magenta
+set style line 15 lt 2 pt 7 pi -1 ps 0.2 dashtype 2 lc rgb '#66A61E' # dark lime green
+set style line 16 lt 2 pt 7 pi -1 ps 0.2 dashtype 2 lc rgb '#E6AB02' # dark banana
+set style line 17 lt 2 pt 7 pi -1 ps 0.2 dashtype 2 lc rgb '#A6761D' # dark tan
+set style line 18 lt 2 pt 7 pi -1 ps 0.2 dashtype 2 lc rgb '#666666' # dark gray
 
 # palette
 set palette maxcolors 8

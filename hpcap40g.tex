@@ -1,4 +1,4 @@
-\documentclass[twoside, draft]{epstfg}
+\documentclass[twoside, 12pt, draft]{epstfg}
 
 \usepackage{lipsum}
 \usepackage[numbers]{natbib}
@@ -84,7 +84,7 @@
 
 \newglossaryentry{DMA}{
 	name = {DMA},
-	description = {Direct Memory Access, un sistema que permite a los periféricos acceder directamente a la memoria del sistema}
+	description = {\textit{Direct Memory Accesss}, un sistema que permite a los periféricos acceder directamente a la memoria del sistema}
 }
 
 \newglossaryentry{padding}{
@@ -106,6 +106,11 @@
 \newglossaryentry{RoCE}{
 	name = {RoCE},
 	description = {\textit{RDMA over Converged Ethernet}, tecnología de Mellanox para permitir acceso directo a memoria remota (RDMA) a través de redes Ethernet}
+}
+
+\newglossaryentry{NUMA}{
+	name = {NUMA},
+	description = {\textit{Non Uniform Memory Architecture}, diseño de sistemas multiprocesador con memoria local para cada procesador.}
 }
 
 \begin{document}
@@ -134,28 +139,57 @@
 
 \chapter{Introducción y motivación}
 
-Durante los últimos años, las necesidades de ancho de banda de Internet se han ido multiplicando a una velocidad difícil de imaginar en su momento. Muchos \glspl{cpd} ya han desplegado redes \gls{10gbe}, y los dispositivos capaces de funcionar a 40 \gls{gbps} o incluso a 100 \gls{gbps} ya están disponibles comercialmente.
+En este capítulo se detallan las necesidades que dan lugar a este Trabajo Fin de Grado, planteando los objetivos que habrán de cumplirse para llevarlo a cabo. Además, se expondrá la estructura que seguirá este documento.
 
-Por supuesto, junto con las nuevas redes de alta velocidad llega la necesidad de monitorizarlas, ya sea para diagnosticar problemas, detectar intrusiones o asegurar un nivel de calidad de servicio. Sin embargo, los sistemas operativos modernos no están totalmente preparados para el manejo de estas velocidades. Incluso para \gls{10gbe} se hacen necesarias configuraciones específicas \cite{leitao2009tuning} que permitan al sistema alcanzar las tasas que ofrece el hardware.
+\section{Motivación}
 
-Para sortear las limitaciones de los sistemas operativos en este sentido son necesarias soluciones específicas y dedicadas. En muchos casos se emplean sistemas o tarjetas de red diseñadas a tal efecto, aunque el coste es mayor que soluciones software basadas en sistemas y tarjetas estándar.
+Durante los últimos años, las necesidades de ancho de banda de Internet se han ido multiplicando a una velocidad difícil de imaginar en su momento. Muchos \glspl{cpd} ya han desplegado redes \gls{10gbe}, y los dispositivos capaces de funcionar a 40 \gls{gbps} o incluso a 100 \gls{gbps} ya empiezan a estar disponibles comercialmente.
 
-Dentro de las soluciones de monitorización por software hay dos aspectos que muchas  no contemplan: el de marcado de paquetes o \textit{timestamping} y el del orden de captura. A 40 Gbps, el tiempo entre paquetes puede llegar a ser de 13 nanosegundos\footnote{Tomando paquetes de tamaño mínimo, 64 bytes, y añadiendo el \textit{interframe gap} de 8 bits.}. Una recepción desordenada o imprecisiones mínimas en las marcas de tiempo pueden ser decisivas para que una herramienta de análisis detecte o ignore anomalías en el tráfico; o para que dé falsos positivos a raíz de fallos en la captura. Teniendo en cuenta que estos problemas ya los introducen las propias redes y sistemas a monitorizar, es necesario reducirlos todo lo posible en el lado de la captura.
+Junto con estas redes de alta velocidad, aparece la necesidad de monitorizarlas. La información que se obtenga de la red puede guardarse para, posteriormente, diagnosticar problemas y evitar una infrautilización de los recursos o problemas en las aplicaciones que funcionen sobre la red. También es posible analizar esos datos en el momento de su recepción para detectar rápidamente anomalías, como puedan ser caídas de sistemas o accesos no autorizados.
+
+Las soluciones de monitorización deben ser capaces por lo tanto de guardar la máxima información posible sin introducir distorsiones, y eso incluye no sólo la recepción de todos los paquetes que pasen por la red, sino también el marcado de su tiempo de llegada.
+
+En muchos casos se emplean sistemas o tarjetas de red diseñadas específicamente para entornos de monitorización. Es, sin embargo, un enfoque poco flexible, complejo y de alto coste. Así,  se buscan soluciones de monitorización software, más flexibles y baratas, que funcionen sobre sistemas y tarjetas estándar.
+
+El problema que se plantea es que los sistemas operativos modernos no están totalmente preparados para el manejo de estas velocidades. Incluso para \gls{10gbe} se hacen necesarias configuraciones específicas \cite{leitao2009tuning} que permitan al sistema alcanzar las tasas que ofrece el hardware. Esto hace necesario el desarrollo a un nivel más bajo, modificando el funcionamiento de los \glspl{driver} que controlan las tarjetas para obtener el rendimiento deseado.
+
+Ahora bien, incluso a bajo nivel aparecen dos problemas que en muchas soluciones de monitorización se ignoran:  el de marcado de paquetes o \textit{timestamping} y el del orden de captura. A 40 Gbps, el tiempo entre paquetes puede llegar a ser de 16 nanosegundos\footnote{Tomando paquetes de tamaño mínimo, 64 bytes, y añadiendo el \textit{interframe gap} de 8 bits y la cabecera física.}, lo que da muy poco margen para realizar operaciones entre paquete y paquete.
+
+Por otra parte, una recepción desordenada o imprecisiones mínimas en las marcas de tiempo pueden ser decisivas para que una herramienta de análisis detecte o ignore anomalías en el tráfico; o para que dé falsos positivos a raíz de fallos en la captura. Teniendo en cuenta que estos problemas ya los introducen las propias redes y sistemas a monitorizar, es necesario reducirlos todo lo posible en el lado de la captura. Estas necesidades llevarán al desarrollo a lo largo de este Trabajo Fin de Grado de una nueva arquitectura de recepción de tráfico, compatible con tarjetas de red estándar, y que sirva como punto de partida para sistemas de recepción no sólo a 40 Gbps sino también a tasas superiores.
+
+Otro problema adicional que se plantea es el almacenamiento del tráfico recibido. No todas las aplicaciones son capaces o tienen la necesidad de realizar análisis de recepción en línea: puede ser interesante almacenar el tráfico en disco para realizar análisis \textit{a posteriori} o sólo sobre intervalos de tiempo en los que se hayan detectado problemas en la red.
+
+Sin embargo, a una tasa de 40 Gbps se necesita una gran cantidad de almacenamiento para todos los datos generados y que además sea suficientemente rápido para no ralentizar la captura. Los sistemas que cumplen estos requisitos son costosos y difíciles de montar, así que es necesario que la solución planteada de recepción sea capaz de sortear estas restricciones y reducir la cantidad de datos a almacenar sin perder información para el análisis posterior.
 
 \section{Objetivos}
 
-Este trabajo se plantea resolver el problema de la monitorización de tráfico en redes 40 GbE, ampliando el sistema de captura HPCAP \cite{victorPhD}, desarrollado en el grupo de investigación HPCN (Escuela Politécnica Superior, UAM) por Víctor Moreno. Para ello, los objetivos a cumplir serán los siguientes:
+El objetivo principal que se plantea para este Trabajo Fin de Grado es la monitorización de tráfico en redes 40 GbE. Para ello, se ampliará el sistema de captura HPCAP \cite{victorPhD}, desarrollado en el grupo de investigación HPCN (Escuela Politécnica Superior, UAM) por Víctor Moreno a lo largo de su tesis doctoral.
 
-\begin{itemize}[itemsep=0pt]
+HPCAP es un sistema de captura capaz de recibir y almacenar tráfico de red a 10 Gbps, desarrollado sobre el \gls{driver} \textit{ixgbe} de Intel para sus tarjetas de red 10 GbE. \todo{Revisar la expresión de esto} El trabajo de mantenimiento y mejora de este driver durante los últimos meses ha sido responsabilidad del autor de este trabajo: a lo largo de ese período se ha estudiado y entendido el sistema de captura y se han añadido características adicionales, como la posibilidad de usar \textit{buffers} intermedios más grandes con las \textit{hugepages} de Linux.
+
+Sobre este trabajo ya realizado se plantean los siguientes objetivos.
+
+\begin{itemize}[itemsep=0pt, topsep = 5pt]
 \item Estudiar los límites de la arquitectura ya existente de HPCAP e identificar los puntos de mejora.
-\item Plantear una solución que permita la captura de tráfico a tasa de línea junto con marcas de tiempo precisas.
-\item Desarrollar métodos que hagan posible el almacenamiento de información sobre el tráfico que pueda ser analizada posteriormente.
+\item Plantear una solución que permita la captura de tráfico a tasa de línea (40 Gbps) junto con marcas de tiempo precisas.
+\item Desarrollar métodos que reduzcan la cantidad de datos a guardar y hagan posible el almacenamiento de información sobre el tráfico que pueda ser analizada posteriormente.
+\item Verificar la portabilidad de la arquitectura, comprobando el funcionamiento correcto en tarjetas de Intel y Mellanox.
 \item Crear un entorno de pruebas que permita verificar y probar el rendimiento de sistemas de captura de tráfico de alta velocidad.
 \end{itemize}
 
+\section{Estructura del documento}
+
+En el siguiente capítulo se revisará el estado del arte, estudiando la arquitectura de los \textit{drivers} de red y sus cuellos de botella y detallando las soluciones ya existentes para salvar esos puntos de mejora.
+
+Una vez estudiadas las soluciones existentes, a lo largo del \fref{chap:Desarrollo} se planteará el sistema diseñado para lograr la recepción a 40 Gbps y su integración con los respectivos \textit{drivers} base de las tarjetas de red.
+
+Ese diseño se validará experimentalmente en el \fref{chap:Validacion}, donde se mostrarán los resultados de las pruebas y el rendimiento del sistema desarrollado.
+
+Por último, en el \fref{chap:Conclusiones} se expondrán las conclusiones del trabajo y se discutirán las líneas de trabajo futuro que surgen a partir del proyecto realizado.
+
 \chapter{Estado del arte}
 
-A lo largo de esta sección se estudiarán las soluciones actuales de captura de tráfico a alta velocidad, empezando antes con una introducción al funcionamiento de \textit{drivers} de red que permita identificar los cuellos de botella que los sistemas de monitorización deberán evitar.
+A lo largo de este capítulo se estudiarán las soluciones actuales de captura de tráfico a alta velocidad, empezando antes con una introducción al funcionamiento de \textit{drivers} de red que permita identificar los cuellos de botella que los sistemas de monitorización deberán evitar.
 
 \section{Funcionamiento y cuellos de botella de un \textit{driver} de red}
 \label{sec:EstadoArte:Funcionamiento}
@@ -163,19 +197,25 @@ A lo largo de esta sección se estudiarán las soluciones actuales de captura de
 \begin{figure}[hbtp]
 \centering
 \input{tikz/LinuxNetworkStack.tex}
-\caption[Funcionamiento de un \textit{driver} de red en Linux]{Esquema del funcionamiento de un \gls{driver} de red en Linux. En rojo, las funciones pertenecientes al \gls{driver}.}
-\label{fig:LinuxNetworkStack}
+\caption[Funcionamiento de un \textit{driver} de red en Linux]{Esquema del funcionamiento de un \gls{driver} de red en Linux.}
+\label{fig:EstadoArte:LinuxNetworkStack}
 \end{figure}
 
-A grandes rasgos, el funcionamiento de un \textit{\gls{driver}} de red en Linux es el que aparece en la \fref{fig:LinuxNetworkStack}. Cuando la \gls{nic} recibe nuevos paquetes, emite una \gls{irq} que es recibida por la función correspondiente configurada por el \gls{driver}. Éste se comunica con la pila de red del \textit{kernel} de Linux, más concretamente con el subsistema \gls{NAPI} \cite{NAPI}, avisando de la disponibilidad de nuevos paquetes. Además, desactivará las interrupciones de la tarjeta hasta que no se hayan leído todos los paquetes pendientes, para mejorar así el rendimiento.
+A grandes rasgos, el funcionamiento de un \textit{\gls{driver}} de red en Linux es el que aparece en la \fref{fig:EstadoArte:LinuxNetworkStack}. Cuando la \gls{nic} recibe nuevos paquetes, emite una \gls{irq} que es recibida por la función correspondiente configurada por el \gls{driver}. Éste se comunica con la pila de red del \textit{kernel} de Linux, más concretamente con el subsistema \gls{NAPI} \cite{NAPI}, avisando de la disponibilidad de nuevos paquetes. Además, desactivará las interrupciones de la tarjeta hasta que no se hayan leído todos los paquetes pendientes, para mejorar así el rendimiento.
 
 El subsistema \gls{NAPI} programará una llamada a la función de recepción del \gls{driver} en función de la carga del sistema, pidiendo la lectura de hasta un cierto máximo de bytes. Cuando esa llamada se realice, el \gls{driver} leerá de una región de memoria los paquetes que la tarjeta haya copiado a través de transferencias DMA, y los transferirá a la pila de red de Linux, que a su vez los gestionará y distribuirá a las aplicaciones cliente correspondientes.
 
-Si bien esta arquitectura es muy efectiva para un sistema de propósito general, tiene varias desventajas como sistema de captura de alto rendimiento. Por un lado, se introduce una cierta latencia al tener que esperar a la primera interrupción y a la llamada correspondiente del subsistema NAPI para empezar a leer los paquetes del anillo de recepción de la tarjeta. Por otra, se realizan dos copias redundantes: del anillo de recepción a la pila de red de Linux y de ésta a la aplicación cliente.
+Esta arquitectura es especialmente efectiva para sistemas de propósito general y muy flexible. Para tasas bajas, el uso de interrupciones como aviso de nuevos paquetes permite al sistema utilizar sólo los recursos necesarios para atender esos paquetes, dejando más tiempo de ejecución al resto de tareas del sistema.
+
+Cuando la tasa aumenta, el subsistema NAPI evita los efectos perjudiciales que tendría un número excesivo de interrupciones: en lugar de realizar cambios excesivos de contexto gastando tiempo en atender a todas las interrupciones generadas, el \textit{driver} las desactiva y simplemente lee los paquetes que la tarjeta va transfiriendo a memoria principal.
+
+Ahora bien, como sistema de captura de alto rendimiento esta arquitectura no es del todo efectiva. Por un lado, se introduce una cierta latencia al tener que esperar a la primera interrupción y a la llamada correspondiente del subsistema NAPI para empezar a leer los paquetes del anillo de recepción de la tarjeta. Para tasas de tráfico suficientemente altas, el tiempo invertido en atender a esa interrupción y el que tarde el sistema Linux en llamar a la rutina de recepción puede ser demasiado alto y provocar la pérdida de los primeros paquetes a recibir. Además, NAPI limita la cantidad de paquetes a recibir en cada llamada, por lo que las interrupciones se están invocando continuamente a pesar de que no aporten información: con una tasa suficientemente alta, el anillo de recepción siempre tiene paquetes.
+
+Por otra parte, con este método se realizan dos copias redundantes: del anillo de recepción a la pila de red de Linux y de ésta a la aplicación cliente. Dado que los accesos a memoria principal son costosos, es deseable reducirlos al máximo para obtener un mejor rendimiento.
 
 \section{Sistemas de captura de tráfico}
 
-Para el sistema operativo Linux se pueden encontrar multitud de sistemas de captura de tráfico. Entre los más conocidos se puede encontrar \textit{libpcap} y sistemas basados en él, como \textit{tcpdump} o \textit{Wireshark}. Ahora bien, estos sistemas no están preparados para la captura a altas tasas de tráfico, por lo que surgen nuevos sistemas más eficientes y con mejor rendimiento. A lo largo de esta sección revisaremos algunos de ellos.
+Para el sistema operativo Linux se pueden encontrar multitud de sistemas de captura de tráfico. Entre los más conocidos se puede encontrar \textit{libpcap} y sistemas basados en él, como \textit{tcpdump} o \textit{Wireshark}. Ahora bien, tal y como se comentaba en la sección anterior, estos sistemas no están preparados para la captura a altas tasas de tráfico y surgen alternativas más eficientes y con mejor rendimiento. A lo largo de esta sección revisaremos algunos de ellos.
 
 \subsection{Linux PACKET\_MMAP}
 
@@ -185,9 +225,15 @@ Aunque es un método más eficiente que la captura paquete a paquete, se sigue u
 
 \subsection{PF\_RING ZC}
 
-PF\_RING ZC (\textit{Zero Copy}) es la versión modificada de PF\_RING DNA \cite{rizzo201210}. Se trata de un sistema comercial de captura de tráfico a 10 Gbps preparado para procesar y reenviar paquetes copiando sólo los datos de la \gls{nic} a la memoria de sistema, saltándose la pila de red del sistema. Una de sus principales fortalezas es la virtualización: PF\_RING ZC permite a máquinas virtuales sobre Linux acceder al tráfico a 10 Gbps, e incluso realiazr operaciones sin copias de memoria entre esas máquinas virtuales para mejorar el rendmiento.
+PF\_RING ZC (\textit{Zero Copy}) es la versión modificada de PF\_RING DNA \cite{rizzo201210}. Se trata de un sistema comercial de captura de tráfico a 10 Gbps preparado para procesar y reenviar paquetes copiando sólo los datos de la \gls{nic} a la memoria de sistema, saltándose la pila de red del sistema. Una de sus principales fortalezas es la virtualización: PF\_RING ZC permite a máquinas virtuales sobre Linux acceder al tráfico a 10 Gbps, e incluso realizar operaciones sin copias de memoria entre esas máquinas virtuales para mejorar el rendmiento.
 
 Sin embargo, todavía no ofrece captura a 40 Gbps, marcado de tiempo preciso o soporte para NICs distintas de las de Intel.
+
+\subsection{Netmap}
+
+Netmap es un sistema de generación y recepción de tráfico orientado a entornos de alto rendimiento, capaz de funcionar con enlaces de 40 Gbps con tarjetas Chelsio. Para ello usan un \textit{driver} modificado capaz de acceder directamente a los \textit{buffers} de la tarjeta y que agrupa las operaciones por lotes para mejorar el rendimiento, y usan múltiples colas y anillos para paralelizar la carga de trabajo.
+
+A nivel de usuario, Netmap expone descriptores de fichero que se pueden operar con las llamadas estándar de Linux (\texttt{ioctl} y \texttt{poll}). Ahora bien, es un sistema que no se enfoca especialmente al almacenamiento de los paquetes y que no pone marcas de tiempo en la recepción.
 
 \subsection{DPDK}
 
@@ -198,12 +244,30 @@ DPDK expone una \gls{api} que permite a las aplicaciones configurar el sistema d
 La principal desventaja de DPDK es que obliga al programador a realizar cualquier tarea adicional a la captura en espacio de usuario, de tal forma que resulta difícil aplicar marcas de tiempo precisas al no poder detectar el momento exacto en el que llega cada paquete.
 
 \subsection{HPCAP}
+\label{sec:EstadoArte:HPCAP}
 
 HPCAP \cite{victorPhD} es un sistema de captura desarrollado en el grupo HPCN de la Escuela Politécnica Superior (UAM) por Víctor Moreno, que permite la captura de tráfico a alta velocidad con marcado de tiempo preciso; y que además está optimizado para permitir el almacenamiento de ese tráfico en disco para su posterior análisis.
 
 El sistema consiste en la modificación del \gls{driver} original de Intel para tarjetas \gls{10gbe}, de tal forma que los paquetes capturados no pasan por la pila de red del sistema sino que se guardan en un \textit{buffer} intermedio en memoria del sistema. Las aplicaciones cliente podrán leerlos y procesarlos a través de la \gls{api} que expone HPCAP, o realizar un guardado directo a disco sin copias adicionales.
 
+Para mejorar el rendimiento del almacenamiento, el \textit{driver} inserta unas cabeceras antes de copiar cada paquete al \textit{buffer} intermedio, que marcan la longitud del paquete y su tiempo de llegada. De esta forma no hay estructuras adicionales que consultar, lo que permite el guardado directo a disco por bloques de 1 MB y evita tener que copiar paquete a paquete, que es menos eficiente.
+
+La comunicación con las aplicaciones cliente de HPCAP se realiza a través de descriptores de fichero generados para cada interfaz. Una aplicación que quiera leer paquetes del \textit{buffer} de HPCAP abrirá ese descriptor de fichero y, usando llamadas \texttt{ioctl}, se comunicará con el \textit{driver} para recibir el número de bytes disponibles para su lectura en el \textit{buffer} y enviar los bytes leídos.
+
+Internamente, HPCAP mantiene un registro de la última posición leída por cada cliente y de la última posición escrita por el hilo de recepción de tráfico. De esta forma, en lugar de reservar y transmitir memoria por cada cliente, el \textit{driver} copia los datos a un único \textit{buffer} compartido por todos los clientes, escribiendo sólo cuando haya espacio disponible. Así se evitan copias adicionales que afectarían al rendimiento.
+
+\section{Conclusiones}
+
+En el momento actual no existe un gran número de soluciones de captura de tráfico a 40 Gbps, y ninguna de ellas contempla especialmente las marcas de tiempo precisas, el orden de paquetes en la recepción o el almacenamiento del tráfico.
+
+El sistema HPCAP que se usará como base en este Trabajo Fin de Grado tiene todas las características necesarias como arquitectura de recepción de alto rendimiento, evitando los cuellos de botella existentes en el sistema de red de Linux.
+
+Sin embargo, todavía es necesario plantear una arquitectura capaz de recibir a una tasa mayor de 10 Gbps, que es el límite actual de HPCAP, manteniendo la compatibilidad con la \gls{api} que da acceso a las aplicaciones cliente. Esta solución se desarrollará en el siguiente capítulo.
+
 \chapter{Desarrollo e implementación}
+\label{chap:Desarrollo}
+
+A lo largo de este capítulo se planteará el diseño de la arquitectura de recepción a 40 Gbps y las soluciones que permitan reducir datos y almacenar el tráfico recibido incluso a tasas demasiado altas para sistemas de almacenamiento comunes.
 
 \section{Arquitectura de los \textit{drivers} originales}
 \label{sec:ArquitecturaOriginal}
@@ -221,32 +285,62 @@ A pesar de ser de fabricantes distintos, los dos \glspl{driver} siguen el mismo 
 
 El anillo de descriptores es la estructura de datos que permite la transferencia de paquetes desde la \gls{nic} al \gls{driver}. Cada descriptor de paquete es una estructura de tamaño fijo que contiene una variable con el estado del descriptor, con los marcadores que determinan si tiene datos, si ha tenido algún error o si es parte de un \gls{jumbo}; y un puntero a los datos del paquete de red correspondiente, que han sido copiados a la memoria del sistema por la \gls{nic}.
 
-Este anillo se comporta como una cola, aunque el acceso se realiza de manera distinta. El puntero de cabecera, \textit{head}, que marca hasta dónde hay paquetes pendientes de leer, no se actualiza por la \gls{nic} al enviar nuevos paquetes al sistema. En su lugar, para comprobar si hay o no nuevos paquetes por leer, el \gls{driver} simplemente lee el campo de estado del siguiente descriptor de paquete para saber si tiene datos o no.
+Este anillo se comporta como una cola, aunque implementado de manera distinta para mejorar el rendimiento. El puntero de cabecera, \textit{head}, que marca hasta dónde hay paquetes pendientes de leer, no aparece explícitamente y no se actualiza por la \gls{nic} al enviar nuevos paquetes al sistema. En su lugar, para comprobar si hay o no nuevos paquetes por leer, el \gls{driver} simplemente lee el campo de estado del siguiente descriptor de paquete para saber si tiene datos o no. Esto supone un ahorro de rendimiento, ya que se ahorra una escritura adicional que sería especialmente lenta, al no poder agruparse con otras escrituras a disco como sí se puede hacer con la escritura de datos o descriptores.
 
 La rutina de recepción, llamada por el subsistema \gls{NAPI}, va leyendo ese anillo de descriptores y enviando los nuevos paquetes que encuentra al sistema operativo, que se encargará de repatirlos a su destino correspondiente.
 
 Una vez que los paquetes se han leído, no sólo hay que actualizar el puntero de cola, sino también notificar al sistema \gls{DMA} de que la memoria que usaban queda libre para su uso por la tarjeta. Realizar esta operación paquete por paquete introduce un coste adicional que se puede ahorrar acumulando varias operaciones que se realizan de una vez, aunque no deben acumularse demasiadas para evitar que la \gls{nic} se quede sin descriptores donde copiar nuevos paquetes y los descarte.
 
-Por lo tanto, para que HPCAP funcione con estos \glspl{driver}, la principal modificación a hacer es sustituir la rutina de recepción original. Para ello, se evita el registro de la interfaz en el subsistema \gls{NAPI}, se desactivan las interrupciones de la \gls{nic}, y se lanzan los hilos de recepción de HPCAP cuando el resto del \gls{driver} se haya inicializado correctamente.
+
+\subsection{Integración con HPCAP, ajustes del hardware y configuración}
+\label{sec:Desarrollo:AjustesHardware}
+
+Para que HPCAP funcione con los \glspl{driver} descritos anteriormente, la principal modificación a hacer es sustituir la rutina de recepción original. Para ello, se evita el registro de la interfaz en el subsistema \gls{NAPI} para evitar interferencias del sistema, se desactivan las interrupciones de la \gls{nic}, y se lanzan los hilos de recepción de HPCAP cuando el resto del \gls{driver} se haya inicializado correctamente.
+
+Los hilos de recepción de HPCAP consultan continuamente el anillo de la tarjeta, copiando los paquetes nuevos y liberando los descriptores ya leídos. Estos hilos no son interrumpidos en ningún momento por el \textit{kernel} y se asignan a una CPU fija, evitando cambios de contexto o paradas que reduzcan el rendimiento del sistema.
+
+Además de esa sustitución, se añaden a las rutinas de inicialización las funciones que reciben y analizan los argumentos pasados al \textit{driver} para configurar HPCAP apropiadamente, y se aumenta el tamaño del anillo de descriptores para mejorar el rendimiento.
+
+Para optimizar la tasa de recepción es necesario cambiar la configuración de la tarjeta con respecto a las opciones por defecto. Las tarjetas están preparadas para recepción con múltiples anillos (tecnología \gls{RSS}), distribuyendo los paquetes o incluso realizando operaciones como la eliminación de cabeceras VLAN.
+
+Ahora bien, todas estas características no son necesarias si el objetivo es capturar todo el tráfico usando la menor cantidad de recursos posible. Esas operaciones adicionales bajan el rendimiento y es necesario desactivarlas. En ambas tarjetas se reduce el número de colas \gls{RSS} a 1 y se desactiva la descarga de VLAN.
+
+Para las tarjetas Mellanox, se realizan los siguientes cambios adicionales:
+
+\begin{itemize}[itemsep = 0pt, topsep = 3pt]
+\item Se desactiva la distribución \gls{RSS} para paquetes UDP.
+\item Se configura la función más rápida (\textit{XOR}) para la distribución \gls{RSS}.
+\item Se desactiva el modo \gls{RoCE}.
+\item Se activa el modo de \gls{RSS} estático, que da mejor rendimiento a costa de menor flexibilidad en las reglas de distribución.
+\end{itemize}
+
+Para las tarjetas Intel, los cambios son los siguientes:
+
+\begin{itemize}[itemsep = 0pt, topsep = 3pt]
+\item Se desactiva el modo \textit{packet-split} para que la tarjeta guarde cada paquete en un único \textit{buffer}.
+\item Se desactiva la copia directa a \textit{socket buffers} (estructuras internas del sistema de red de Linux) y se reserva una zona de memoria contigua que actúa de \textit{buffer} \gls{DMA} de la tarjeta.
+\end{itemize}
+
+Una vez hecha la integración del código existente de HPCAP con los \textit{drivers} de Intel y de Mellanox, el siguiente es el diseño de una arquitectura que sea capaz de recibir tráfico a 40 Gbps.
 
 \section{Recepción a 40 Gbps}
 \label{sec:Desarrollo:Recepcion40Gbps}
 
-Tal y como se comentaba en la introducción, la recepción a 40 Gbps es un desafío importante por las restricciones de tiempo. A esta tasa, los paquetes pueden llegar cada 13 nanosegundos, lo que en un procesador de gama alta a 3,40 GHz apenas significan 44 ciclos.
-
-\begin{wraptable}[8]{l}[1.5cm]{0.35\textwidth}
-\vspace{-15pt}
-\begin{tabular}{lc}
+\begin{table}[hbtp]
+\centering
+\begin{tabular}{lccc}
 \toprule
-\textbf{Operación} & \textbf{Ciclos} \\ \midrule
-Acceso caché L1 & 4 \\
-Acceso caché L2 & 12 \\
-Acceso caché L3 & 44 \\
-\textit{Branch mispredict} & 16 \\ \bottomrule
+\textbf{Operación} & \textbf{Ciclos} & \textbf{Nanosegundos} & \textbf{\% Tiempo disponible} \\ \midrule
+Acceso caché L1 & 4 	& 	1,18 & 	7 \% \\
+Acceso caché L2 & 12 	& 	3,53 & 	21 \% \\
+Acceso caché L3 & 44 	&  12,94 & 77 \% \\
+\textit{Branch mispredict} & 16 & 4,71 & 28 \% \\ \bottomrule
 \end{tabular}
-\caption{Latencias en CPUs Intel con arquitectura Skylake \cite{intelOptimization}.}
-\label{tab:LatenciaIntelSkylake}
-\end{wraptable}
+\caption[Latencias en CPUs Intel con arquitectura Skylake]{Latencias en CPUs Intel con arquitectura Skylake \cite{intelOptimization}, comparando con el tiempo disponible entre paquetes de 64 bytes a tasa de 40 Gbps en un procesador a 3,40 Ghz.}
+\label{tab:Desarrollo:LatenciaIntelSkylake}
+\end{table}
+
+Tal y como se comentaba en la introducción, la recepción a 40 Gbps es un desafío importante por las restricciones de tiempo. A esta tasa, los paquetes pueden llegar cada 16 nanosegundos, lo que en un procesador de gama alta a 3,40 GHz apenas significan 57 ciclos.
 
 Esta restricción de tiempo hace imposible que un único hilo pueda soportar toda la carga de tráfico. Un fallo de caché o del predictor de saltos puede consumir un cuarto del tiempo disponible para el procesado de un paquete, de tal forma que es prácticamente imposible procesar los paquetes a esa tasa incluso aunque no hubiese que copiarlos después a un \textit{buffer} intermedio.
 
@@ -258,21 +352,20 @@ Así, se hace necesario el uso de varios hilos de lectura que sí puedan soporta
 \item Copia al \textit{buffer} intermedio de HPCAP.
 \end{enumerate}
 
-Por supuesto, todas las operaciones de sincronización tendrán que hacerse sin mecanismos de bloqueo, que son demasiado lentos para el procesado a tasa de 40 Gbps. A priori, la solución sería la implementación de una cola sin bloqueos (por ejemplo, \cite{krizhanovsky2013lock}). Sin embargo, esta situación específica y las características de los lectores y de los clientes que accederán al \textit{buffer} intermedio de HPCAP permitirán la simplificación de las operaciones y la reducción de los mecanismos de concurrencia necesarios.
+Por supuesto, todas las operaciones de sincronización tendrán que hacerse sin mecanismos de bloqueo, que son demasiado lentos para el procesado a tasa de 40 Gbps. A priori, la solución sería la implementación de una cola sin bloqueos (por ejemplo como la desarrollada en \cite{krizhanovsky2013lock}). Sin embargo, esta situación específica y las características de los lectores y de los clientes que accederán al \textit{buffer} intermedio de HPCAP permitirán la simplificación de las operaciones y la reducción de los mecanismos de concurrencia necesarios.
 
 \subsection{Lectura del anillo de recepción}
 
-A la hora de la lectura, un problema a tener en cuenta es el de la caché. Un fallo de caché puede provocar una latencia de muchos ciclos de reloj (\fref{tab:LatenciaIntelSkylake}), y con ello la pérdida de paquetes. Si todos los hilos de recepción tratan de leer todos los paquetes del anillo de recepción, los patrones de acceso no van a ser predecibles. Cuando un hilo acceda a un descriptor, el sistema cargaría en la caché de su núcleo descriptores cercanos para un acceso más rápido. Ahora bien, es posible que el resto de hilos consuman esos paquetes, de tal forma que el siguiente paquete disponible ya no estaría cargado en caché y habría una latencia adicional al acceder a él.
-
-\begin{wrapfigure}[9]{R}{0.3\textwidth}
+\begin{figure}[hbtp]
 \centering
-\vspace{-20pt}
 \input{tikz/RingAssignment.tex}
-\caption{División del anillo de recepción en cuatro segmentos fijos para los hilos.}
-\label{fig:RingAssignment}
-\end{wrapfigure}
+\caption[División del anillo de recepción en cuatro segmentos fijos para los hilos]{División del anillo de recepción en cuatro segmentos fijos para los hilos, mostrando el efecto que tendría en el \textit{buffer} de escritura.}
+\label{fig:Desarrollo:RingAssignment}
+\end{figure}
 
-Para evitar este problema, a cada hilo de lectura se le asigna un segmento fijo del anillo de recepción como en la \fref{fig:RingAssignment}. De esta forma cada hilo siempre accederá a los mismos descriptores, lo que permitirá incluir instrucciones de \textit{prefetch} para garantizar en la medida de lo posible que los datos a acceder estén siempre en la caché.
+A la hora de la lectura, un problema a tener en cuenta es el de la caché. Un fallo de caché puede provocar una latencia de muchos ciclos de reloj (\fref{tab:Desarrollo:LatenciaIntelSkylake}), y con ello la pérdida de paquetes. Si todos los hilos de recepción tratan de leer todos los paquetes del anillo de recepción, los patrones de acceso no van a ser predecibles. Cuando un hilo acceda a un descriptor, el sistema cargaría en la caché de su núcleo descriptores cercanos para un acceso más rápido. Ahora bien, es posible que el resto de hilos consuman esos paquetes, de tal forma que el siguiente paquete disponible ya no estaría cargado en caché y habría una latencia adicional al acceder a él.
+
+Para evitar este problema, a cada hilo de lectura se le asigna un segmento fijo del anillo de recepción como en la \fref{fig:Desarrollo:RingAssignment}. De esta forma cada hilo siempre accederá a los mismos descriptores, lo que permitirá incluir instrucciones de \textit{prefetch} para garantizar en la medida de lo posible que los datos a acceder estén siempre en la caché.
 
 Esta asignación fija de segmentos del anillo también evita problemas de concurrencia, ya que no hay competición por acceso a los mismos recursos.
 
@@ -288,7 +381,7 @@ La solución implementada es la siguiente. A cada hilo se le asignan dos variabl
 
 Si, por otra parte, \texttt{can\_free} es 0, se lee la variable \texttt{freed\_last\_rxd} del segmento previo. Si es 1, indica que ya se pueden liberar los descriptores del segmento actual, así que se resetea su valor a 0 y \texttt{can\_free} se pone a 1. Es necesario que esta comprobación se haga sólo cuando \texttt{can\_free} sea 0. El pseudocódigo de este procedimiento se puede ver en el \fref{lst:AlgoritmoDescriptores}.
 
-\begin{algorithm}[hbtp]
+\begin{algorithm}[btp]
 \begin{algorithmic}
 \Function{free\_descriptors}{thread, descr}
 \State prev $\gets$ \Call{previous\_thread\_of}{thread}
@@ -317,15 +410,17 @@ La única técnica de concurrencia usada es que la variable \texttt{freed\_last\
 
 \subsection{Copia al \textit{buffer} intermedio de HPCAP}
 
-El último problema a resolver es el de la copia al \textit{buffer} intermedio de HPCAP, de donde leerán después los clientes. Para ello se empleará una variable atómica que marque la siguiente posición de escritura en el \textit{buffer}. Cuando un hilo quiera escribir un nuevo paquete, aumentará esa variable en el tamaño del paquete más la cabecera correspondiente, reservando ese espacio a la vista del resto de hilos. Una vez hecha esa reserva, escribirá los datos y continuará con el siguiente paquete.
+El último problema a resolver es el de la copia al \textit{buffer} intermedio de HPCAP, de donde leerán después los clientes, manteniendo además la \gls{api} y el funcionamiento ya existente descrito en la \fref{sec:EstadoArte:HPCAP}.
 
-En un principio, habría que asegurar que esta variable se mantuviese entre 0 y el tamaño del \textit{buffer} de escritura, pero esto implicaría no una operación atómica (sumar un valor y leer el resultado) sino varias, ya que habría que calcular el módulo si el valor obtenido supera el tamaño del \textit{buffer}. Esto implicaría más mecanismos de sincronización y por lo tanto un rendimiento menor.
+Para ello se empleará una variable atómica que marque la siguiente posición de escritura en el \textit{buffer}. Cuando un hilo quiera escribir un nuevo paquete, aumentará esa variable en el tamaño del paquete más la cabecera correspondiente, reservando ese espacio a la vista del resto de hilos. Una vez hecha esa reserva, escribirá los datos y continuará con el siguiente paquete.
+
+El siguiente paso es notificar a los clientes que hay nuevos datos disponibles para leer. De nuevo, se pueden aprovechar cuestiones de diseño de HPCAP para evitar mecanismos de bloqueo para gestionar la concurrencia. En una cola sin bloqueos habría que evitar de alguna forma que los clientes puedan leer datos que no se han terminado de escribir. Sin embargo, en HPCAP los clientes están en espacio de usuario, y eso induce un retardo que hace innecesarios más mecanismos de sincronización.
+
+El peor caso ocurriría cuando un hilo actualiza la variable reservando espacio para un nuevo paquete, y justo en el ciclo siguiente se lee esa variable en otro hilo desde una llamada \texttt{ioctl} realizada por un cliente. Ahora bien, para que ese valor leído llegue a espacio de usuario primero ha de realizarse una copia a la memoria de espacio de usuario y se tiene que hacer un cambio del modo \textit{kernel} a modo espacio de usuario para que la aplicación cliente retome el control de la ejecución, lo que habitualmente lleva más de 50 nanosegundos, unos 170 ciclos de reloj a 3,40 GHz. En ese tiempo se asegura que la copia se ha realizado correctamente, dado que los hilos de lectura no son interrumpidos en ningún momento. Así, incluso en el caso en el que menos tiempo pasaría desde la reserva del espacio de escritura hasta que la aplicación cliente lea esos datos queda garantizado que la copia se realiza correctamente.
+
+Como optimización adicional, en un principio habría que asegurar que esta variable se mantuviese entre 0 y el tamaño del \textit{buffer} de escritura, pero esto implicaría no una operación atómica (sumar un valor y leer el resultado) sino varias, ya que habría que calcular el módulo si el valor obtenido supera el tamaño del \textit{buffer}. Esto implicaría más mecanismos de sincronización y por lo tanto un rendimiento menor.
 
 Por suerte, se puede aprovechar el desbordamiento de enteros de C para hacer ese módulo implícitamente. Por el diseño de HPCAP, el tamaño del \textit{buffer} intermedio es siempre una potencia de 2, luego se puede dejar que la variable atómica desborde normalmente y después calcular el módulo tamaño del \textit{buffer} para obtener la posición real, ya que $(x \mod 2^{32}) \mod 2^n = x \mod 2^n$, donde $2^n$ es el tamaño del \textit{buffer} con $n ≤ 32$.
-
-El siguiente paso es notificar a los clientes que hay nuevos datos disponibles para leer. De nuevo, se pueden aprovechar cuestiones de diseño de HPCAP para evitar mecanismos extra de concurrencia. En una cola sin bloqueos habría que evitar de alguna forma que los clientes puedan leer datos que no se han terminado de escribir. Sin embargo, en HPCAP los clientes están en espacio de usuario, y eso induce un retardo que hace innecesarios más mecanismos de sincronización.
-
-El peor caso ocurriría cuando un hilo actualiza la variable reservando espacio para un nuevo paquete, y justo en el ciclo siguiente se lee esa variable en otro hilo desde una llamada \texttt{ioctl}. Ahora bien, para que ese valor leído llegue a espacio de usuario primero ha de realizarse una copia a la memoria de espacio de usuario y se tiene que hacer un cambio del modo \textit{kernel} a modo espacio de usuario para que la aplicación cliente retome el control de la ejecución, lo que habitualmente lleva más de 50 nanosegundos, unos 170 ciclos de reloj a 3,40 GHz. En ese tiempo se asegura que la copia se ha realizado correctamente, dado que los hilos de lectura no son interrumpidos en ningún momento. Así, incluso en el caso en el que menos tiempo pasaría desde la reserva del espacio de escritura hasta que la aplicación cliente lea esos datos queda garantizado que la copia se realiza correctamente.
 
 \paragraph{Detección de llenado del \textit{buffer}} Es necesario asegurarse de que, al copiar los paquetes, no se sobreescriben datos que todavía no hayan leído los clientes. Dado que las reservas de tamaño se hacen de forma atómica, no es posible comprobar si hay espacio y luego hacer la reserva: podría darse una condición de carrera en la que, habiendo espacio para un único paquete, dos hilos comprueben a la vez que tienen espacio suficiente y por lo tanto sobreescriban el \textit{buffer}.
 
@@ -362,21 +457,7 @@ Dado que la tarjeta sobre la que se ha diseñado y probado el \textit{driver} of
 
 Para obtener las marcas de tiempo, durante la configuración inicial de la tarjeta se activa el filtrado hardware. En la recepción, cada descriptor incluirá un marcado de tiempo usando un reloj interno de la tarjeta, que después habrá que convertir a la hora local y guardar en la cabecera del paquete en un formato legible con toda la precisión posible, que en el caso de la tarjeta de Mellanox implica almacenarlo en nanosegundos.
 
-\subsection{Ajustes del hardware y configuración}
-\label{sec:Desarrollo:AjustesHardware}
-
-Además de la arquitectura de hilos para alto rendimiento, es necesario cambiar la configuración de la tarjeta para optimizar la tasa de recepción. Por defecto, las tarjetas están preparadas para recepción con múltiples anillos (tecnología \gls{RSS}), distribuyendo los paquetes o incluso realizando operaciones como la eliminación de cabeceras VLAN.
-
-Ahora bien, todas estas características no son necesarias si el objetivo es capturar todo el tráfico usando la menor cantidad de recursos posible. Esas operaciones adicionales bajan el rendimiento y es necesario desactivarlas. En particular, se realizan las siguientes modificaciones:
-
-\begin{itemize}[itemsep = 0pt]
-\item Se desactiva \gls{RSS} para paquetes UDP.
-\item Se reduce el número de colas \gls{RSS} a 1, y se configura la función más rápida (\textit{XOR}) para la distribución.
-\item Se desactivan los modos \gls{RoCE} y de descarga de VLAN.
-\item Se activa el modo de \gls{RSS} estático, que da mejor rendimiento a costa de menor flexibilidad en las reglas de distribución.
-\end{itemize}
-
-\section{Almacenamiento del tráfico: filtrado y guardado selectivo}
+\section{Almacenamiento del tráf\kern 0.8pt ico: f\kern 0.8pt iltrado y guardado selectivo}
 
 En la sección anterior se ha expuesto un diseño para la recepción de tráfico a 40 Gbps, pero falta considerar las opciones disponibles para poder almacenar todo ese tráfico para su posterior análisis.
 
@@ -386,7 +467,7 @@ La opción directa, el almacenamiento de todo el tráfico, no es factible si se 
 \centering
 \begin{tabular}{cl cccc}
 \toprule
-\textbf{Tipo} & \textbf{Modelo} & \textbf{Velocidad} & \textbf{Capacidad} & \textbf{Nº Discos} & \textbf{Coste} \\
+\textbf{Tipo} & \textbf{Modelo} & \textbf{Velocidad} & \textbf{Capacidad} & \textbf{Discos} & \textbf{Coste} \\
 & & \textbf{(MB/s)} & \textbf{(TB)} & & \textbf{\texteuro} \\
 \midrule
 \multirow{2}{*}{SSD}
@@ -449,13 +530,58 @@ Por último, para facilitar el desarrollo, se incluye dentro del \textit{driver}
 
 Este módulo de medición es especialmente relevante porque permite la identificación de los puntos débiles del diseño y los cuellos de botella sin influir notablemente en el rendimiento ni modificar el comportamiento del \textit{driver}. De hecho, fue muy útil para identificar problemas en la tarjeta de red y poder cambiar la configuración para optimizar la velocidad de recepción.
 
+\section{Conclusiones}
+
+A lo largo de este capítulo se ha expuesto la arquitectura necesaria para recibir tráfico a 40 Gbps, usando múltiples hilos para mejorar el rendimiento. Conociendo el funcionamiento del \textit{driver} y las condiciones en las que se ejecuta, se pueden implementar sistemas de sincronización simples y que afectan poco al rendimiento usando variables atómicas en lugar de otros métodos (\textit{spinlock}, \textit{mutex} o semáforos) que serían más lentos e impedirían alcanzar tasas altas de tráfico.
+
+Además, se han descrito los pasos necesarios para integrar esa arquitectura con los \textit{drivers} existentes, y se han planteado soluciones para poder reducir la cantidad de datos que se reciben en las aplicaciones cliente para reducir los requisitos de almacenamiento necesarios.
+
+En el siguiente capítulo se pasará a comprobar el funcionamiento y la efectividad real del sistema diseñado.
+
 \chapter{Validación experimental}
+\label{chap:Validacion}
+
+En este capítulo se comprueba el rendimiento de la arquitectura propuesta, validando que supone una mejora frente al enfoque básico con un único hilo; y además se muestra la efectividad de las características adicionales para la reducción de los datos recibidos por los clientes.
+
+En primer lugar, se detallará el entorno usado para desarrollar las pruebas. Después se describirán las pruebas realizadas de captura de tráfico sobre la tarjeta Mellanox, comparando los resultados según el número de hilos usados, y por último se presentarán los resultados de filtrado y almacenamiento selectivo de paquetes. En una sección adicional se mostrarán los resultados obtenidos con la tarjeta de Intel, que no son tan detallados al haber tenido problemas con el generador de tráfico.
+
+\section{Entorno de pruebas}
+
+\begin{table}[hbtp]
+\centering
+\small
+\begin{tabular}{lcc}
+\toprule & \textbf{skadi} & \textbf{nrg} \\ \midrule
+Procesador 	& 2 $\times$ Intel Core 	& 2 $\times$ Intel Xeon E5-2630  	\\
+			& 2,40 GHz, 12 núcleos 		& 2,6 GHz, 12 núcleos  		\\
+RAM 		& 128 GB 		& 32 GB 			\\
+NIC 		& Mellanox ConnectX-3 & Intel XL710 \\ \bottomrule
+\end{tabular}
+\caption{Especificaciones técnicas de los sistemas de prueba.}
+\label{tab:Validacion:Sistemas}
+\end{table}
+
+El entorno de pruebas consiste de dos servidores del grupo HPCN, \textit{skadi} y \textit{nrg}, cuyas especificaciones se detallan en la \fref{tab:Validacion:Sistemas}. Estos serán los encargados de recibir el tráfico usando el driver de HPCAP.
+
+Para maximizar el rendimiento, se configura apropiadamente la asignación de núcleos de CPU teniendo en cuenta la arquitectura \gls{NUMA} de los servidores y los nodos a los que están conectados la tarjeta de red y el sistema de almacenamiento RAID. La distribución óptima \cite{m3omon} consiste en ejecutar los hilos de recepción en el mismo nodo NUMA al que se encuentra conectada la tarjeta de red y el hilo de volcado a disco en el nodo donde está conectado el RAID.
+
+Para las pruebas se conectará el sistema correspondiente al generador de tráfico, otro equipo con un único procesador de 4 núcleos a 3,7 GHz y una tarjeta de red Intel XL710 40 GbE. En él se ejecutará el generador \textit{pktgen-DPDK} basado en DPDK, que aunque para tamaños de paquete bajos no es capaz de saturar el enlace, es la mejor opción disponible para realizar las pruebas.
+
+\begin{figure}[tbp]
+\centering
+\footnotesize
+\input{tikz/NUMAArch.tex}
+\caption{Arquitectura NUMA de los sistemas de pruebas.}
+\label{fig:Validacion:NUMAArch}
+\end{figure}
+
+El principal problema de este entorno de pruebas es que impide la comparación de rendimiento de las dos tarjetas de Intel y Mellanox, ya que las especificaciones de los sistemas son distintas y por lo tanto no se puede distinguir entre los factores intrínsecos a la implementación y a la tarjeta y los que dependen del procesador usado. Aun así, cumple el propósito de servir como plataforma de pruebas y validación del rendimiento del \textit{driver} desarrollado y de la arquitectura planteada.
 
 \section{Recepción de tráfico}
 
 \subsection{Arquitectura básica: capacidades y limitaciones}
 
-\begin{figure}[btp]
+\begin{figure}[htbp]
 \inputgnuplot{gnuplot/simple-arch-max-rate}
 \caption[Capacidad de una arquitectura básica de captura]{Una medida de la capacidad base de la tarjeta: tasa máxima que se alcanza sin perder paquetes en función del tamaño de paquetes.}
 \label{fig:Validacion:SimpleArchRate}
@@ -463,17 +589,17 @@ Este módulo de medición es especialmente relevante porque permite la identific
 
 Dadas las limitaciones del hardware, está claro que un único hilo de recepción no será suficiente para hacer la recepción a 40 Gbps. Aun así, es necesario realizar las pruebas en esta arquitectura simple para establecer una base sobre la que comparar y medir mejoras.
 
-Para la prueba, se utilizan dos servidores conectados directamente con un cable de 40 Gbps. En uno de ellos (sistema con Intel Xeon \todo{N cores a 20Ghz, 128GB RAM y una tarjeta Mellanox ConnectX-3}) se instala HPCAP, y en el otro se usa \textit{pktgen-DPDK} para generar tráfico a la tasa deseada. La tasa de envío se incrementa gradualmente hasta llegar al máximo que HPCAP es capaz de recibir sin perder ningún paquete.
+La prueba se realiza en el entorno descrito anteriormente. La tasa de envío del generador de paquetes se incrementa gradualmente hasta llegar al máximo que HPCAP es capaz de recibir sin perder ningún paquete.
 
 Tal y como se ve en la \fref{fig:Validacion:SimpleArchRate}, sólo se llega a la tasa máxima de captura a partir de los 1250 bytes de tamaño de paquete. Para tamaños pequeños se observa el mismo comportamiento que con la versión original de HPCAP \citep{MorenoTFM2012}, donde para tamaños cercanos al mínimo (64 bytes) no se llegaba a la tasa máxima de 10 Gbps. En nuestro caso, para ese mismo tamaño se llega a una tasa de 7.6 Gbps.
 
-Así mismo, sobre esta arquitectura básica se ha comprobado el efecto de las marcas de tiempo (\textit{timestamp}) obtenidas a través de la tarjeta o a través del reloj software del \textit{kernel} Linux. El rendimiento en ambos casos es prácticamente el mismo, lo que permite relajar los requisitos de ordenación de paquetes al poder confiar en la tarjeta para realizar el marcado.
+Así mismo, sobre esta arquitectura básica se ha comprobado el efecto de las marcas de tiempo (\textit{timestamp}) obtenidas a través de la tarjeta (sólo disponible en la tarjeta de Mellanox) o a través del reloj software del \textit{kernel} Linux. El rendimiento en ambos casos es prácticamente el mismo, lo que permite relajar los requisitos de ordenación de paquetes al poder confiar en la tarjeta para realizar el marcado.
 
 En cualquiera de los dos casos, se observa que un hilo no es suficiente para conseguir una tasa aceptable de tráfico, por lo que es necesario diseñar un sistema de recepción distinto que pasamos a probar a continuación.
 
 \subsection{Arquitectura con múltiples hilos}
 
-\begin{figure}[b]
+\begin{figure}[hbtp]
 \inputgnuplot{gnuplot/multicore-max-rate}
 \caption[Capacidad del diseño de recepción a 40 Gbps]{Tráfico máximo soportado por el diseño de recepción a 40Gbps según el número de hilos empleados.}
 \label{fig:Validacion:MulticoreMaxRate}
@@ -491,17 +617,17 @@ Además, se comprueba que la arquitectura no introduce un desorden excesivo. Cie
 
 Para realizar las pruebas, se configuraron dos servidores de la misma forma que en secciones anteriores y se configuró \textit{pktgen-DPDK} para marcar su orden de salida. En el servidor de captura se usó el driver HPCAP configurado para capturar únicamente los campos correspondientes de cada paquete, de tal forma que se pueda guardar en disco la información necesaria sin pérdidas.
 
-A modo de prueba base, primero se comprobó que con un único hilo se producía el comportamiento esperado, sin ningún tipo de desorden introducido. Esto permite confirmar la corrección de la implementación y asegurar que la tarjeta de red no introduce ningún desorden por sí misma.
-
-\begin{figure}[hbtp]
+\begin{figure}[bp]
 \inputgnuplot{gnuplot/multicore-ordering}
 \caption[Desorden de paquetes inducido por el sistema de captura]{Porcentaje sobre el total de paquetes recibidos que se desordenan al pasar por el sistema de captura. Las barras de error muestran la variación de resultados al cambiar la velocidad y tamaño de paquete manteniendo el mismo \textit{ratio} de paquetes por segundo.}
 \label{fig:Validacion:Ordering}
 \end{figure}
 
+En primer lugar se comprobó que con un único hilo se producía el comportamiento esperado, sin ningún tipo de desorden introducido. Esto permite confirmar la corrección de la implementación y asegurar que la tarjeta de red no introduce ningún desorden por sí misma.
+
 Los resultados de la prueba completa se pueden ver en la \fref{fig:Validacion:Ordering}, que muestra el porcentaje de paquetes desordenados según el tráfico, medido en millones de paquetes por segundo. El desorden se mantiene en valores aceptables para tasas de tráfico bajas y llega hasta el 30 \% con tasas altas; tasas que por otra parte sólo se alcanzan con paquetes pequeños, una situación poco frecuente en entornos de captura reales.
 
-También se puede observar que, tal y como se esperaba dado el diseño del sistema, el porcentaje de desorden aumenta al aumentar el tamaño de hilos.
+También se puede observar que, tal y como se esperaba dado el diseño del sistema, el porcentaje de desorden aumenta al aumentar el número de hilos.
 
 \section{Captura y guardado de tráfico}
 
@@ -515,7 +641,7 @@ El entorno de pruebas es el mismo que el planteado en pruebas anteriores, y se c
 \label{fig:Validacion:DiskStore}
 \end{figure}
 
-Como era esperable, el rendimiento disminuye al guardar datos en el sistema de archivos en RAM, y de hecho no se llega a la tasa completa de 40 Gbps. Cabe destacar que la tasa obtenida es muy dependiente del tamaño del \textit{buffer} de HPCAP. En estas pruebas se usó un \textit{buffer} de 2 GB, que no se pudo ampliar debido a un \textit{bug} en el \textit{kernel} de Linux, concretamente en las rutinas encargadas de asignar direcciones virtuales a páginas de tipo \textit{huge}.\todo{¿Menciono aquí que hemos puesto un parche y lo hemos enviado?}.
+Como era esperable, el rendimiento disminuye al guardar datos en el sistema de archivos en RAM, y de hecho no se llega a la tasa completa de 40 Gbps. Cabe destacar que la tasa obtenida es muy dependiente del tamaño del \textit{buffer} de HPCAP. En estas pruebas se usó un \textit{buffer} de 2 GB, que no se pudo ampliar debido a un \textit{bug} en el \textit{kernel} de Linux, concretamente en las rutinas encargadas de asignar direcciones virtuales a páginas de tipo \textit{huge}. Durante el desarrollo, se creó y envió un parche a Linux para corregir este problema\footnote{\url{http://marc.info/?l=linux-mm&m=146114962421719&w=2}}.
 
 \subsection{Filtrado}
 
@@ -531,9 +657,19 @@ En esas pruebas no se han encontrado diferencias significativas de rendimiento: 
 \label{fig:Validacion:CaplenEffects}
 \end{figure}
 
-Para comprobar los efectos del almacenamiento selectivo, se realizan dos pruebas de recepción limitando el tamaño de paquete a 18, 64 y 200 bytes. En la \fref{fig:Validacion:CaplenEffects} se puede observar que el rendimiento mejora y se alcanza la tasa máxima soportada por el \textit{driver} desarrollado.
+Para comprobar los efectos del almacenamiento selectivo, se realizan tres pruebas de recepción limitando el tamaño de paquete a 18, 64 y 200 bytes. El primer caso captura toda la cabecera a nivel Ethernet, el segundo caso captura cabeceras Ethernet, IP y de la capa de transporte (TCP/UDP). Por último, una captura de 200 bytes permitiría almacenar prácticamente cualquier cabecera de la capa de aplicación y una parte de la carga útil del paquete.
 
-\section{Resultados Intel}
+En la \fref{fig:Validacion:CaplenEffects} se puede observar que el rendimiento mejora en todos los casos, y se alcanza la tasa máxima soportada por el \textit{driver} desarrollado. Los mejores resultados se obtienen con los límites de 18 y 64 bytes, especialmente para tamaños de paquete pequeños. A partir de los 600 bytes por paquete, en los tres casos la tasa alcanzada es la misma.
+
+\section{Recepción y almacenamiento de tráfico - Tarjeta Intel}
+
+Para la validación de la implementación sobre la tarjeta Intel se ha planteado el mismo entorno de pruebas que en secciones anteriores cambiando los roles: \textit{einsrepo} se usa como generador de tráfico con la tarjeta Mellanox, y el receptor es \textit{nrg} con la Intel XL710. Sin embargo, un problema con las tarjetas Mellanox y con el sistema de generación de tráfico \textit{pktgen-DPDK} impide hacer las pruebas correctamente.
+
+El generador no es capaz de controlar la tasa de generación de tráfico por falta de soporte de la tarjeta de Mellanox, por lo que las pruebas realizadas anteriormente no se pueden realizar. La alternativa en este punto sería pasar a generar a tasa máxima y medir el porcentaje de pérdidas, pero tampoco es una alternativa factible ya que para tamaños de paquete pequeños \textit{pktgen-DPDK} no es capaz de saturar el enlace.
+
+Las pruebas que se realicen para esta tarjeta son menos precisas que las realizadas para la Mellanox, y sólo se obtienen resultados significativos en una de ellas.
+
+Para la prueba de recepción de tráfico \todo{Esto lo hablamos luego porque me están pasando cosas raras.}
 
 \begin{figure}[hbtp]
 \inputgnuplot{gnuplot/intel-hpcapdd}
@@ -542,12 +678,33 @@ Para comprobar los efectos del almacenamiento selectivo, se realizan dos pruebas
 \end{figure}
 
 \chapter{Conclusiones}
+\label{chap:Conclusiones}
 
-En este Trabajo de Fin de Grado se han identificado los puntos débiles de soluciones actuales de captura de tráfico y se han mejorado para lograr captura en enlaces de 40 Gbps. Para ello, se ha necesitado un diseño de concurrencia correcto y capaz de funcionar sin introducir retrasos excesivos en la ejecución, un aspecto crítico debido a las restricciones de tiempo existentes.
+En este Trabajo de Fin de Grado se han identificado los puntos débiles de soluciones actuales de captura de tráfico para desarrollar un sistema capaz de recibir a 40 Gbps. Se ha explorado la arquitectura del sistema de red de Linux, viendo que es insuficiente para sistemas de alto rendimiento por el uso de interrupciones y de copias múltiples e innecesarias. Por otra parte, una revisión del estado del arte en sistemas de captura indica que no hay apenas herramientas de captura a 40 Gbps, y que además pocas se enfocan en un marcado de tiempo preciso y en el mantenimiento del orden de recepción de los paquetes.
 
-Además, se ha desarrollado un entorno que permite realizar pruebas y validar experimentalmente el rendimiento de este sistema. Los resultados obtenidos son prometedores, logrando captura a 40 Gbps para paquetes de tamaño suficientemente alto, y mostrando que las características diseñadas para mejorar la efectividad de la captura (filtrado y almacenamiento selectivo) son factibles y mejoran el rendimiento.
+Se utiliza de base el trabajo ya desarrollado de Víctor Moreno en su tesis doctoral, HPCAP, capaz de recibir a 10 Gbps en tarjetas de red de Intel. Este motor de captura desactiva las interrupciones y realiza un \textit{polling} continuo al anillo de recepción de la tarjeta, un enfoque mucho más eficiente para tasas altas de tráfico. Además, cuenta con una \gls{api} para aplicaciones cliente que quieran recibir los paquetes, y está preparado para almacenar el tráfico directamente y de forma eficiente a disco.
 
-Como trabajo futuro, se podrían explorar más caminos para mejorar el filtrado y la selección de datos, como filtrado de paquetes ASCII \cite{ucedaselective} o limitación de tamaño dinámica que varíe según la tasa de recepción. También se podría comprobar si la implementación de \gls{BPF} para permitir filtros más complejos es práctica y no disminuye en exceso el rendimiento del \textit{driver}.
+Para que HPCAP sea capaz de recibir a 40 Gbps es necesario un cambio de arquitectura: un único hilo no es capaz de recibir a esa tasa con los procesadores actuales. Esa arquitectura se desarrolla en el \fref{chap:Desarrollo}, usando técnicas de concurrencia simples y de alto rendimiento, principalmente basadas en variables atómicas, y el conocimiento sobre el entorno de funcionamiento de HPCAP que permite evitar otras técnicas más lentas y que impedirían la recepción a alto rendimiento.
+
+Así pues, la arquitectura es capaz de lanzar varios hilos que leen al mismo tiempo de un anillo de recepción usando una división y asignación de segmentos fijos por cada hilo, y devolviendo los descriptores a la tarjeta para su reutilización de forma ordenada. Además, se usan variables atómicas y un algoritmo de \textit{padding} para que todos los hilos escriban los paquetes en un único \textit{buffer} y se pueda trabajar con él a nivel de bloque, mucho más eficiente si el objetivo es guardar los datos a disco.
+
+Por otra parte y dado que a 40 Gbps se puede generar una cantidad de datos demasiado grande para sistemas de almacenamiento comunes, se desarrollan dos métodos capaces de reducir los datos a tratar con pérdida de información mínima: por un lado, un algoritmo de filtrado que reduzca al máximo el tiempo de comprobación de cada filtro; y por otro funciones de almacenamiento selectivo que permitan copiar y guardar sólo la información necesaria de cada paquete.
+
+Además, el desarrollo se hace de manera portable para tarjetas Intel y Mellanox: el núcleo del código HPCAP es común a los dos \textit{drivers} de cada fabricante, y sólo se realizan algunas modificaciones en cada caso específico, modificaciones que dependen del hardware y del funcionamiento de cada tarjeta.
+
+La validación experimental demuestra que la arquitectura es efectiva, pudiendo recibir tráfico a 40 Gbps para paquetes suficientemente grandes (alrededor de 600 bytes) en ambas arquitecturas. Además, no se introduce un desorden excesivo en la captura, que era uno de los objetivos iniciales del trabajo.
+
+Las características adicionales para reducción de los datos a guardar también funcionan apropiadamente: el filtrado de paquetes no afecta de manera apreciable al rendimiento de la captura, y el almacenamiento selectivo permite aumentar la tasa a la que es capaz de recibir el \textit{driver}
+
+El entorno de pruebas creado también ha resultado suficiente para las pruebas realizadas, aunque no haya sido capaz de generar tráfico suficiente como para saturar el enlace 40 GbE.
+
+Por último, el desarrollo muestra que mantener un núcleo común y modificaciones puntuales en los \textit{drivers} base es un enfoque factible y efectivo para el soporte de tarjetas de diferentes fabricantes, y facilita el desarrollo y soporte del sistema.
+
+Como trabajo futuro, se podrían explorar más caminos para mejorar el filtrado y la selección de datos. Por ejemplo, se podría implementar filtrado de paquetes ASCII \cite{ucedaselective}, una técnica rápida para capturar sólo paquetes con protocolos de texto plano, que podría aumentar la efectividad de la captura descartando todos los paquetes innecesarios con alta precisión.
+
+También se podrían implementar limitaciones de tamaño dinámicas que varíen según la tasa de recepción, para maximizar los recursos en los que el tráfico no sea constante. Siguiendo con el filtrado, se podría comprobar si la implementación de \gls{BPF} para permitir filtros más complejos es práctica y no disminuye en exceso el rendimiento del \textit{driver}.
+
+En último lugar, sería necesario mejorar el entorno de pruebas con un generador de tráfico dedicado a 40 Gbps, capaz de saturar el enlace para cualquier tamaño de paquete y de generar flujos, de tal forma que se pueda estudiar el desorden de paquetes dentro del mismo flujo.
 
 \backmatter
 \appendix
