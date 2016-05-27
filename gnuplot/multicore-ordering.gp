@@ -5,7 +5,7 @@ load 'gnuplot/config.gp'
 set term cairolatex color size 4.7in,3in font ",10" dashed transparent
 set output 'gnuplot/multicore-ordering.tex'
 
-set title 'Porcentaje de desorden'
+set title 'Desorden de paquetes'
 
 set grid x y
 set xlabel 'Tráfico (Mpps)'

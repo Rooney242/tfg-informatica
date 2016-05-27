@@ -1,4 +1,4 @@
-\documentclass[twoside, 12pt, draft]{epstfg}
+\documentclass[twoside, 12pt]{epstfg}
 
 \usepackage{lipsum}
 \usepackage[numbers]{natbib}
@@ -46,11 +46,22 @@
 \setdegreeDouble
 
 \begin{abstract}[spa]
-\lipsum[1]
+El avance de las redes de datos lleva consigo la necesidad de monitorizarlas para detectar problemas, anomalías e intrusiones. Las velocidades cada vez más altas de estas tecnologías Ethernet hacen necesaria la aparición de soluciones específicas capaces de capturar ese tráfico, perferiblemente usando servidores estándar y hardware no especializado.
+
+A lo largo de este trabajo se desarrollará una arquitectura para recibir y almacenar tráfico a 40 Gbps en tarjetas Intel y Mellanox usando como base el driver HPCAP, actualmente en explotación comercial para monitorización de redes 10 GbE. Esta arquitectura usará múltiples hilos de recepción para alcanzar una tasa suficientemente alta y aprovechará las características específicas de sistemas multiprocesador.
+
+Previamente se estudiarán las soluciones existentes para monitorización para identificar las necesidades existentes, y se entenderá cómo funciona la pila de red del sistema Linux y la arquitectura de los \textit{drivers} de los fabricantes de las tarjetas. Después, se planteará la arquitectura multihilo, que deberá usar primitivas de sincronización rápidas para evitar perder el rendimiento; y se integrará esta solución dentro de los \textit{drivers} existentes de las tarjetas de Intel y Mellanox. Por último, se desarrollarán características adicionales para reducir la cantidad de datos recibidos y hacerlos manejables por aplicaciones de análisis o de almacenamiento a disco.
+
+También se creará un entorno experimental en el que se pueda comprobar el rendimiento y correcto funcionamiento del desarrollo. Gracias a este entorno, se demostrará que la modificación de HPCAP es capaz de recibir a 40 Gbps para paquetes con tamaño suficientemente grande y que las funciones de reducción de datos son efectivas y mejoran el rendimiento.
 \end{abstract}
 
-\begin{abstract}[eng]
-\lipsum[2]
+\begin{abstract}[eng] The advance of data networks comes with the need for monitoring and detection of problems, anomalies and intrusions. The high speeds of the Ethernet technologies used incite the developments of specific solutions capable of capturing that traffic, preferably using standard servers and commodity hardware.
+
+In this project, a new architecture for receiving and storing traffic at 40 Gbps line rate with Intel and Mellanox network cards will be developed, using as a starting point the HPCAP driver. This driver is currently in commercial operation for 10 GbE network monitoring. The architecture will use several reception threads to reach a high enough traffic rate, and will employ the specific features of multiprocessor systems to improve its performance.
+
+First, the existent solutions for monitoring will be reviewed identifying existing needs, and the inner workings of the Linux's network stack and of the network drivers will be studied and understood. With this base, the multithreaded architecture will be designed using fast synchronization techniques to avoid performance hits, and this solution will be integrated with the existing Mellanox and Intel drivers. Then, additional features will be developed to reduce the amount of received data, in order to make it manageable by analysis or storage applications.
+
+Additionally, an experimental environment will be developed to allow the testing and measurements of this project. Using this environment, we will prove that this modified version of HPCAP is capable of receiving traffic at 40 Gbps for frames of enough size, and that the features for data reduction are effective and improve the performance of the system.
 \end{abstract}
 
 \keywords[spa]{keyword, comma, separated, list}
@@ -120,10 +131,10 @@
 \frontmatter
 
 \maketitle[spa]
-\maketitle[eng]
+% \maketitle[eng]
 
 \makeinnertitle[spa]
-\makeinnertitle[eng]
+% \makeinnertitle[eng]
 
 \makeabstract[spa]
 \makeabstract[eng]
@@ -147,7 +158,7 @@ Durante los últimos años, las necesidades de ancho de banda de Internet se han
 
 Junto con estas redes de alta velocidad, aparece la necesidad de monitorizarlas. La información que se obtenga de la red puede guardarse para, posteriormente, diagnosticar problemas y evitar una infrautilización de los recursos o problemas en las aplicaciones que funcionen sobre la red. También es posible analizar esos datos en el momento de su recepción para detectar rápidamente anomalías, como puedan ser caídas de sistemas o accesos no autorizados.
 
-Las soluciones de monitorización deben ser capaces por lo tanto de guardar la máxima información posible sin introducir distorsiones, y eso incluye no sólo la recepción de todos los paquetes que pasen por la red, sino también el marcado de su tiempo de llegada.
+Las soluciones de monitorización deben ser capaces por lo tanto de guardar la máxima información posible sin introducir distorsiones, y eso incluye no sólo la recepción de todos los paquetes que pasen por la red, sino también el marcado preciso de su tiempo de llegada.
 
 En muchos casos se emplean sistemas o tarjetas de red diseñadas específicamente para entornos de monitorización. Es, sin embargo, un enfoque poco flexible, complejo y de alto coste. Así,  se buscan soluciones de monitorización software, más flexibles y baratas, que funcionen sobre sistemas y tarjetas estándar.
 
@@ -165,9 +176,9 @@ Sin embargo, a una tasa de 40 Gbps se necesita una gran cantidad de almacenamien
 
 El objetivo principal que se plantea para este Trabajo Fin de Grado es la monitorización de tráfico en redes 40 GbE. Para ello, se ampliará el sistema de captura HPCAP \cite{victorPhD}, desarrollado en el grupo de investigación HPCN (Escuela Politécnica Superior, UAM) por Víctor Moreno a lo largo de su tesis doctoral.
 
-HPCAP es un sistema de captura capaz de recibir y almacenar tráfico de red a 10 Gbps, desarrollado sobre el \gls{driver} \textit{ixgbe} de Intel para sus tarjetas de red 10 GbE. \todo{Revisar la expresión de esto} El trabajo de mantenimiento y mejora de este driver durante los últimos meses ha sido responsabilidad del autor de este trabajo: a lo largo de ese período se ha estudiado y entendido el sistema de captura y se han añadido características adicionales, como la posibilidad de usar \textit{buffers} intermedios más grandes con las \textit{hugepages} de Linux.
+HPCAP es un sistema de captura capaz de recibir y almacenar tráfico de red a 10 Gbps, desarrollado sobre el \gls{driver} \textit{ixgbe} de Intel para sus tarjetas de red 10 GbE. Previamente al desarrollo de este Trabajo Fin de Grado, el mantenimiento de este \textit{driver} ha sido mi responsabilidad. Algunas de las tareas realizadas han sido mejorar la compatibilidad en diferentes distribuciones Linux, desarrollar el soporte para recepción de paquetes con etiquetas VLAN estándar y propietarias (Cisco), o facilitar el uso mixto de tarjetas con varias interfaces manteniendo unas en modo de captura de alto rendimiento y otras como interfaces de red Linux normales. Además, se han ampliado las capacidades del \textit{driver} para que sea capaz de capturar no sólo en una sino en varias interfaces a altas tasas de tráfico, usando \textit{buffers} intermedios más grandes con las \textit{hugepages} de Linux.
 
-Sobre este trabajo ya realizado se plantean los siguientes objetivos.
+Este trabajo previo sobre HPCAP permite plantear la ampliación del sistema para captura a tasas todavía mayores de tráfico, que será el propósito de este Trabajo Fin de Grado. Los objetivos para llevarlo a cabo serán los siguientes:
 
 \begin{itemize}[itemsep=0pt, topsep = 5pt]
 \item Estudiar los límites de la arquitectura ya existente de HPCAP e identificar los puntos de mejora.
@@ -176,6 +187,8 @@ Sobre este trabajo ya realizado se plantean los siguientes objetivos.
 \item Verificar la portabilidad de la arquitectura, comprobando el funcionamiento correcto en tarjetas de Intel y Mellanox.
 \item Crear un entorno de pruebas que permita verificar y probar el rendimiento de sistemas de captura de tráfico de alta velocidad.
 \end{itemize}
+
+Dado el amplio ámbito de estos objetivos, el desarrollo se realizará de manera modular, cumpliendo los objetivos poco a poco y validando los resultados obtenidos a cada paso.
 
 \section{Estructura del documento}
 
@@ -219,7 +232,7 @@ Para el sistema operativo Linux se pueden encontrar multitud de sistemas de capt
 
 \subsection{Linux PACKET\_MMAP}
 
-Una opción para captura de alto rendimiento integrada en el propio \textit{kernel} de Linux es la configuración llamada PACKET\_MMAP. Esta opción permite acceder directamente a los anillos de recepción del sistema desde espacio de usuario, de tal forma que no hay que realizar llamadas a sistema ni hacer copias adicionales para recibir cada paquete.
+Una opción para captura de alto rendimiento integrada en el propio \textit{kernel} de Linux es la configuración llamada PACKET\_MMAP \cite{packetmmap}. Esta opción permite acceder directamente a los anillos de recepción del sistema desde espacio de usuario, de tal forma que no hay que realizar llamadas a sistema ni hacer copias adicionales para recibir cada paquete.
 
 Aunque es un método más eficiente que la captura paquete a paquete, se sigue usando la pila de red de Linux, lo que hace difícil la mejora y modificación para obtener mayor rendimento o poder usar los marcados de tiempo \textit{hardware} que ofrezca la tarjeta.
 
@@ -231,7 +244,7 @@ Sin embargo, todavía no ofrece captura a 40 Gbps, marcado de tiempo preciso o s
 
 \subsection{Netmap}
 
-Netmap es un sistema de generación y recepción de tráfico orientado a entornos de alto rendimiento, capaz de funcionar con enlaces de 40 Gbps con tarjetas Chelsio. Para ello usan un \textit{driver} modificado capaz de acceder directamente a los \textit{buffers} de la tarjeta y que agrupa las operaciones por lotes para mejorar el rendimiento, y usan múltiples colas y anillos para paralelizar la carga de trabajo.
+Netmap \cite{rizzo2012netmap} es un sistema de generación y recepción de tráfico orientado a entornos de alto rendimiento, capaz de funcionar con enlaces de 40 Gbps con tarjetas Chelsio. Para ello usan un \textit{driver} modificado capaz de acceder directamente a los \textit{buffers} de la tarjeta y que agrupa las operaciones por lotes para mejorar el rendimiento, y usan múltiples colas y anillos para paralelizar la carga de trabajo.
 
 A nivel de usuario, Netmap expone descriptores de fichero que se pueden operar con las llamadas estándar de Linux (\texttt{ioctl} y \texttt{poll}). Ahora bien, es un sistema que no se enfoca especialmente al almacenamiento de los paquetes y que no pone marcas de tiempo en la recepción.
 
@@ -256,7 +269,9 @@ La comunicación con las aplicaciones cliente de HPCAP se realiza a través de d
 
 Internamente, HPCAP mantiene un registro de la última posición leída por cada cliente y de la última posición escrita por el hilo de recepción de tráfico. De esta forma, en lugar de reservar y transmitir memoria por cada cliente, el \textit{driver} copia los datos a un único \textit{buffer} compartido por todos los clientes, escribiendo sólo cuando haya espacio disponible. Así se evitan copias adicionales que afectarían al rendimiento.
 
-\section{Conclusiones}
+El \textit{driver} de HPCAP es capaz de recibir paquetes de tamaño mínimo (64 bytes) a la tasa máxima del enlace sin pérdidas. Además, es la base de un sistema de monitorización y análisis de tráfico \cite{m3omon} actualmente en explotación comercial.
+
+\section{Conclusiones del capítulo}
 
 En el momento actual no existe un gran número de soluciones de captura de tráfico a 40 Gbps, y ninguna de ellas contempla especialmente las marcas de tiempo precisas, el orden de paquetes en la recepción o el almacenamiento del tráfico.
 
@@ -270,27 +285,26 @@ Sin embargo, todavía es necesario plantear una arquitectura capaz de recibir a 
 A lo largo de este capítulo se planteará el diseño de la arquitectura de recepción a 40 Gbps y las soluciones que permitan reducir datos y almacenar el tráfico recibido incluso a tasas demasiado altas para sistemas de almacenamiento comunes.
 
 \section{Arquitectura de los \textit{drivers} originales}
-\label{sec:ArquitecturaOriginal}
+\label{sec:Desarrollo:ArquitecturaOriginal}
 
 \begin{figure}[btp]
 \centering
 \input{tikz/DriverRings.tex}
 \caption[Esquema del anillo de descriptores para recepción de paquetes]{Esquema del anillo de descriptores para la recepción de paquetes. Cada descriptor tiene un puntero a los datos del paquete recibido y un campo que marca si el descriptor tiene o no datos. En gris, los datos y descriptores listos para ser leídos por el \gls{driver}.}
-\label{fig:DriverRings}
+\label{fig:Desarrollo:DriverRings}
 \end{figure}
 
 Para poder adaptar HPCAP a las \glspl{nic} de 40 Gbps de Intel y Mellanox es necesario utilizar los \glspl{driver} originales de los fabricantes y modificarlos para que sea el código de HPCAP el encargado de la recepción. Esto implica conocer su funcionamiento no sólo a grandes rasgos (\fref{sec:EstadoArte:Funcionamiento}), sino también las rutinas de comunicación con el hardware y de reserva de recursos de esos \glspl{driver} originales.
 
 A pesar de ser de fabricantes distintos, los dos \glspl{driver} siguen el mismo proceso para inicializarse y para la recepción de paquetes. Cuando el \gls{driver} se inserta en el sistema Linux, lee los parámetros de configuración de la línea de comandos y empieza a reservar recursos acorde a esos parámetros. Entre esos recursos están las regiones de memoria de los anillos de recepción, donde la \gls{nic} escribirá los paquetes recibidos; y estructuras en memoria compartida entre software y hardware, de donde se leerán datos como los descriptores de paquetes y los punteros de cabecera y cola del anillo.
 
-El anillo de descriptores es la estructura de datos que permite la transferencia de paquetes desde la \gls{nic} al \gls{driver}. Cada descriptor de paquete es una estructura de tamaño fijo que contiene una variable con el estado del descriptor, con los marcadores que determinan si tiene datos, si ha tenido algún error o si es parte de un \gls{jumbo}; y un puntero a los datos del paquete de red correspondiente, que han sido copiados a la memoria del sistema por la \gls{nic}.
+El anillo de descriptores (\fref{fig:Desarrollo:DriverRings}) es la estructura de datos que permite la transferencia de paquetes desde la \gls{nic} al \gls{driver}. Cada descriptor de paquete es una estructura de tamaño fijo que contiene una variable con el estado del descriptor, con los marcadores que determinan si tiene datos, si ha tenido algún error o si es parte de un \gls{jumbo}; y un puntero a los datos del paquete de red correspondiente, que han sido copiados a la memoria del sistema por la \gls{nic}.
 
 Este anillo se comporta como una cola, aunque implementado de manera distinta para mejorar el rendimiento. El puntero de cabecera, \textit{head}, que marca hasta dónde hay paquetes pendientes de leer, no aparece explícitamente y no se actualiza por la \gls{nic} al enviar nuevos paquetes al sistema. En su lugar, para comprobar si hay o no nuevos paquetes por leer, el \gls{driver} simplemente lee el campo de estado del siguiente descriptor de paquete para saber si tiene datos o no. Esto supone un ahorro de rendimiento, ya que se ahorra una escritura adicional que sería especialmente lenta, al no poder agruparse con otras escrituras a disco como sí se puede hacer con la escritura de datos o descriptores.
 
 La rutina de recepción, llamada por el subsistema \gls{NAPI}, va leyendo ese anillo de descriptores y enviando los nuevos paquetes que encuentra al sistema operativo, que se encargará de repatirlos a su destino correspondiente.
 
 Una vez que los paquetes se han leído, no sólo hay que actualizar el puntero de cola, sino también notificar al sistema \gls{DMA} de que la memoria que usaban queda libre para su uso por la tarjeta. Realizar esta operación paquete por paquete introduce un coste adicional que se puede ahorrar acumulando varias operaciones que se realizan de una vez, aunque no deben acumularse demasiadas para evitar que la \gls{nic} se quede sin descriptores donde copiar nuevos paquetes y los descarte.
-
 
 \subsection{Integración con HPCAP, ajustes del hardware y configuración}
 \label{sec:Desarrollo:AjustesHardware}
@@ -301,9 +315,9 @@ Los hilos de recepción de HPCAP consultan continuamente el anillo de la tarjeta
 
 Además de esa sustitución, se añaden a las rutinas de inicialización las funciones que reciben y analizan los argumentos pasados al \textit{driver} para configurar HPCAP apropiadamente, y se aumenta el tamaño del anillo de descriptores para mejorar el rendimiento.
 
-Para optimizar la tasa de recepción es necesario cambiar la configuración de la tarjeta con respecto a las opciones por defecto. Las tarjetas están preparadas para recepción con múltiples anillos (tecnología \gls{RSS}), distribuyendo los paquetes o incluso realizando operaciones como la eliminación de cabeceras VLAN.
+Para optimizar la tasa de recepción es necesario cambiar la configuración de la tarjeta con respecto a las opciones por defecto. Las tarjetas están preparadas para realizar varias operaciones en hardware, como la eliminación de cabeceras VLAN o el análisis del protocolo TCP (\textit{TCP offloading}) para ahorrar trabajo a la CPU. También es estándar la tecnología \gls{RSS}, que permite distribuir el trabajo de recepción de tráfico entre varios núcleos del procesador. Para ello, se crean varios anillos de recepción, cada uno atendido por un núcleo distinto. La tarjeta se encarga de distribuir los paquetes a cada uno de esos anillos, normalmente tratando de mantener paquetes de un mismo flujo dentro del mismo anillo.
 
-Ahora bien, todas estas características no son necesarias si el objetivo es capturar todo el tráfico usando la menor cantidad de recursos posible. Esas operaciones adicionales bajan el rendimiento y es necesario desactivarlas. En ambas tarjetas se reduce el número de colas \gls{RSS} a 1 y se desactiva la descarga de VLAN.
+Todas estas características no son necesarias si el objetivo es capturar todo el tráfico usando la menor cantidad de recursos posible. Esas operaciones adicionales bajan el rendimiento y es necesario desactivarlas. En ambas tarjetas se reduce el número de colas \gls{RSS} a 1 y se desactiva la descarga de VLAN.
 
 Para las tarjetas Mellanox, se realizan los siguientes cambios adicionales:
 
@@ -453,9 +467,13 @@ Si por el contrario no se puede incluir la cabecera a comienzo de fichero, la si
 
 \subsection{Marcas de tiempo}
 
-Dado que la tarjeta sobre la que se ha diseñado y probado el \textit{driver} ofrece marcado de todos los paquetes en el propio hardware, se puede evitar el marcado de tiempo software, que sería más impreciso al depender del rendimiento de cada hilo y su velocidad para leer descriptores de la tarjeta. Así también se evita marcar los paquetes de forma desordenada, ya que un hilo puede empezar a leer y marcar paquetes antes de que el hilo anterior haya podido acabar con todos los de su segmento.
+El último paso en la recepción de los paquetes es el marcado de su tiempo de llegada. En este caso, las tarjetas Mellanox tienen una ventaja: son capaces de marcar los tiempos de llegada en el hardware.
 
 Para obtener las marcas de tiempo, durante la configuración inicial de la tarjeta se activa el filtrado hardware. En la recepción, cada descriptor incluirá un marcado de tiempo usando un reloj interno de la tarjeta, que después habrá que convertir a la hora local y guardar en la cabecera del paquete en un formato legible con toda la precisión posible, que en el caso de la tarjeta de Mellanox implica almacenarlo en nanosegundos.
+
+En el caso de las tarjetas de Intel, no hay marcado hardware y éste se tiene que realizar en los hilos de recepción. Para ello, se usa la función \texttt{getnstimeofday()}, ya evaluada como la más precisa para las necesidades de HPCAP \cite{victorPhD}. A pesar de ello, no podrá llegar a ser tan precisa como el marcado hardware, ya que en este caso entran en juego varios factores que introducen imprecisiones en las marcas de tiempo software
+
+Por un lado, las marcas son susceptibles al rendimiento de los hilos: cuanto más tarden en procesar cada paquete desde que éste llega al anillo de recepción, más desplazado estará el tiempo marcado con respecto al de llegada real. Además, dado que la tarjeta Intel trabaja por lotes de paquetes (8 ó 4 descriptores cada vez según la configuración \cite{XL710Datasheet}), puede ocurrir que paquetes con tiempos distintos de llegada se marquen de manera muy seguida por el hilo de recepción correspondiente, distorsionando así los datos del tráfico.
 
 \section{Almacenamiento del tráf\kern 0.8pt ico: f\kern 0.8pt iltrado y guardado selectivo}
 
@@ -496,7 +514,7 @@ La principal ventaja de este diseño es su simplicidad y su buen rendimiento, co
 
 Una posible solución a esa falta de flexibilidad sería permitir la creación de filtros anidados, de tal forma que se pueda implementar cualquier combinación lógica deseada. Sin embargo, eso implicaría una complejidad mayor en el bucle de recepción y por lo tanto un peor rendimiento. Además, sería más difícil traducir los filtros deseados a la combinación de cadenas y configuración necesarias para llevarlos a cabo.
 
-La otra solución sería integrar el \textit{driver} con los filtros \gls{BPF} integrados en el \textit{kernel} Linux. Estos filtros se programan usando una sintaxis específica (por ejemplo, \texttt{host 192.168.1.1}) que se traduce a un lenguaje máquina específico. El código resultante se ejecuta en un intérprete optimizado dentro del \textit{kernel}. Si bien es un sistema complejo para filtros sencillos, es apropiado para casos más genéricos al tener un lenguaje máquina fácilmente interpretable y además el compilador ya está preparado para los distintos protocolos y cabeceras de tamaño variable que puedan encontrarse.
+La otra solución sería integrar el \textit{driver} con los filtros \gls{BPF} \cite{mccanne1993bsd} integrados en el \textit{kernel} Linux. Estos filtros se programan usando una sintaxis específica (por ejemplo, \texttt{host 192.168.1.1}) que se traduce a un lenguaje máquina específico. El código resultante se ejecuta en un intérprete optimizado dentro del \textit{kernel}. Si bien es un sistema complejo para filtros sencillos, es apropiado para casos más genéricos al tener un lenguaje máquina fácilmente interpretable y además el compilador ya está preparado para los distintos protocolos y cabeceras de tamaño variable que puedan encontrarse.
 
 \paragraph{Configuración de filtros ``en vivo''}
 
@@ -522,7 +540,7 @@ Una opción alternativa que permitiría guardar sólo la información más útil
 
 \section{Herramientas adicionales y entorno de pruebas}
 
-Para poder probar y medir el rendimiento de la implementación, se desarrollan algunas herramientas y módulos adicionales. En primer lugar, se crea un \textit{script} encargado de compilar e insertar el \textit{driver} en el sistema, comprobando que todos los parámetros y configuraciones se han cargado correctamente y que responde sin problemas.
+Para poder probar y medir el rendimiento de la implementación, se desarrollan algunas herramientas y módulos adicionales. En primer lugar, se crea un \textit{script} encargado de compilar e insertar el \textit{driver} en el sistema, comprobando que todos los parámetros y configuraciones se han cargado correctamente y que responde sin problemas. Adicionalmente, se pueden realizar pruebas de funcionamiento que comprueban que HPCAP no corrompe datos y que no se producen fallos en ciertas situaciones límite (por ejemplo, cuando los paquetes se ajustan exactamente al tamaño del \textit{buffer}, que puede provocar problemas con el \textit{padding}; o cuando se utilizan etiquetas VLAN que la tarjeta no reconoce correctamente).
 
 Las estadísticas de tasa de recepción y pérdidas se obtienen extrayendo los datos internos de la tarjeta, y añadiendo los provenientes del \textit{driver} (principalmente el número de paquetes descartados por espacio insuficiente en el \textit{buffer} de copia). Esto permite controlar y medir el rendimiento de sistema de captura.
 
@@ -530,7 +548,7 @@ Por último, para facilitar el desarrollo, se incluye dentro del \textit{driver}
 
 Este módulo de medición es especialmente relevante porque permite la identificación de los puntos débiles del diseño y los cuellos de botella sin influir notablemente en el rendimiento ni modificar el comportamiento del \textit{driver}. De hecho, fue muy útil para identificar problemas en la tarjeta de red y poder cambiar la configuración para optimizar la velocidad de recepción.
 
-\section{Conclusiones}
+\section{Conclusiones del capítulo}
 
 A lo largo de este capítulo se ha expuesto la arquitectura necesaria para recibir tráfico a 40 Gbps, usando múltiples hilos para mejorar el rendimiento. Conociendo el funcionamiento del \textit{driver} y las condiciones en las que se ejecuta, se pueden implementar sistemas de sincronización simples y que afectan poco al rendimiento usando variables atómicas en lugar de otros métodos (\textit{spinlock}, \textit{mutex} o semáforos) que serían más lentos e impedirían alcanzar tasas altas de tráfico.
 
@@ -545,27 +563,30 @@ En este capítulo se comprueba el rendimiento de la arquitectura propuesta, vali
 
 En primer lugar, se detallará el entorno usado para desarrollar las pruebas. Después se describirán las pruebas realizadas de captura de tráfico sobre la tarjeta Mellanox, comparando los resultados según el número de hilos usados, y por último se presentarán los resultados de filtrado y almacenamiento selectivo de paquetes. En una sección adicional se mostrarán los resultados obtenidos con la tarjeta de Intel, que no son tan detallados al haber tenido problemas con el generador de tráfico.
 
-\section{Entorno de pruebas}
+\section{Entorno experimental}
+\label{sec:Validacion:Entorno}
 
 \begin{table}[hbtp]
 \centering
 \small
 \begin{tabular}{lcc}
-\toprule & \textbf{skadi} & \textbf{nrg} \\ \midrule
-Procesador 	& 2 $\times$ Intel Core 	& 2 $\times$ Intel Xeon E5-2630  	\\
-			& 2,40 GHz, 12 núcleos 		& 2,6 GHz, 12 núcleos  		\\
-RAM 		& 128 GB 		& 32 GB 			\\
+\toprule & \textbf{skadi} & \textbf{einsrepo} \\ \midrule
+Procesador 	& 2 $\times$ Intel Core 	& Intel Xeon Algo  	\\
+			& 2,40 GHz, 12 núcleos 		& 3,7 GHz, 4 núcleos  		\\
+RAM 		& 128 GB 		& \textcolor{red}{Algo} GB 			\\
 NIC 		& Mellanox ConnectX-3 & Intel XL710 \\ \bottomrule
 \end{tabular}
 \caption{Especificaciones técnicas de los sistemas de prueba.}
 \label{tab:Validacion:Sistemas}
 \end{table}
 
-El entorno de pruebas consiste de dos servidores del grupo HPCN, \textit{skadi} y \textit{nrg}, cuyas especificaciones se detallan en la \fref{tab:Validacion:Sistemas}. Estos serán los encargados de recibir el tráfico usando el driver de HPCAP.
+El entorno de pruebas consiste de dos servidores del grupo HPCN, \textit{skadi} y \textit{einsrepo}, cuyas especificaciones se detallan en la \fref{tab:Validacion:Sistemas}. Estos serán los encargados de recibir el tráfico usando el driver de HPCAP.
 
-Para maximizar el rendimiento, se configura apropiadamente la asignación de núcleos de CPU teniendo en cuenta la arquitectura \gls{NUMA} de los servidores y los nodos a los que están conectados la tarjeta de red y el sistema de almacenamiento RAID. La distribución óptima \cite{m3omon} consiste en ejecutar los hilos de recepción en el mismo nodo NUMA al que se encuentra conectada la tarjeta de red y el hilo de volcado a disco en el nodo donde está conectado el RAID.
+Para maximizar el rendimiento, se configura apropiadamente la asignación de núcleos de CPU teniendo en cuenta la arquitectura \gls{NUMA} (\fref{fig:Validacion:NUMAArch}) de los servidores y los nodos a los que están conectados la tarjeta de red y el sistema de almacenamiento RAID. La distribución óptima \cite{m3omon} consiste en ejecutar los hilos de recepción en el mismo nodo NUMA al que se encuentra conectada la tarjeta de red y el hilo de volcado a disco en el nodo donde está conectado el RAID.
 
-Para las pruebas se conectará el sistema correspondiente al generador de tráfico, otro equipo con un único procesador de 4 núcleos a 3,7 GHz y una tarjeta de red Intel XL710 40 GbE. En él se ejecutará el generador \textit{pktgen-DPDK} basado en DPDK, que aunque para tamaños de paquete bajos no es capaz de saturar el enlace, es la mejor opción disponible para realizar las pruebas.
+Esta configuración se ajusta automáticamente con las herramientas de instalación desarrolladas para el \textit{driver}, que detectan la distribución del equipo y ajustan la afinidad de los hilos de recepción de manera automática.
+
+Para las pruebas ambos equipos se conectan directamente entre sí por una conexión de 40 Gbps: uno de ellos ejecutará un generador de tráfico y en el otro estará instalado HPCAP para la recepción de los datos. El generador de tráfico usado es \textit{pktgen-DPDK}, basado en DPDK. Aunque para tamaños de paquete bajos no es capaz de saturar el enlace, es la mejor opción disponible para realizar las pruebas.
 
 \begin{figure}[tbp]
 \centering
@@ -575,7 +596,7 @@ Para las pruebas se conectará el sistema correspondiente al generador de tráfi
 \label{fig:Validacion:NUMAArch}
 \end{figure}
 
-El principal problema de este entorno de pruebas es que impide la comparación de rendimiento de las dos tarjetas de Intel y Mellanox, ya que las especificaciones de los sistemas son distintas y por lo tanto no se puede distinguir entre los factores intrínsecos a la implementación y a la tarjeta y los que dependen del procesador usado. Aun así, cumple el propósito de servir como plataforma de pruebas y validación del rendimiento del \textit{driver} desarrollado y de la arquitectura planteada.
+El principal problema de este entorno experimental es que impide la comparación de rendimiento de las dos tarjetas de Intel y Mellanox, ya que las especificaciones de los sistemas son distintas y por lo tanto no se puede distinguir entre los factores intrínsecos a la implementación y a la tarjeta y los que dependen del procesador usado. Aun así, cumple el propósito de servir como plataforma de pruebas y validación del rendimiento del \textit{driver} desarrollado y de la arquitectura planteada.
 
 \section{Recepción de tráfico}
 
@@ -583,13 +604,13 @@ El principal problema de este entorno de pruebas es que impide la comparación d
 
 \begin{figure}[htbp]
 \inputgnuplot{gnuplot/simple-arch-max-rate}
-\caption[Capacidad de una arquitectura básica de captura]{Una medida de la capacidad base de la tarjeta: tasa máxima que se alcanza sin perder paquetes en función del tamaño de paquetes.}
+\caption[Capacidad de una arquitectura básica de captura]{Una medida de la capacidad base de la tarjeta: tasa máxima que se alcanza sin perder tráfico en función del tamaño de paquete.}
 \label{fig:Validacion:SimpleArchRate}
 \end{figure}
 
 Dadas las limitaciones del hardware, está claro que un único hilo de recepción no será suficiente para hacer la recepción a 40 Gbps. Aun así, es necesario realizar las pruebas en esta arquitectura simple para establecer una base sobre la que comparar y medir mejoras.
 
-La prueba se realiza en el entorno descrito anteriormente. La tasa de envío del generador de paquetes se incrementa gradualmente hasta llegar al máximo que HPCAP es capaz de recibir sin perder ningún paquete.
+La prueba se realiza en el entorno descrito anteriormente. La tasa de envío del generador de paquetes se incrementa gradualmente hasta llegar al máximo que HPCAP es capaz de recibir sin perder ningún paquete. Para ello, se comprueban los contadores de pérdidas de la tarjeta, visibles desde la herramienta estándar \texttt{ethtool}.
 
 Tal y como se ve en la \fref{fig:Validacion:SimpleArchRate}, sólo se llega a la tasa máxima de captura a partir de los 1250 bytes de tamaño de paquete. Para tamaños pequeños se observa el mismo comportamiento que con la versión original de HPCAP \citep{MorenoTFM2012}, donde para tamaños cercanos al mínimo (64 bytes) no se llegaba a la tasa máxima de 10 Gbps. En nuestro caso, para ese mismo tamaño se llega a una tasa de 7.6 Gbps.
 
@@ -601,7 +622,7 @@ En cualquiera de los dos casos, se observa que un hilo no es suficiente para con
 
 \begin{figure}[hbtp]
 \inputgnuplot{gnuplot/multicore-max-rate}
-\caption[Capacidad del diseño de recepción a 40 Gbps]{Tráfico máximo soportado por el diseño de recepción a 40Gbps según el número de hilos empleados.}
+\caption[Capacidad del diseño de recepción a 40 Gbps]{Tráfico máximo soportado por el diseño de recepción a 40Gbps para 1, 2 y 4 hilos. El gráfico incluye la capacidad máxima teórica del enlace Ethernet.}
 \label{fig:Validacion:MulticoreMaxRate}
 \end{figure}
 
@@ -609,19 +630,19 @@ A lo largo de esta sección se valida la arquitectura diseñada en la \fref{sec:
 
 El primer resultado es el del tráfico máximo que el sistema es capaz de recibir sin perder ningún paquete. El entorno de pruebas es el mismo que el descrito en la sección anterior.
 
-Como se puede ver en la \fref{fig:Validacion:MulticoreMaxRate}, el sistema alcanza la tasa teórica de 40 GbE a partir de los 600 bytes de tamaño, un resultado aceptable ya que el tamaño medio de paquete se encuentra en el entorno de los 600 bytes \cite{john2007analysis}.
+Como se puede ver en la \fref{fig:Validacion:MulticoreMaxRate}, el sistema alcanza la tasa teórica de 40 GbE a partir de los 600 bytes de tamaño, un resultado aceptable ya que el tamaño medio de paquete se encuentra en el entorno de los 600 bytes \cite{john2007analysis}. Para tamaños más bajos la capacidad del sistema baja considerablemente, llegando a los 12 Gbps para paquetes de tamaño mínimo (64 bytes).
 
-La prueba se ha realizado con dos y con cuatro hilos de recepción, lo que nos permite observar que la tarjeta Mellanox no es capaz de dar el total de la capacidad del enlace con un único anillo de recepción. Esta hipótesis está soportada porque durante el desarrollo no se consiguió una mejora de velocidad con múltiples hilos hasta que no se configuró apropiadamente la tarjeta de red (ver \fref{sec:Desarrollo:AjustesHardware} para los ajustes concretos).
+Los resultados según el número de hilos nos permiten verificar que el diseño funciona y que es capaz de mejorar la tasa de recepción con un único hilo. Además, dada la variación mínima de rendimiento entre el uso de dos y con cuatro hilos de recepción, se observa que la tarjeta Mellanox no es capaz de dar el total de la capacidad del enlace con un único anillo de recepción. Esta hipótesis está soportada además por el hecho de que, durante el desarrollo, se vio que el rendimiento dependía de manera crítica de la configuración de la tarjeta. De hecho, no se consiguió una mejora de velocidad con múltiples hilos hasta que no se configuró apropiadamente la tarjeta de red (ver \fref{sec:Desarrollo:AjustesHardware} para los ajustes concretos).
 
-Además, se comprueba que la arquitectura no introduce un desorden excesivo. Cierto desorden en la captura es aceptable, ya que este se puede corregir usando las marcas de tiempo precisas que pone la tarjeta a cada paquete de llegada, aunque para facilitar los análisis es preferible que ese desorden no sea demasiado alto.
-
-Para realizar las pruebas, se configuraron dos servidores de la misma forma que en secciones anteriores y se configuró \textit{pktgen-DPDK} para marcar su orden de salida. En el servidor de captura se usó el driver HPCAP configurado para capturar únicamente los campos correspondientes de cada paquete, de tal forma que se pueda guardar en disco la información necesaria sin pérdidas.
-
-\begin{figure}[bp]
+\begin{figure}[hbtp]
 \inputgnuplot{gnuplot/multicore-ordering}
 \caption[Desorden de paquetes inducido por el sistema de captura]{Porcentaje sobre el total de paquetes recibidos que se desordenan al pasar por el sistema de captura. Las barras de error muestran la variación de resultados al cambiar la velocidad y tamaño de paquete manteniendo el mismo \textit{ratio} de paquetes por segundo.}
 \label{fig:Validacion:Ordering}
 \end{figure}
+
+Además de la tasa de recepción, se comprueba que la arquitectura no introduce un desorden excesivo. Cierto desorden en la captura es aceptable, ya que este se puede corregir usando las marcas de tiempo precisas que pone la tarjeta a cada paquete de llegada, aunque para facilitar los análisis es preferible que ese desorden no sea demasiado alto.
+
+Para realizar las pruebas, se configuraron dos servidores de la misma forma que en secciones anteriores y se configuró \textit{pktgen-DPDK} para marcar su orden de salida. En el servidor de captura se usó el driver HPCAP configurado para capturar únicamente los campos correspondientes de cada paquete, de tal forma que se pueda guardar en disco la información necesaria sin pérdidas.
 
 En primer lugar se comprobó que con un único hilo se producía el comportamiento esperado, sin ningún tipo de desorden introducido. Esto permite confirmar la corrección de la implementación y asegurar que la tarjeta de red no introduce ningún desorden por sí misma.
 
@@ -641,7 +662,7 @@ El entorno de pruebas es el mismo que el planteado en pruebas anteriores, y se c
 \label{fig:Validacion:DiskStore}
 \end{figure}
 
-Como era esperable, el rendimiento disminuye al guardar datos en el sistema de archivos en RAM, y de hecho no se llega a la tasa completa de 40 Gbps. Cabe destacar que la tasa obtenida es muy dependiente del tamaño del \textit{buffer} de HPCAP. En estas pruebas se usó un \textit{buffer} de 2 GB, que no se pudo ampliar debido a un \textit{bug} en el \textit{kernel} de Linux, concretamente en las rutinas encargadas de asignar direcciones virtuales a páginas de tipo \textit{huge}. Durante el desarrollo, se creó y envió un parche a Linux para corregir este problema\footnote{\url{http://marc.info/?l=linux-mm&m=146114962421719&w=2}}.
+Como era esperable, el rendimiento disminuye al guardar datos en el sistema de archivos en RAM, y de hecho no se llega a la tasa completa de 40 Gbps. Cabe destacar que la tasa obtenida es muy dependiente del tamaño del \textit{buffer} de HPCAP. En estas pruebas se usó un \textit{buffer} de 2 GB, que no se pudo ampliar debido a un \textit{bug} en el \textit{kernel} de Linux, concretamente en las rutinas encargadas de asignar direcciones virtuales a páginas de tipo \textit{huge}. Durante el desarrollo, se creó y envió un parche\footnote{\url{http://marc.info/?l=linux-mm&m=146114962421719&w=2}} a Linux para corregir este problema, que ya ha sido aceptado.
 
 \subsection{Filtrado}
 
@@ -659,30 +680,36 @@ En esas pruebas no se han encontrado diferencias significativas de rendimiento: 
 
 Para comprobar los efectos del almacenamiento selectivo, se realizan tres pruebas de recepción limitando el tamaño de paquete a 18, 64 y 200 bytes. El primer caso captura toda la cabecera a nivel Ethernet, el segundo caso captura cabeceras Ethernet, IP y de la capa de transporte (TCP/UDP). Por último, una captura de 200 bytes permitiría almacenar prácticamente cualquier cabecera de la capa de aplicación y una parte de la carga útil del paquete.
 
-En la \fref{fig:Validacion:CaplenEffects} se puede observar que el rendimiento mejora en todos los casos, y se alcanza la tasa máxima soportada por el \textit{driver} desarrollado. Los mejores resultados se obtienen con los límites de 18 y 64 bytes, especialmente para tamaños de paquete pequeños. A partir de los 600 bytes por paquete, en los tres casos la tasa alcanzada es la misma.
+En la \fref{fig:Validacion:CaplenEffects} se puede observar que el rendimiento mejora en todos los casos, y se alcanza la tasa máxima soportada por el \textit{driver} desarrollado. Los mejores resultados se obtienen con los límites de 18 y 64 bytes, especialmente para tamaños de paquete pequeños. A partir de los 600 bytes por paquete, en los tres casos la tasa alcanzada es la misma: la máxima que era capaz de dar el sistema descartando todos los datos.
 
 \section{Recepción y almacenamiento de tráfico - Tarjeta Intel}
 
-Para la validación de la implementación sobre la tarjeta Intel se ha planteado el mismo entorno de pruebas que en secciones anteriores cambiando los roles: \textit{einsrepo} se usa como generador de tráfico con la tarjeta Mellanox, y el receptor es \textit{nrg} con la Intel XL710. Sin embargo, un problema con las tarjetas Mellanox y con el sistema de generación de tráfico \textit{pktgen-DPDK} impide hacer las pruebas correctamente.
+Para la validación de la implementación sobre la tarjeta Intel se ha planteado el mismo entorno de pruebas que en secciones anteriores cambiando los roles: \textit{skadi} se usa como generador de tráfico con la tarjeta Mellanox, y el receptor es \textit{einsrepo} con la Intel XL710. Sin embargo, un problema con las tarjetas Mellanox y con el sistema de generación de tráfico \textit{pktgen-DPDK} impide hacer las pruebas correctamente.
 
-El generador no es capaz de controlar la tasa de generación de tráfico por falta de soporte de la tarjeta de Mellanox, por lo que las pruebas realizadas anteriormente no se pueden realizar. La alternativa en este punto sería pasar a generar a tasa máxima y medir el porcentaje de pérdidas, pero tampoco es una alternativa factible ya que para tamaños de paquete pequeños \textit{pktgen-DPDK} no es capaz de saturar el enlace.
+El generador no es capaz de controlar la tasa de generación de tráfico por falta de soporte de la tarjeta de Mellanox, por lo que las pruebas realizadas anteriormente no se pueden realizar. La alternativa en este punto sería pasar a generar a tasa máxima y medir el porcentaje de pérdidas, pero tampoco es una alternativa factible ya que para tamaños de paquete pequeños \textit{pktgen-DPDK} no es capaz de saturar el enlace, de tal forma que las medidas de pérdidas no serían comparables ni útiles.
 
-Las pruebas que se realicen para esta tarjeta son menos precisas que las realizadas para la Mellanox, y sólo se obtienen resultados significativos en una de ellas.
+Las pruebas que se realicen para esta tarjeta son menos precisas que las realizadas para la Mellanox, y sólo se obtienen resultados significativos en una de ellas: la prueba de guardado en RAM de los datos. El resto de pruebas eran o bien imposibles de realizar por no poder controlar la tasa (desorden de paquetes) o bien porque el generador no era capaz de dar una tasa suficientemente alta como para provocar pérdidas y medir la capacidad máxima del \textit{driver}.
 
-Para la prueba de recepción de tráfico \todo{Esto lo hablamos luego porque me están pasando cosas raras.}
+En el caso de la prueba de guardado en RAM de los datos sí se han podido provocar pérdidas en el \textit{driver} que den idea de la capacidad máxima del sistema. Sin embargo, son medidas menos precisas que en la tarjeta Mellanox al cambiar la metodología: en lugar de aumentar progresivamente la tasa hasta provocar pérdidas, se genera tráfico y se mide la tasa a la que el \textit{driver} está recibiendo paquetes. En general, esta tasa es menor que la capacidad máxima de recepción, ya que al introducir pérdidas baja el rendimiento de los hilos de recepción y de las rutinas del hardware.
 
 \begin{figure}[hbtp]
 \inputgnuplot{gnuplot/intel-hpcapdd}
-\caption[Tasa para la tarjeta Intel]{Tasa intel HPCAPDD.}
+\caption[Tasa de recepción para la tarjeta Intel XL710]{Tasa de recepción de tráfico con guardado en RAM de los datos para la tarjeta Intel XL710.}
 \label{fig:Validacion:IntelHpcapdd}
 \end{figure}
+
+En cualquier caso, en la \fref{fig:Validacion:IntelHpcapdd} se observa que la tasa obtenida es bastante alta para el guardado en RAM de los datos con dos hilos de recepción, llegando prácticamente a la tasa máxima con 600 bytes por paquete. Además, de nuevo se verifica la validez del diseño multihilo: la mejora de rendimiento al pasar de uno a dos hilos de recepción es muy significativa.
+
+Los resultados son ligeramente mejores de los obtenidos para la tarjeta Mellanox (ver \fref{fig:Validacion:DiskStore}), aunque como se comentaba en la \fref{sec:Validacion:Entorno} los resultados no son comparables debido a las diferencias del hardware de los sistemas de prueba.
 
 \chapter{Conclusiones}
 \label{chap:Conclusiones}
 
-En este Trabajo de Fin de Grado se han identificado los puntos débiles de soluciones actuales de captura de tráfico para desarrollar un sistema capaz de recibir a 40 Gbps. Se ha explorado la arquitectura del sistema de red de Linux, viendo que es insuficiente para sistemas de alto rendimiento por el uso de interrupciones y de copias múltiples e innecesarias. Por otra parte, una revisión del estado del arte en sistemas de captura indica que no hay apenas herramientas de captura a 40 Gbps, y que además pocas se enfocan en un marcado de tiempo preciso y en el mantenimiento del orden de recepción de los paquetes.
+En este Trabajo de Fin de Grado se ha conseguido desarrollar un sistema capaz de recibir tráfico a 40 Gbps para paquetes de tamaño medio (600 bytes) usando un diseño multihilo capaz de aprovechar las arquitecturas multiprocesador de sistemas estándar de alta gama, sin necesidad de usar hardware especializado y por lo tanto manteniendo un coste bajo para la monitorización. Además, se han desarrollado soluciones para reducir la cantidad de datos a recibir por aplicaciones cliente aumentando así la tasa máxima que las aplicaciones cliente seran capaces de analizar o de almacenar en disco. Todo ello se ha realizado de manera portable, manteniendo una misma base de código para tarjetas de diferentes fabricantes (Mellanox y Linux).
 
-Se utiliza de base el trabajo ya desarrollado de Víctor Moreno en su tesis doctoral, HPCAP, capaz de recibir a 10 Gbps en tarjetas de red de Intel. Este motor de captura desactiva las interrupciones y realiza un \textit{polling} continuo al anillo de recepción de la tarjeta, un enfoque mucho más eficiente para tasas altas de tráfico. Además, cuenta con una \gls{api} para aplicaciones cliente que quieran recibir los paquetes, y está preparado para almacenar el tráfico directamente y de forma eficiente a disco.
+Para ello, en primer lugar los puntos débiles de soluciones actuales de captura de tráfico para desarrollar un sistema capaz de recibir a 40 Gbps. Se ha explorado la arquitectura del sistema de red de Linux, viendo que es insuficiente para sistemas de alto rendimiento por el uso de interrupciones y de copias múltiples e innecesarias. Por otra parte, una revisión del estado del arte en sistemas de captura indica que no hay apenas herramientas de captura a 40 Gbps, y que además pocas se enfocan en un marcado de tiempo preciso y en el mantenimiento del orden de recepción de los paquetes.
+
+Se utiliza de base el trabajo ya desarrollado de Víctor Moreno en su tesis doctoral, HPCAP, capaz de recibir a 10 Gbps en tarjetas de red de Intel. Este motor de captura desactiva las interrupciones y realiza un \textit{polling} continuo al anillo de recepción de la tarjeta, un enfoque mucho más eficiente para tasas altas de tráfico. Además, cuenta con una \gls{api} para aplicaciones cliente que quieran recibir los paquetes, y está preparado para almacenar el tráfico directamente y de forma eficiente a disco usando técnicas de \textit{padding}.
 
 Para que HPCAP sea capaz de recibir a 40 Gbps es necesario un cambio de arquitectura: un único hilo no es capaz de recibir a esa tasa con los procesadores actuales. Esa arquitectura se desarrolla en el \fref{chap:Desarrollo}, usando técnicas de concurrencia simples y de alto rendimiento, principalmente basadas en variables atómicas, y el conocimiento sobre el entorno de funcionamiento de HPCAP que permite evitar otras técnicas más lentas y que impedirían la recepción a alto rendimiento.
 
@@ -694,9 +721,9 @@ Además, el desarrollo se hace de manera portable para tarjetas Intel y Mellanox
 
 La validación experimental demuestra que la arquitectura es efectiva, pudiendo recibir tráfico a 40 Gbps para paquetes suficientemente grandes (alrededor de 600 bytes) en ambas arquitecturas. Además, no se introduce un desorden excesivo en la captura, que era uno de los objetivos iniciales del trabajo.
 
-Las características adicionales para reducción de los datos a guardar también funcionan apropiadamente: el filtrado de paquetes no afecta de manera apreciable al rendimiento de la captura, y el almacenamiento selectivo permite aumentar la tasa a la que es capaz de recibir el \textit{driver}
+Las características adicionales para reducción de los datos a guardar también funcionan apropiadamente: el filtrado de paquetes no afecta de manera apreciable al rendimiento de la captura, y el almacenamiento selectivo permite aumentar la tasa a la que es capaz de recibir el \textit{driver}.
 
-El entorno de pruebas creado también ha resultado suficiente para las pruebas realizadas, aunque no haya sido capaz de generar tráfico suficiente como para saturar el enlace 40 GbE.
+El entorno de pruebas creado también ha resultado suficiente para las pruebas realizadas, aunque no haya sido capaz de generar tráfico suficiente como para saturar el enlace 40 GbE. Las herramientas adicionales han sido útiles para preparar ese entorno y configurar el sistema aprovechando al máximo la arquitectura multiprocesador.
 
 Por último, el desarrollo muestra que mantener un núcleo común y modificaciones puntuales en los \textit{drivers} base es un enfoque factible y efectivo para el soporte de tarjetas de diferentes fabricantes, y facilita el desarrollo y soporte del sistema.
 
