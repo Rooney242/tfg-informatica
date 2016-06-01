@@ -1,29 +1,240 @@
-\documentclass[10pt, compress,usetitleprogressbar,aspectratio=1610]{beamer}
+\documentclass[10pt,notes,compress,usetitleprogressbar,aspectratio=1610]{beamer}
 
 \usepackage[spanish, es-tabla]{babel}
+\usepackage[T1]{fontenc}
+\usepackage[utf8x]{inputenc}
+\usepackage{tikztools}
+\usepackage{pgfplots}
+\usepackage{chronology}
+\usepackage{tikz-3dplot}
 
-\usetheme{epstfg}
+\definecolor{palette1}{HTML}{1B9E77}
+\definecolor{palette2}{HTML}{D95F02}
+\definecolor{palette3}{HTML}{7570B3}
+\definecolor{palette4}{HTML}{E7298A}
+\definecolor{palette5}{HTML}{66A61E}
+\definecolor{palette6}{HTML}{E6AB02}
+\definecolor{palette7}{HTML}{A6761D}
+\definecolor{palette8}{HTML}{666666}
 
-\title[spa]{Monitorización, captura y almacenamiento inteligente de tráfico de red a 40Gbps}
-\title[eng]{Monitoring, capture and smart storage of network traffic at 40 Gbps}
-\author{Guillermo Julián Moreno}
-\tutor{Francisco Gómez Arribas}
-\date[spa]{Mayo 2016}
-\date[eng]{May 2016}
-\group[spa]{HPCN}
-\group[eng]{HPCN}
-\department[spa]{Departamento}
-\department[eng]{Department}
+\usetheme{metropolis}
 
-\setdegreeDouble
+\metroset{
+	color/theme = eps,
+	fonttheme = palatino,
+	titleformat = allsmallcaps,
+	titleformat subtitle = regular,
+	numbering = fraction,
+	progressbar = frametitle,
+	titleformat plain = regular,
+	logo = eps,
+	section as frame subtitle
+}
+
+\renewcommand{\event}[3][e]{
+	\pgfmathsetlength\xstop{(#2-\theyearstart)*\unit}%
+	\draw[fill=black,draw=none,opacity=0.5]%
+		(\xstop, 0) circle (.2\unit)%
+		node[opacity=1,rotate=45,right=0\unit, yshift = 0.3cm] {#3};
+}
+
+% For input of gnuplot files. Automatically resizes the image based on linewidth.
+\newcommand{\inputgnuplot}[2][1]{
+	\vspace{-2ex}
+	\resizebox{#1\linewidth}{!}{
+		\IfFileExists{#2.tex}{
+			\fontsize{7pt}{7pt}\fontfamily{ppl}\selectfont
+			\input{#2.tex}
+			\vspace{-15pt} % Adjust for font size
+		}{
+			\PackageWarning{epstfg}{File `#2.tex' not found.}
+			\fbox{Gnuplot not found.\begin{minipage}{4.7in}\hfill\vspace{3in}\end{minipage}}
+		}
+	}
+	\vspace{-3ex}
+}
+
+
+\title{Monitorizaci\'on, captura y almacenamiento inteligente de tr\'afico de red a 40 Gbps}
+\subtitle{Trabajo Fin de Grado | Doble Grado en Ingenier\'ia Inform\'atica - Matem\'aticas}
+\author{Guillermo Juli\'an Moreno}
+\date{Junio 2016}
+
+\institute{HPCN \\ Dept. Tecnología Electr\'onica y de las comunicaciones}
+
+
+\setbeameroption{show notes}
+% \setbeameroption{show only notes}
 
 \begin{document}
 
 \maketitle
 
-\begin{frame}{Table of contents}
+\begin{frame}{Tabla de contenidos}
   \setbeamertemplate{section in toc}[sections numbered]
   \tableofcontents[hideallsubsections]
 \end{frame}
+
+\section{Introducción y motivación}
+
+\begin{frame}
+\frametitle{Redes Ethernet}
+
+\begin{figure}[t]
+\centering
+\begin{chronology}{1999}{2016}{0.8\textwidth}
+\event{2002}{\footnotesize 1ª versión 10 GbE}
+\event{2006}{\footnotesize Estándar 10 GbE}
+\event{2010}{\footnotesize Estándar 40/100 GbE}
+\event{2014}{\footnotesize Intel XL710 40 GbE}
+\event{2011}{\footnotesize Mellanox ConnectX-3 40 GbE}
+\end{chronology}
+\caption{Cronología de redes Ethernet de alta velocidad}
+\end{figure}
+
+Cada vez más CPDs aumentan la velocidad de sus redes Ethernet: las soluciones a 40~Gbps ya empiezan a desplegarse comercialmente.
+
+Las \textbf{necesidades de monitorización} persisten: detección de problemas y anomalías, diagnósticos de red, detección de intrusiones...
+
+\note{Para la monitorización se usan soluciones específicas: la pila de red de Linux es demasiado genérica y realiza tareas adicionales que no hacen falta si sólo buscamos captura de tráfico.
+
+Son especialmente interesantes las que usan hardware y servidores no especializados por su bajo coste. Una de esas soluciones es HPCAP.}
+\end{frame}
+
+\begin{frame}
+\frametitle{HPCAP}
+
+HPCAP, tesis doctoral de Víctor Moreno: \textit{driver} Linux para captura y almacenamiento de tráfico a 10 Gbps en tarjetas Intel, con uso bajo de recursos.
+\vspace{3em}
+\begin{alertblock}{Objetivo del TFG}
+Ampliación y mejora de HPCAP para la recepción a 40 Gbps.
+\end{alertblock}
+\end{frame}
+
+\begin{frame}
+\frametitle{Recepción 40G: Retos}
+
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\begin{itemize}
+\item Nos acercamos a los límites de velocidad del procesador. \note{Lo que en entornos normales ni siquiera se considera, como las latencias de acceso a la caché, a estas velocidades pueden significar una parte importante del tiempo disponible para procesar cada paquete. Incluso un fallo del predictor de ramas puede suponer un cuarto del tiempo disponible.}
+\item Tampoco hay mucho margen a nivel PCI: el ancho de banda máximo de PCIe 3.0 x8 es de unos 55 Gbps.
+\item Se genera una gran cantidad de datos: 420 TB al día en un enlace 40 Gbps. \note{Si queremos almacenar estos datos vamos a tener que reducirlos de alguna forma, incluso antes de que lleguen a las aplicaciones de análisis que lean del driver.}
+\end{itemize}
+\end{column}
+\begin{column}{0.5\textwidth}
+\begin{figure}
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+	width = 0.9\textwidth,
+	horizontal mbarplot, xlabel = {\footnotesize Ciclos},
+	symbolic y coords = {Cach\'e L3,Cach\'e L2,Cach\'e L1,Fallo \textit{branch}},
+	ytick = data,
+	x tick label style={font=\footnotesize},
+    y tick label style={font=\footnotesize},
+    xmax = 75,
+    xtick = {0, 10, 20, 30, 40, 50, 57}
+    ]
+	\addplot plot coordinates {
+		(4,Cach\'e L1)
+		(12,Cach\'e L2)
+		(44,Cach\'e L3)
+		(16,Fallo \textit{branch})
+	};
+	\draw[mDarkBrown, dashed, thick] ({rel axis cs:{58/75},0}) -- ({rel axis cs:{58/75},1}) node[above, yshift = 0.05cm, midway, sloped, align = center, rotate = 180] {\footnotesize Tiempo entre  paquetes (64b)};
+\end{axis}
+\end{tikzpicture}
+%\caption{Latencias en CPUs Intel Skylake a 3,4 GHz}
+\end{figure}
+\end{column}
+\end{columns}
+\end{frame}
+
+\section{Desarrollo e implementación}
+
+\begin{frame}{Arquitectura previa HPCAP}
+
+\begin{figure}[hbtp]
+\centering
+\input{tikz/DriverRings_PlusNIC.tex}
+% \caption{Anillo de descriptores}
+\end{figure}
+
+\begin{itemize}
+\item Un único hilo de copia al \textit{buffer} de datos.
+\item Uso de \textit{padding} para poder almacenar por bloques. \note{El almacenamiento por bloques es más eficiente que paquete a paquete.}
+\item Los descriptores se devuelven de manera ordenada a la tarjeta.
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Requisitos}
+
+\note{En un primer momento podríamos decir que este problema ya está resuelto: ya existen colas concurrentes, ¿no? No, si pretendemos que vaya a 40 Gbps.}
+
+\begin{itemize}
+\item Arquitectura multihilo.
+\item Semáforos, \textit{mutex} o \textit{spinlocks} son demasiado lentos.
+\item Minimizar los puntos de sincronización para evitar fallos de caché y latencia por sincronización entre núcleos.
+\item Mantener al máximo el orden de recepción.
+\item Marcado de tiempo preciso.
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Solución}
+
+Aprovechamos las características de HPCAP para diseñar una arquitectura eficiente.
+
+\begin{itemize}
+\item \textbf{Anillo de recepción fijo}: Asignamos un hilo a cada segmento del anillo de recepción. Así evitamos sincronizar la lectura, sólo sincronizamos devolución en el borde de cada segmento con una variable atómica. \note[item]{La variable atómica marca si el segmento anterior ha acabado.}
+\item \textbf{Buffers de tamaño prefijado}: Mantenemos una variable atómica con la posición de escritura, dejamos que el \textit{overflow} de C haga el módulo implícitamente. \note[item]{Habría que reiniciar la posición a 0 cuando llegásemos al final del \textit{buffer}, lo que implicaría más sincronización. Pero si el tamaño del buffer es siempre potencia de 2, no tenemos que preocuparnos. Esto además nos permite controlar el padding al inicio y final del fichero.}
+\item \textbf{Lectores en espacio de usuario e hilos funcionando sin paradas}: No es necesario marcar cuándo se acaba la copia, ya que siempre acaba antes de que el lector sepa que hay nuevos datos.
+\end{itemize}
+
+Por último, se aprovecha el marcado de tiempo hardware para evitar problemas de precisión.
+
+\end{frame}
+
+\begin{frame}{Almacenamiento inteligente}
+
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\alert{Problema} 40 Gbps son muchos datos a procesar y almacenar ($\sim$400 TB al día).
+
+Soluciones a nivel de hilos de recepción:
+\begin{itemize}
+\item \textbf{Filtrado}: Configurados en vivo por la aplicación lectora sin parar la captura en ningún momento.
+\item \textbf{Almacenamiento selectivo}: Selección de los rangos de bytes que se guardan en el \textit{buffer}.
+\end{itemize}
+\end{column}
+\begin{column}{0.5\textwidth}
+\begin{figure}[btp]
+\inputgnuplot{gnuplot/caplen-effects}
+\caption{Tasa efectiva limitando el tamaño de paquete}
+\label{fig:Desarrollo:CaplenEffects}
+\end{figure}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Sistemas multiprocesador}
+
+\begin{figure}[tbp]
+\centering
+\footnotesize
+\resizebox{0.7\textwidth}{!}{
+\input{tikz/NUMAArch.tex}}
+\caption{Arquitectura NUMA de los sistemas de pruebas.}
+\label{fig:Validacion:NUMAArch}
+\end{figure}
+
+Para maximizar el rendimiento, se usan sistemas multiprocesador y se tiene en cuenta su arquitectura NUMA. Los hilos de recepción se ejecutan en el nodo con la NIC, los de almacenamiento en el nodo con el RAID.
+
+\end{frame}
+
+\section{Validación experimental}
 
 \end{document}
