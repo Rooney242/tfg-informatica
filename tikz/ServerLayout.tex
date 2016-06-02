@@ -1,0 +1,12 @@
+\begin{tikzpicture}
+\node[palette1, fill = palette1!30!white, text = black, rectangle, draw, minimum height = 2.5cm, minimum width = 1.5cm] (skadi) at (0,0) {\footnotesize skadi};
+\node[palette2, fill = palette2!30!white, text = black, rectangle, draw, minimum height = 2.5cm, minimum width = 1.5cm] (einsrepo) at (4,0) {\footnotesize einsrepo};
+
+\draw[<->] (skadi) -- node[midway, above] {\footnotesize 40 Gbps} (einsrepo);
+
+\node[below = 0.1cm, align = center, scale = 0.55] at (skadi.south) {2x Intel Xeon E5-2620 \\ 2,4 GHz, 6 núcleos \\ 64 GB RAM \par};
+\node[below = 0.1cm, align = center, scale = 0.55] at (einsrepo.south) {Intel Xeon E5-1620 \\ 3,7 GHz, 6 núcleos \\ 32 GB RAM \par};
+
+\node[above = 0.1cm, scale = 0.6, align = center] at (skadi.north) {Mellanox MT27500 \\ ConnectX-3};
+\node[above = 0.35cm, scale = 0.6, align = center] at (einsrepo.north) {Intel XL710};
+\end{tikzpicture}

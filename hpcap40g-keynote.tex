@@ -94,25 +94,37 @@
 
 Cada vez más CPDs aumentan la velocidad de sus redes Ethernet: las soluciones a 40~Gbps ya empiezan a desplegarse comercialmente.
 
-Las \textbf{necesidades de monitorización} persisten: detección de problemas y anomalías, diagnósticos de red, detección de intrusiones...
+Las \textbf{necesidades de monitorización} persisten: detección de problemas y anomalías, diagnósticos de red, detección de intrusiones... \note{Son especialmente interesantes las que usan hardware y servidores no especializados por su bajo coste.}
 
-\note{Para la monitorización se usan soluciones específicas: la pila de red de Linux es demasiado genérica y realiza tareas adicionales que no hacen falta si sólo buscamos captura de tráfico.
+\end{frame}
 
-Son especialmente interesantes las que usan hardware y servidores no especializados por su bajo coste. Una de esas soluciones es HPCAP.}
+\begin{frame}{Estado del arte}
+La pila de red por defecto del sistema no es suficiente para obtener alto rendimiento: hacen falta soluciones específicas.\note[item]{La pila de red es demasiado genérica y realiza tareas adicionales que no hacen falta si sólo buscamos captura de tráfico.}
+
+\begin{itemize}
+\item \textbf{PACKET\_MMAP}: Acceso directo a los anillos de recepción del sistema, integrado en el kernel. \note[item]{El problema es que sigue usando la pila de red de Linux.}
+\item \textbf{PF\_RINC ZC}: Sistema comercial que evita la pila de red, orientado a virtualización. Sólo captura a 10 Gbps y no tiene marcas de tiempo.
+\item \textbf{Netmap}: Acceso directo a los anillos de la tarjeta sin usar la pila de red, con múltiples anillos y colas para mejorar rendimiento. Sólo funciona a 40 Gbps con tarjetas Chelsio.
+\item \textbf{Intel DPDK}: Soporte para múltiples tarjetas, incluyendo las de Mellanox e Intel de 40 GbE. Expone APIs en espacio de usuario para trabajar con los paquetes recibidos.
+\item \textbf{HPCAP}: Tesis doctoral de Víctor Moreno (HPCN, Escuela Politécnica Superior), consistente \textit{driver} Linux para captura y almacenamiento de tráfico a 10 Gbps en tarjetas Intel, con uso bajo de recursos.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Objetivos}
+
+Modificación y mejora de HPCAP para recepción a 40 Gbps:
+
+\begin{itemize}
+\item Recepción a 40 Gbps usando la menor cantidad de recursos posibles.
+\item Marcado de tiempo preciso de los paquetes recibidos.
+\item Desarrollo de métodos que permitan almacenar los datos recibidos.
+\item Verificar la portabilidad de la arquitectura, usando tarjetas Intel y Mellanox.
+\item Creación de un entorno de pruebas que permita verificar el rendimiento.
+\end{itemize}
 \end{frame}
 
 \begin{frame}
-\frametitle{HPCAP}
-
-HPCAP, tesis doctoral de Víctor Moreno: \textit{driver} Linux para captura y almacenamiento de tráfico a 10 Gbps en tarjetas Intel, con uso bajo de recursos.
-\vspace{3em}
-\begin{alertblock}{Objetivo del TFG}
-Ampliación y mejora de HPCAP para la recepción a 40 Gbps.
-\end{alertblock}
-\end{frame}
-
-\begin{frame}
-\frametitle{Recepción 40G: Retos}
+\frametitle{Retos}
 
 \begin{columns}
 \begin{column}{0.5\textwidth}
@@ -174,27 +186,50 @@ Ampliación y mejora de HPCAP para la recepción a 40 Gbps.
 
 \note{En un primer momento podríamos decir que este problema ya está resuelto: ya existen colas concurrentes, ¿no? No, si pretendemos que vaya a 40 Gbps.}
 
+Necesitamos una arquitectura multihilo, pero con más restricciones de las habituales en sistemas concurrentes.
+
 \begin{itemize}
-\item Arquitectura multihilo.
 \item Semáforos, \textit{mutex} o \textit{spinlocks} son demasiado lentos.
 \item Minimizar los puntos de sincronización para evitar fallos de caché y latencia por sincronización entre núcleos.
 \item Mantener al máximo el orden de recepción.
 \item Marcado de tiempo preciso.
 \end{itemize}
+
+Aprovecharemos las características de HPCAP para diseñar una arquitectura eficiente.
 \end{frame}
 
 \begin{frame}
-\frametitle{Solución}
+\frametitle{Diseño (I)}
 
-Aprovechamos las características de HPCAP para diseñar una arquitectura eficiente.
+\begin{figure}
+\centering
+\input{tikz/RingAssignment.tex}
+\end{figure}
 
-\begin{itemize}
-\item \textbf{Anillo de recepción fijo}: Asignamos un hilo a cada segmento del anillo de recepción. Así evitamos sincronizar la lectura, sólo sincronizamos devolución en el borde de cada segmento con una variable atómica. \note[item]{La variable atómica marca si el segmento anterior ha acabado.}
-\item \textbf{Buffers de tamaño prefijado}: Mantenemos una variable atómica con la posición de escritura, dejamos que el \textit{overflow} de C haga el módulo implícitamente. \note[item]{Habría que reiniciar la posición a 0 cuando llegásemos al final del \textit{buffer}, lo que implicaría más sincronización. Pero si el tamaño del buffer es siempre potencia de 2, no tenemos que preocuparnos. Esto además nos permite controlar el padding al inicio y final del fichero.}
-\item \textbf{Lectores en espacio de usuario e hilos funcionando sin paradas}: No es necesario marcar cuándo se acaba la copia, ya que siempre acaba antes de que el lector sepa que hay nuevos datos.
-\end{itemize}
+\textbf{Anillo de recepción fijo}: Asignamos un hilo a cada segmento del anillo de recepción. Así evitamos sincronizar la lectura, sólo sincronizamos devolución en el borde de cada segmento con una variable atómica. \note{La variable atómica marca si el segmento anterior ha acabado.}
 
-Por último, se aprovecha el marcado de tiempo hardware para evitar problemas de precisión.
+El marcado de tiempo hardware permitirá reordenar a posteriori los paquetes.
+
+\end{frame}
+
+\begin{frame}{Diseño (II)}
+
+\begin{figure}
+\centering
+\input{tikz/ContadoresBuffer.tex}
+\end{figure}
+
+\textbf{Buffers de tamaño prefijado}: Mantenemos una variable atómica con la posición de escritura, dejamos que el \textit{overflow} de C haga el módulo implícitamente. \note[item]{Habría que reiniciar la posición a 0 cuando llegásemos al final del \textit{buffer}, lo que implicaría más sincronización. Pero si el tamaño del buffer es siempre potencia de 2, no tenemos que preocuparnos. Esto además nos permite controlar el padding al inicio y final del fichero.}
+\end{frame}
+
+\begin{frame}{Diseño (III)}
+
+\begin{figure}
+\centering
+\input{tikz/Userspace.tex}
+\end{figure}
+
+\textbf{Lectores en espacio de usuario e hilos funcionando sin paradas}: No es necesario marcar cuándo se acaba la copia, ya que siempre acaba antes de que el lector sepa que hay nuevos datos.
 
 \end{frame}
 
@@ -236,5 +271,118 @@ Para maximizar el rendimiento, se usan sistemas multiprocesador y se tiene en cu
 \end{frame}
 
 \section{Validación experimental}
+
+\begin{frame}{Entorno experimental}
+
+\begin{columns}
+
+\begin{column}{0.5\textwidth}
+Servidores interconectados, uno genera tráfico y el otro recibe los datos con HPCAP. Aumentamos tasa de generación hasta encontrar el máximo soportado sin pérdidas.
+\vspace{10pt}
+
+Generador de tráfico: \textit{pktgen-DPDK}. No satura el enlace para tamaños pequeños y no controla la tasa de envío en tarjetas Mellanox. \note{Esto nos dará problemas para las pruebas de la Intel XL710.}
+\end{column}
+
+\begin{column}{0.5\textwidth}
+\begin{figure}
+\centering
+\input{tikz/ServerLayout.tex}
+% \caption{Entorno de pruebas}
+\end{figure}
+\end{column}
+\end{columns}
+
+\end{frame}
+
+\begin{frame}{Arquitectura básica + timestamp}
+
+\begin{figure}[htbp]
+\centering
+\inputgnuplot[0.7]{gnuplot/simple-arch-max-rate}
+\end{figure}
+
+Confirmamos que un único hilo no es suficiente. También comprobamos que el marcado por hardware o software da el mismo rendimiento.
+
+\end{frame}
+
+\begin{frame}{Múltiples hilos}
+\begin{figure}[hbtp]
+\inputgnuplot[0.7]{gnuplot/multicore-max-rate}
+%\caption[Capacidad del diseño de recepción a 40 Gbps]{Tráfico máximo soportado por el diseño de recepción a 40Gbps para 1, 2 y 4 hilos. El gráfico incluye la capacidad máxima teórica del enlace Ethernet.}
+%\label{fig:Validacion:MulticoreMaxRate}
+\end{figure}
+
+Mejoramos rendimiento con múltiples hilos, pero alcanzamos un tope: Mellanox tiene un cuello de botella en la copia a memoria de los paquetes.
+
+\end{frame}
+
+\begin{frame}{Desorden}
+\begin{figure}[hbtp]
+\inputgnuplot[0.7]{gnuplot/multicore-ordering}
+%\caption[Desorden de paquetes inducido por el sistema de captura]{Porcentaje sobre el total de paquetes recibidos que se desordenan al pasar por el sistema de captura. Las barras de error muestran la variación de resultados al cambiar la velocidad y tamaño de paquete manteniendo el mismo \textit{ratio} de paquetes por segundo.}
+\label{fig:Validacion:Ordering}
+\end{figure}
+
+No se introduce un desorden excesivo (máx. 30\% para tasas más altas).
+\end{frame}
+
+\begin{frame}{Almacenamiento}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\begin{figure}[hbtp]
+\inputgnuplot{gnuplot/multicore-disk-store}
+%\caption{Comparación entre rendimiento descartando paquetes y guardándolos en un sistema de archivos en RAM.}
+\label{fig:Validacion:DiskStore}
+\end{figure}
+\end{column}
+\begin{column}{0.5\textwidth}
+\begin{figure}[hbtp]
+\inputgnuplot{gnuplot/caplen-effects-experimental}
+%\caption[Tasa máxima experimental limitando el tamaño de paquete]{Tasa máxima de recepción guardando los datos en RAM y limitando el tamaño de paquete.}
+\label{fig:Validacion:CaplenEffects}
+\end{figure}
+\end{column}
+\end{columns}
+\vspace{10pt}
+Las pruebas se realizan con un buffer de 2 GB, que es el valor en el que ya se consigue la tasa máxima.\note{Comentar lo del parche.}
+
+El guardado de paquetes reduce la tasa de recepción. Si se reducen los datos a guardar se consigue llegar a la tasa máxima del sistema.
+\end{frame}
+
+\begin{frame}{Resultados Intel}
+
+\begin{figure}[hbtp]
+\inputgnuplot[0.7]{gnuplot/intel-hpcapdd}
+%\caption[Tasa de recepción para la tarjeta Intel XL710]{Tasa de recepción de tráfico con guardado en RAM de los datos para la tarjeta Intel XL710.}
+\label{fig:Validacion:IntelHpcapdd}
+\end{figure}
+
+Problemas con el generador: no satura enlace y no permite controlar la tasa de envío. Sólo se obtienen resultados significativos para la prueba de guardado en RAM.
+
+Aun así, se comprueba que la arquitectura diseñada mejora considerablemente el rendimiento obtenido.
+\end{frame}
+
+\section{Conclusiones}
+
+\begin{frame}{Resultados}
+\begin{itemize}
+\item Diseño válida para monitorización a 40 Gbps a partir de 600 bytes de tamaño de paquete.
+\item Arquitectura y código portables entre \textit{driver} Intel y Mellanox.
+\item El almacenamiento selectivo y el filtrado son capaces de mejorar el rendimiento de la captura y reducir la cantidad de datos a guardar.
+\item El marcado de tiempo por hardware permite tolerar un desorden mayor en la recepción sin afectar al rendimiento.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Trabajo futuro}
+\begin{itemize}
+\item Mejora del filtrado: uso de filtro ASCII o BPF.
+\item Limitaciones de tamaño dinámicas en función de la tasa de recepción.
+\item Mejora del entorno de pruebas: generación a 40 Gbps y soporte de flujos TCP.
+\end{itemize}
+\end{frame}
+
+\begin{frame}[standout]
+¿Preguntas?
+\end{frame}
 
 \end{document}
