@@ -62,17 +62,18 @@
 
 \institute{HPCN \\ Dept. Tecnología Electr\'onica y de las comunicaciones}
 
-
-\setbeameroption{show notes}
+\setbeameroption{hide notes}
+% \setbeameroption{show notes}
 % \setbeameroption{show only notes}
 
 \begin{document}
 
-\maketitle
+\maketitle \note{Empty}
 
 \begin{frame}{Tabla de contenidos}
   \setbeamertemplate{section in toc}[sections numbered]
   \tableofcontents[hideallsubsections]
+  \note{Empty}
 \end{frame}
 
 \section{Introducción y motivación}
@@ -105,7 +106,7 @@ La pila de red por defecto del sistema no es suficiente para obtener alto rendim
 \item \textbf{PACKET\_MMAP}: Acceso directo a los anillos de recepción del sistema, integrado en el kernel. \note[item]{El problema es que sigue usando la pila de red de Linux.}
 \item \textbf{PF\_RINC ZC}: Sistema comercial que evita la pila de red, orientado a virtualización. Sólo captura a 10 Gbps y no tiene marcas de tiempo.
 \item \textbf{Netmap}: Acceso directo a los anillos de la tarjeta sin usar la pila de red, con múltiples anillos y colas para mejorar rendimiento. Sólo funciona a 40 Gbps con tarjetas Chelsio.
-\item \textbf{Intel DPDK}: Soporte para múltiples tarjetas, incluyendo las de Mellanox e Intel de 40 GbE. Expone APIs en espacio de usuario para trabajar con los paquetes recibidos.
+\item \textbf{Intel DPDK}: Soporte para múltiples tarjetas, incluyendo las de Mellanox e Intel de 40 GbE. Expone APIs en espacio de usuario para trabajar con los paquetes recibidos. \note[item]{Lo malo de DPDK: tenemos menos flexibilidad para manejar los anillos internos de la tarjeta. Dependemos de que Intel no cambie APIs ni nada. Cuando no tenemos timestamp hardware, perdemos precisión al hacerlo en espacio de usuario.}
 \item \textbf{HPCAP}: Tesis doctoral de Víctor Moreno (HPCN, Escuela Politécnica Superior), consistente \textit{driver} Linux para captura y almacenamiento de tráfico a 10 Gbps en tarjetas Intel, con uso bajo de recursos.
 \end{itemize}
 \end{frame}
@@ -121,6 +122,8 @@ Modificación y mejora de HPCAP para recepción a 40 Gbps:
 \item Verificar la portabilidad de la arquitectura, usando tarjetas Intel y Mellanox.
 \item Creación de un entorno de pruebas que permita verificar el rendimiento.
 \end{itemize}
+
+\note{Empty}
 \end{frame}
 
 \begin{frame}
@@ -163,7 +166,7 @@ Modificación y mejora de HPCAP para recepción a 40 Gbps:
 \end{columns}
 \end{frame}
 
-\section{Desarrollo e implementación}
+\section{Desarrollo e implementación} \note{Empty}
 
 \begin{frame}{Arquitectura previa HPCAP}
 
@@ -208,7 +211,7 @@ Aprovecharemos las características de HPCAP para diseñar una arquitectura efic
 
 \textbf{Anillo de recepción fijo}: Asignamos un hilo a cada segmento del anillo de recepción. Así evitamos sincronizar la lectura, sólo sincronizamos devolución en el borde de cada segmento con una variable atómica. \note{La variable atómica marca si el segmento anterior ha acabado.}
 
-El marcado de tiempo hardware permitirá reordenar a posteriori los paquetes.
+El marcado de tiempo hardware permitirá reordenar a posteriori los paquetes. \note{Si no tenemos marcado de tiempo hardware tenemos la ventaja de que tardamos menos en recuperar los paquetes, habría que medir bien si esto desordena menos que varios anillos.}
 
 \end{frame}
 
@@ -230,6 +233,8 @@ El marcado de tiempo hardware permitirá reordenar a posteriori los paquetes.
 \end{figure}
 
 \textbf{Lectores en espacio de usuario e hilos funcionando sin paradas}: No es necesario marcar cuándo se acaba la copia, ya que siempre acaba antes de que el lector sepa que hay nuevos datos.
+
+\note{Con esto, ya podemos recibir a 40 Gbps. El problema es qué hacer con los datos.}
 
 \end{frame}
 
@@ -253,6 +258,8 @@ Soluciones a nivel de hilos de recepción:
 \end{figure}
 \end{column}
 \end{columns}
+
+\note{Empty}
 \end{frame}
 
 \begin{frame}{Sistemas multiprocesador}
@@ -268,9 +275,11 @@ Soluciones a nivel de hilos de recepción:
 
 Para maximizar el rendimiento, se usan sistemas multiprocesador y se tiene en cuenta su arquitectura NUMA. Los hilos de recepción se ejecutan en el nodo con la NIC, los de almacenamiento en el nodo con el RAID.
 
+\note{Empty}
+
 \end{frame}
 
-\section{Validación experimental}
+\section{Validación experimental} \note{Empty}
 
 \begin{frame}{Entorno experimental}
 
@@ -301,7 +310,7 @@ Generador de tráfico: \textit{pktgen-DPDK}. No satura el enlace para tamaños p
 \inputgnuplot[0.7]{gnuplot/simple-arch-max-rate}
 \end{figure}
 
-Confirmamos que un único hilo no es suficiente. También comprobamos que el marcado por hardware o software da el mismo rendimiento.
+Confirmamos que un único hilo no es suficiente. También comprobamos que el marcado por hardware o software da el mismo rendimiento. \note{Empty}
 
 \end{frame}
 
@@ -312,7 +321,7 @@ Confirmamos que un único hilo no es suficiente. También comprobamos que el mar
 %\label{fig:Validacion:MulticoreMaxRate}
 \end{figure}
 
-Mejoramos rendimiento con múltiples hilos, pero alcanzamos un tope: Mellanox tiene un cuello de botella en la copia a memoria de los paquetes.
+Mejoramos rendimiento con múltiples hilos, pero alcanzamos un tope: Mellanox tiene un cuello de botella en la copia a memoria de los paquetes. \note{Empty}
 
 \end{frame}
 
@@ -323,7 +332,9 @@ Mejoramos rendimiento con múltiples hilos, pero alcanzamos un tope: Mellanox ti
 \label{fig:Validacion:Ordering}
 \end{figure}
 
-No se introduce un desorden excesivo (máx. 30\% para tasas más altas).
+No se introduce un desorden excesivo (máx. 30\% para tasas más altas). \note{Si tenemos marcado de tiempo hardware esto no es un problema.
+
+30 Mpps sólo se alcanzan con paquetes pequeños, 150 bytes aprox.}
 \end{frame}
 
 \begin{frame}{Almacenamiento}
@@ -344,7 +355,7 @@ No se introduce un desorden excesivo (máx. 30\% para tasas más altas).
 \end{column}
 \end{columns}
 \vspace{10pt}
-Las pruebas se realizan con un buffer de 2 GB, que es el valor en el que ya se consigue la tasa máxima.\note{Comentar lo del parche.}
+Las pruebas se realizan con un buffer de 2 GB, que es el valor en el que ya se consigue la tasa máxima.\note{Comentar lo del parche aceptado.}
 
 El guardado de paquetes reduce la tasa de recepción. Si se reducen los datos a guardar se consigue llegar a la tasa máxima del sistema.
 \end{frame}
@@ -360,17 +371,20 @@ El guardado de paquetes reduce la tasa de recepción. Si se reducen los datos a 
 Problemas con el generador: no satura enlace y no permite controlar la tasa de envío. Sólo se obtienen resultados significativos para la prueba de guardado en RAM.
 
 Aun así, se comprueba que la arquitectura diseñada mejora considerablemente el rendimiento obtenido.
+\note{Como no controlamos tasa de envío, el porcentaje de pérdidas no es útil porque varía según la tasa a la que enviemos.}
 \end{frame}
 
-\section{Conclusiones}
+\section{Conclusiones} \note{Empty}
 
 \begin{frame}{Resultados}
 \begin{itemize}
-\item Diseño válida para monitorización a 40 Gbps a partir de 600 bytes de tamaño de paquete.
+\item Diseño válido para monitorización a 40 Gbps a partir de 600 bytes de tamaño de paquete.
 \item Arquitectura y código portables entre \textit{driver} Intel y Mellanox.
 \item El almacenamiento selectivo y el filtrado son capaces de mejorar el rendimiento de la captura y reducir la cantidad de datos a guardar.
 \item El marcado de tiempo por hardware permite tolerar un desorden mayor en la recepción sin afectar al rendimiento.
 \end{itemize}
+
+\note{Hemos conseguido los objetivos básicos que nos planteábamos}
 \end{frame}
 
 \begin{frame}{Trabajo futuro}
@@ -379,10 +393,14 @@ Aun así, se comprueba que la arquitectura diseñada mejora considerablemente el
 \item Limitaciones de tamaño dinámicas en función de la tasa de recepción.
 \item Mejora del entorno de pruebas: generación a 40 Gbps y soporte de flujos TCP.
 \end{itemize}
+
+\note{Aunque todavía queda bastantes cosas por hacer y mejorar.}
 \end{frame}
 
 \begin{frame}[standout]
 ¿Preguntas?
+
+\note{Fin.}
 \end{frame}
 
 \end{document}
