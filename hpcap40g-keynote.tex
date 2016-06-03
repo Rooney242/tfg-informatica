@@ -24,7 +24,7 @@
 	fonttheme = palatino,
 	titleformat = allsmallcaps,
 	titleformat subtitle = regular,
-	numbering = fraction,
+	numbering = counter,
 	progressbar = frametitle,
 	titleformat plain = regular,
 	logo = eps,
@@ -62,13 +62,14 @@
 
 \institute{HPCN \\ Dept. Tecnología Electr\'onica \\ y de las comunicaciones}
 
-\setbeameroption{hide notes}
+% \setbeameroption{hide notes}
 % \setbeameroption{show notes}
 % \setbeameroption{show only notes}
 
 \begin{document}
 
-\maketitle \note{Empty}
+% Aclarar que se usa principalmente Intel y Mellanox
+\maketitle \note{}
 
 \begin{frame}{Tabla de contenidos}
   \setbeamertemplate{section in toc}[sections numbered]
@@ -76,7 +77,7 @@
   \note{Empty}
 \end{frame}
 
-\section{Introducción y motivación}
+\section{Introducción y motivación} \note{En primer lugar, vamos a entender en qué contexto nos estamos moviendo, que es el de las redes Ethernet y su monitorización.}
 
 \begin{frame}
 \frametitle{Redes Ethernet}
@@ -95,25 +96,59 @@
 
 Cada vez más CPDs aumentan la velocidad de sus redes Ethernet: las soluciones a 40~Gbps ya empiezan a desplegarse comercialmente.
 
-Las \textbf{necesidades de monitorización} persisten: detección de problemas y anomalías, diagnósticos de red, detección de intrusiones... \note{Son especialmente interesantes las que usan hardware y servidores no especializados por su bajo coste.}
+Las \textbf{necesidades de monitorización} persisten: detección de problemas y anomalías, diagnósticos de red, detección de intrusiones... \note{A lo largo de los años, las redes Ethernet han ido evolucionando con mayor velocidad cada vez. Estas soluciones son especialmente útiles en CPDs, donde ya se están empezando a desplegar las redes de 40 Gbps, y donde Intel y Mellanox son los actores más potentes.}
+\end{frame}
+
+\begin{frame}{Monitorización de redes}
+
+\begin{itemize}
+\item Por un lado, se puede analizar el tráfico según llega al sistema para detectar problemas, sacando también estadísticas agregadas. \note[item]{Ejemplos de agregadas: estadísticas por cada conexión TCP, o tasa de tráfico recibido según las redes.}
+\item También se puede guardar el tráfico y analizarlo con herramientas más complejas, o estudiar en detalle intervalos en los que hubo problemas.
+\end{itemize}
+
+En los dos casos necesitamos herramientas que permitan recoger los paquetes recibidos y nos permitan saber cuándo llegaron y en qué orden. \note[item]{De hecho, si nos llegan paquetes desordenados puede ser un problema de la red.}
 
 \end{frame}
 
 \begin{frame}{Estado del arte}
-La pila de red por defecto del sistema no es suficiente para obtener alto rendimiento: hacen falta soluciones específicas.\note[item]{La pila de red es demasiado genérica y realiza tareas adicionales que no hacen falta si sólo buscamos captura de tráfico.}
+
+\note[item]{En un primer momento podríamos pensar en usar directamente la captura del sistema, pero la pila de red no está preparada para hacer captura a alto rendimiento: es genérica y hace demasiadas cosas que no nos hacen falta si sólo queremos guardar los paquetes. Necesitamos herramientas especializadas, y preferiblemente usando hardware estándar.
+
+Hemos revisado algunas de esas soluciones.}
+
+La pila de red del sistema no es suficiente para obtener alto rendimiento: hacen falta soluciones específicas.
 
 \begin{itemize}
-\item \textbf{PACKET\_MMAP}: Acceso directo a los anillos de recepción del sistema, integrado en el kernel. \note[item]{El problema es que sigue usando la pila de red de Linux.}
-\item \textbf{PF\_RINC ZC}: Sistema comercial que evita la pila de red, orientado a virtualización. Sólo captura a 10 Gbps y no tiene marcas de tiempo.
+\item \textbf{PACKET\_MMAP}: Acceso directo a los anillos de recepción del sistema, integrado en el kernel. \note[item]{Tenemos, por un lado, una ya integrada dentro del sistema que nos da un acceso más directo a los paquetes, pero que sigue siendo demasiado lenta.}
+\item \textbf{PF\_RINC ZC}: Sistema comercial que evita la pila de red, orientado a virtualización. Sólo captura a 10 Gbps y no tiene marcas de tiempo. \note[item]{Hay otras soluciones más eficientes que se basan en saltar toda la pila de red del sistema y acceder directamente a las estructuras de la tarjeta. El problema es que o bien no dan soporte para tarjetas de 40 Gbps, o no permiten marcar todos los paquetes que llegan de manera precisa, lo que los hace menos apropiados para análisis de red.}
 \item \textbf{Netmap}: Acceso directo a los anillos de la tarjeta sin usar la pila de red, con múltiples anillos y colas para mejorar rendimiento. Sólo funciona a 40 Gbps con tarjetas Chelsio.
-\item \textbf{Intel DPDK}: Soporte para múltiples tarjetas, incluyendo las de Mellanox e Intel de 40 GbE. Expone APIs en espacio de usuario para trabajar con los paquetes recibidos. \note[item]{Lo malo de DPDK: tenemos menos flexibilidad para manejar los anillos internos de la tarjeta. Dependemos de que Intel no cambie APIs ni nada. Cuando no tenemos timestamp hardware, perdemos precisión al hacerlo en espacio de usuario.}
-\item \textbf{HPCAP}: Tesis doctoral de Víctor Moreno (HPCN, Escuela Politécnica Superior), consistente \textit{driver} Linux para captura y almacenamiento de tráfico a 10 Gbps en tarjetas Intel, con uso bajo de recursos.
+\item \textbf{Intel DPDK}: Soporte para múltiples tarjetas, incluyendo las de Mellanox e Intel de 40 GbE. Expone APIs en espacio de usuario para trabajar con los paquetes recibidos.
+\item \textbf{HPCAP}: Tesis doctoral de Víctor Moreno (HPCN, Escuela Politécnica Superior), un \textit{driver} Linux para captura y almacenamiento de tráfico a 10 Gbps en tarjetas Intel, con uso bajo de recursos. \note[item]{Un hilo por cada interfaz de recepción.}
 \end{itemize}
 \end{frame}
 
+\begin{frame}{Arquitectura previa HPCAP}
+
+\note{La tarjeta de red copia los paquetes a un anillo de descriptores, de donde HPCAP lee y copia a un buffer intermedio. Las aplicaciones leen directamente de ese buffer.}
+
+\begin{figure}[hbtp]
+\centering
+\input{tikz/DriverRings_PlusNIC.tex}
+% \caption{Anillo de descriptores}
+\end{figure}
+
+\begin{itemize}
+\item Un único hilo de copia al \textit{buffer} de datos.
+\item Uso de \textit{padding} para poder almacenar por bloques. \note{El almacenamiento por bloques es más eficiente que paquete a paquete.}
+\item Los descriptores se devuelven de manera ordenada a la tarjeta para su reutilización.
+\end{itemize}
+
+\end{frame}
+
+
 \begin{frame}{Objetivos}
 
-Modificación y mejora de HPCAP para recepción a 40 Gbps:
+Modificación y mejora de HPCAP para la recepción a 40 Gbps:
 
 \begin{itemize}
 \item Recepción a 40 Gbps usando la menor cantidad de recursos posibles.
@@ -123,18 +158,22 @@ Modificación y mejora de HPCAP para recepción a 40 Gbps:
 \item Creación de un entorno de pruebas que permita verificar el rendimiento.
 \end{itemize}
 
-\note{Empty}
 \end{frame}
 
 \begin{frame}
 \frametitle{Retos}
+\note{Los retos a superar están por un lado en el desarrollo en sí, en la integración de un \textit{driver} que tiene que funcionar correctamente con las tarjetas de Intel y Mellanox e interactuar con el resto del \textit{kernel} Linux.
+
+Pero además tiene que funcionar en un entorno restringido, donde estamos muy cercanos a los límites del hardware. Por ejemplo, un fallo del predictor de ramas puede suponer un cuarto del tiempo disponible para procesar un paquete de 64 bytes.
+
+Además, la cantidad de datos generados es muy grande: si queremos almacenar todos los paquetes vamos a tener que reducirla de alguna forma.}
 
 \begin{columns}
 \begin{column}{0.5\textwidth}
 \begin{itemize}
-\item Nos acercamos a los límites de velocidad del procesador. \note{Lo que en entornos normales ni siquiera se considera, como las latencias de acceso a la caché, a estas velocidades pueden significar una parte importante del tiempo disponible para procesar cada paquete. Incluso un fallo del predictor de ramas puede suponer un cuarto del tiempo disponible.}
+\item Las restricciones de tiempo están cerca de los límites de velocidad del procesador \footnotemark.
 \item Tampoco hay mucho margen a nivel PCI: el ancho de banda máximo de PCIe 3.0 x8 es de unos 55 Gbps.
-\item Se genera una gran cantidad de datos: 420 TB al día en un enlace 40 Gbps. \note{Si queremos almacenar estos datos vamos a tener que reducirlos de alguna forma, incluso antes de que lleguen a las aplicaciones de análisis que lean del driver.}
+\item Se genera una gran cantidad de datos: 420 TB al día en un enlace 40 Gbps.
 \end{itemize}
 \end{column}
 \begin{column}{0.5\textwidth}
@@ -157,48 +196,34 @@ Modificación y mejora de HPCAP para recepción a 40 Gbps:
 		(44,Cach\'e L3)
 		(16,Fallo \textit{branch})
 	};
-	\draw[mDarkBrown, dashed, thick] ({rel axis cs:{58/75},0}) -- ({rel axis cs:{58/75},1}) node[above, yshift = 0.05cm, midway, sloped, align = center, rotate = 180] {\footnotesize Tiempo entre  paquetes (64b)};
+	\draw[mDarkBrown, dashed, thick] ({rel axis cs:{58/75},0}) -- ({rel axis cs:{58/75},1}) node[above, yshift = 0.05cm, midway, sloped, align = center, rotate = 180] {\footnotesize Tiempo entre  paquetes (64B)};
 \end{axis}
 \end{tikzpicture}
 %\caption{Latencias en CPUs Intel Skylake a 3,4 GHz}
 \end{figure}
 \end{column}
 \end{columns}
+
+\footnotetext{\footnotesize Referencia: Intel 64 and IA-32 Optimization Reference Manual}
 \end{frame}
 
 \section{Desarrollo e implementación} \note{Empty}
 
-\begin{frame}{Arquitectura previa HPCAP}
-
-\begin{figure}[hbtp]
-\centering
-\input{tikz/DriverRings_PlusNIC.tex}
-% \caption{Anillo de descriptores}
-\end{figure}
-
-\begin{itemize}
-\item Un único hilo de copia al \textit{buffer} de datos.
-\item Uso de \textit{padding} para poder almacenar por bloques. \note{El almacenamiento por bloques es más eficiente que paquete a paquete.}
-\item Los descriptores se devuelven de manera ordenada a la tarjeta.
-\end{itemize}
-
-\end{frame}
-
 \begin{frame}
-\frametitle{Requisitos}
+\frametitle{Requisitos - Recepción 40G}
 
 \note{En un primer momento podríamos decir que este problema ya está resuelto: ya existen colas concurrentes, ¿no? No, si pretendemos que vaya a 40 Gbps.}
 
-Necesitamos una arquitectura multihilo, pero con más restricciones de las habituales en sistemas concurrentes.
+Se necesita una arquitectura multihilo, pero con más restricciones de las habituales en sistemas concurrentes.
 
 \begin{itemize}
-\item Semáforos, \textit{mutex} o \textit{spinlocks} son demasiado lentos.
+\item El uso de semáforos, \textit{mutex} o \textit{spinlocks} para proteger regiones críticas es demasiado lento. \note[item]{En la medida de lo posible, tenemos que evitar que ningún hilo pare su ejecución mientras siga habiendo paquetes.}
 \item Minimizar los puntos de sincronización para evitar fallos de caché y latencia por sincronización entre núcleos.
-\item Mantener al máximo el orden de recepción.
+\item Minimizar el desorden de los paquetes recibidos.
 \item Marcado de tiempo preciso.
 \end{itemize}
 
-Aprovecharemos las características de HPCAP para diseñar una arquitectura eficiente.
+Se pueden aprovechar las características de HPCAP para diseñar una arquitectura eficiente.
 \end{frame}
 
 \begin{frame}
@@ -209,9 +234,9 @@ Aprovecharemos las características de HPCAP para diseñar una arquitectura efic
 \input{tikz/RingAssignment.tex}
 \end{figure}
 
-\textbf{Anillo de recepción fijo}: Asignamos un hilo a cada segmento del anillo de recepción. Así evitamos sincronizar la lectura, sólo sincronizamos devolución en el borde de cada segmento con una variable atómica. \note{La variable atómica marca si el segmento anterior ha acabado.}
+\textbf{Anillo de recepción fijo}: se asigna un hilo a cada segmento del anillo de recepción. Así evitamos sincronizar la lectura, sólo se sincroniza devolución en el borde de cada segmento con una variable atómica. \note{La variable atómica marca si el segmento anterior ha acabado.}
 
-El marcado de tiempo hardware permitirá reordenar a posteriori los paquetes. \note{Si no tenemos marcado de tiempo hardware tenemos la ventaja de que tardamos menos en recuperar los paquetes, habría que medir bien si esto desordena menos que varios anillos.}
+Si está disponible, el marcado de tiempo hardware permitirá reordenar a posteriori los paquetes. \note{Si no tenemos marcado de tiempo hardware tenemos la ventaja de que tardamos menos en recuperar los paquetes, habría que medir bien si esto desordena menos que varios anillos.}
 
 \end{frame}
 
@@ -222,7 +247,7 @@ El marcado de tiempo hardware permitirá reordenar a posteriori los paquetes. \n
 \input{tikz/ContadoresBuffer.tex}
 \end{figure}
 
-\textbf{Buffers de tamaño prefijado}: Mantenemos una variable atómica con la posición de escritura, dejamos que el \textit{overflow} de C haga el módulo implícitamente. \note[item]{Habría que reiniciar la posición a 0 cuando llegásemos al final del \textit{buffer}, lo que implicaría más sincronización. Pero si el tamaño del buffer es siempre potencia de 2, no tenemos que preocuparnos. Esto además nos permite controlar el padding al inicio y final del fichero.}
+\textbf{Buffers de tamaño prefijado}: se mantiene una variable atómica con la posición de escritura, dejamos que el \textit{overflow} de C haga el módulo implícitamente. \note[item]{Habría que reiniciar la posición a 0 cuando llegásemos al final del \textit{buffer}, lo que implicaría más sincronización. Pero si el tamaño del buffer es siempre potencia de 2, no tenemos que preocuparnos. Esto además nos permite controlar el padding al inicio y final del fichero.}
 \end{frame}
 
 \begin{frame}{Diseño (III)}
@@ -232,7 +257,7 @@ El marcado de tiempo hardware permitirá reordenar a posteriori los paquetes. \n
 \input{tikz/Userspace.tex}
 \end{figure}
 
-\textbf{Lectores en espacio de usuario e hilos funcionando sin paradas}: No es necesario marcar cuándo se acaba la copia, ya que siempre acaba antes de que el lector sepa que hay nuevos datos.
+\textbf{Lectores en espacio de usuario e hilos funcionando sin paradas}: no es necesario marcar cuándo se acaba la copia, ya que siempre acaba antes de que el lector sepa que hay nuevos datos.
 
 \note{Con esto, ya podemos recibir a 40 Gbps. El problema es qué hacer con los datos.}
 
@@ -241,7 +266,7 @@ El marcado de tiempo hardware permitirá reordenar a posteriori los paquetes. \n
 \begin{frame}{Almacenamiento inteligente}
 
 \begin{columns}
-\begin{column}{0.5\textwidth}
+\begin{column}{0.45\textwidth}
 \alert{Problema} 40 Gbps son muchos datos a procesar y almacenar ($\sim$400 TB al día).
 
 Soluciones a nivel de hilos de recepción:
@@ -250,9 +275,9 @@ Soluciones a nivel de hilos de recepción:
 \item \textbf{Almacenamiento selectivo}: Selección de los rangos de bytes que se guardan en el \textit{buffer}.
 \end{itemize}
 \end{column}
-\begin{column}{0.5\textwidth}
+\begin{column}{0.55\textwidth}
 \begin{figure}[btp]
-\inputgnuplot{gnuplot/caplen-effects}
+\inputgnuplot[1]{gnuplot/caplen-effects}
 \caption{Tasa efectiva limitando el tamaño de paquete}
 \label{fig:Desarrollo:CaplenEffects}
 \end{figure}
@@ -310,7 +335,7 @@ Generador de tráfico: \textit{pktgen-DPDK}. No satura el enlace para tamaños p
 \inputgnuplot[0.7]{gnuplot/simple-arch-max-rate}
 \end{figure}
 
-Confirmamos que un único hilo no es suficiente. También comprobamos que el marcado por hardware o software da el mismo rendimiento. \note{Empty}
+Se confirma que un único hilo no es suficiente. También se comprueba que el marcado por hardware o software da el mismo rendimiento. \note{Principalmente porque la marca que da la tarjeta hay que convertirla a una marca de tiempo válida.}
 
 \end{frame}
 
@@ -321,7 +346,7 @@ Confirmamos que un único hilo no es suficiente. También comprobamos que el mar
 %\label{fig:Validacion:MulticoreMaxRate}
 \end{figure}
 
-Mejoramos rendimiento con múltiples hilos, pero alcanzamos un tope: Mellanox tiene un cuello de botella en la copia a memoria de los paquetes. \note{Empty}
+Usando  múltiples hilos se mejora el rendimiento, pero alcanzamos un tope: Mellanox tiene un cuello de botella en la copia a memoria de los paquetes. \note{Empty}
 
 \end{frame}
 
@@ -382,6 +407,7 @@ Aun así, se comprueba que la arquitectura diseñada mejora considerablemente el
 \item Arquitectura y código portables entre \textit{driver} Intel y Mellanox.
 \item El almacenamiento selectivo y el filtrado son capaces de mejorar el rendimiento de la captura y reducir la cantidad de datos a guardar.
 \item El marcado de tiempo por hardware permite tolerar un desorden mayor en la recepción sin afectar al rendimiento.
+\item Durante el desarrollo se ha detectado un \textit{bug} en el \textit{kernel}, que se ha corregido y ha sido aceptado en Linux.
 \end{itemize}
 
 \note{Hemos conseguido los objetivos básicos que nos planteábamos}
@@ -389,7 +415,7 @@ Aun así, se comprueba que la arquitectura diseñada mejora considerablemente el
 
 \begin{frame}{Trabajo futuro}
 \begin{itemize}
-\item Mejora del filtrado: uso de filtro ASCII o BPF.
+\item Incorporación de filtros ASCII o BPF.
 \item Limitaciones de tamaño dinámicas en función de la tasa de recepción.
 \item Mejora del entorno de pruebas: generación a 40 Gbps y soporte de flujos TCP.
 \end{itemize}
