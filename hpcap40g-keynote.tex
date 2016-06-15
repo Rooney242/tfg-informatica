@@ -62,22 +62,23 @@
 
 \institute{HPCN \\ Dept. Tecnología Electr\'onica \\ y de las comunicaciones}
 
-% \setbeameroption{hide notes}
+\setbeameroption{hide notes}
 % \setbeameroption{show notes}
 % \setbeameroption{show only notes}
 
 \begin{document}
 
-% Aclarar que se usa principalmente Intel y Mellanox
-\maketitle \note{}
+\maketitle \note{Buenos días, me llamo Guillermo Julián Moreno y voy a presentar mi TFG sobre (leer título).}
 
 \begin{frame}{Tabla de contenidos}
   \setbeamertemplate{section in toc}[sections numbered]
   \tableofcontents[hideallsubsections]
-  \note{Empty}
+  \note{En primer lugar, explicaré en qué contexto se desarrolla este TFG y la motivación del trabajo. Después, explicaré cómo se ha desarrollado e implementado la solución de captura. Lo siguiente serán las pruebas de rendimiento y la validación del sistema, y por último las conclusiones que se extraen de este trabajo.}
 \end{frame}
 
-\section{Introducción y motivación} \note{En primer lugar, vamos a entender en qué contexto nos estamos moviendo, que es el de las redes Ethernet y su monitorización.}
+\section{Introducción y motivación} \note{
+	Como decía, empezaré motivando este trabajo y explicando el contexto, que en este caso es el de las redes Ethernet de alta velocidad.
+}
 
 \begin{frame}
 \frametitle{Redes Ethernet}
@@ -96,17 +97,19 @@
 
 Cada vez más CPDs aumentan la velocidad de sus redes Ethernet: las soluciones a 40~Gbps ya empiezan a desplegarse comercialmente.
 
-Las \textbf{necesidades de monitorización} persisten: detección de problemas y anomalías, diagnósticos de red, detección de intrusiones... \note{A lo largo de los años, las redes Ethernet han ido evolucionando con mayor velocidad cada vez. Estas soluciones son especialmente útiles en CPDs, donde ya se están empezando a desplegar las redes de 40 Gbps, y donde Intel y Mellanox son los actores más potentes.}
+Las \textbf{necesidades de monitorización} persisten: detección de problemas y anomalías, diagnósticos de red, detección de intrusiones... \note{A lo largo de los años, las redes Ethernet han ido evolucionando y aumentando la velocidad. [Describir cronología], comentar que Intel y Mellanox son los principales fabricantes.
+
+Independientemente de la velocidad, siguen existiendo necesidades de monitorización.}
 \end{frame}
 
 \begin{frame}{Monitorización de redes}
 
 \begin{itemize}
-\item Por un lado, se puede analizar el tráfico según llega al sistema para detectar problemas, sacando también estadísticas agregadas. \note[item]{Ejemplos de agregadas: estadísticas por cada conexión TCP, o tasa de tráfico recibido según las redes.}
-\item También se puede guardar el tráfico y analizarlo con herramientas más complejas, o estudiar en detalle intervalos en los que hubo problemas.
+\item Se puede analizar el tráfico según llega al sistema para detectar problemas o extraer estadísticas agregadas. \note[item]{Ejemplos de agregadas: estadísticas por cada conexión TCP, o tasa de tráfico recibido según las redes.}
+\item También se puede guardar el tráfico, analizarlo con herramientas más complejas y  estudiar en detalle intervalos en los que hubo problemas.
 \end{itemize}
 
-En los dos casos necesitamos herramientas que permitan recoger los paquetes recibidos y nos permitan saber cuándo llegaron y en qué orden. \note[item]{De hecho, si nos llegan paquetes desordenados puede ser un problema de la red.}
+En los dos casos necesitamos herramientas que permitan recoger los paquetes recibidos sabiendo cuándo llegaron y en qué orden. \note[item]{De hecho, si nos llegan paquetes desordenados puede ser un problema de la red.}
 
 \end{frame}
 
@@ -116,7 +119,7 @@ En los dos casos necesitamos herramientas que permitan recoger los paquetes reci
 
 Hemos revisado algunas de esas soluciones.}
 
-La pila de red del sistema no es suficiente para obtener alto rendimiento: hacen falta soluciones específicas.
+La pila de red del sistema no es suficiente para obtener alto rendimiento: hacen falta soluciones específicas, y preferiblemente usando hardware no especializado.
 
 \begin{itemize}
 \item \textbf{PACKET\_MMAP}: Acceso directo a los anillos de recepción del sistema, integrado en el kernel. \note[item]{Tenemos, por un lado, una ya integrada dentro del sistema que nos da un acceso más directo a los paquetes, pero que sigue siendo demasiado lenta.}
@@ -158,11 +161,16 @@ Modificación y mejora de HPCAP para la recepción a 40 Gbps:
 \item Creación de un entorno de pruebas que permita verificar el rendimiento.
 \end{itemize}
 
+\note{Mencionar que Intel y Mellanox son los principales fabricantes}
+
 \end{frame}
 
 \begin{frame}
 \frametitle{Retos}
-\note{Los retos a superar están por un lado en el desarrollo en sí, en la integración de un \textit{driver} que tiene que funcionar correctamente con las tarjetas de Intel y Mellanox e interactuar con el resto del \textit{kernel} Linux.
+\note{
+Comentar que 64 B es tamaño mínimo de paquete.
+
+Los retos a superar están por un lado en el desarrollo en sí, en la integración de un \textit{driver} que tiene que funcionar correctamente con las tarjetas de Intel y Mellanox e interactuar con el resto del \textit{kernel} Linux.
 
 Pero además tiene que funcionar en un entorno restringido, donde estamos muy cercanos a los límites del hardware. Por ejemplo, un fallo del predictor de ramas puede suponer un cuarto del tiempo disponible para procesar un paquete de 64 bytes.
 
@@ -259,7 +267,7 @@ Si está disponible, el marcado de tiempo hardware permitirá reordenar a poster
 
 \textbf{Lectores en espacio de usuario e hilos funcionando sin paradas}: no es necesario marcar cuándo se acaba la copia, ya que siempre acaba antes de que el lector sepa que hay nuevos datos.
 
-\note{Con esto, ya podemos recibir a 40 Gbps. El problema es qué hacer con los datos.}
+\note{El mejor caso de latencia de una llamada a sistema son unos 100 nanosegundos. Con la coherencia de caché sabemos que no va a haber problemas.}
 
 \end{frame}
 
@@ -284,7 +292,7 @@ Soluciones a nivel de hilos de recepción:
 \end{column}
 \end{columns}
 
-\note{Empty}
+\note{Mejor hacerlo en hilos de recepción para controlar el padding.}
 \end{frame}
 
 \begin{frame}{Sistemas multiprocesador}
@@ -346,7 +354,7 @@ Se confirma que un único hilo no es suficiente. También se comprueba que el ma
 %\label{fig:Validacion:MulticoreMaxRate}
 \end{figure}
 
-Usando  múltiples hilos se mejora el rendimiento, pero alcanzamos un tope: Mellanox tiene un cuello de botella en la copia a memoria de los paquetes. \note{Empty}
+Usando  múltiples hilos se mejora el rendimiento, pero alcanzamos un tope: hay un cuello de botella en la copia por DMA de los paquetes. \note{Empty}
 
 \end{frame}
 
@@ -359,7 +367,9 @@ Usando  múltiples hilos se mejora el rendimiento, pero alcanzamos un tope: Mell
 
 No se introduce un desorden excesivo (máx. 30\% para tasas más altas). \note{Si tenemos marcado de tiempo hardware esto no es un problema.
 
-30 Mpps sólo se alcanzan con paquetes pequeños, 150 bytes aprox.}
+30 Mpps sólo se alcanzan con paquetes pequeños, 150 bytes aprox.
+
+Primero se comprueba que no hay desorden con 1 hilo.}
 \end{frame}
 
 \begin{frame}{Almacenamiento}
@@ -426,7 +436,11 @@ Aun así, se comprueba que la arquitectura diseñada mejora considerablemente el
 \begin{frame}[standout]
 ¿Preguntas?
 
-\note{Fin.}
+\note{
+Q: ¿Cada cuánto puede cambiar un chipset de Intel o Mellanox?
+A: No tengo datos exactos, pero en general el driver es el mismo para modelos similares (misma velocidad) y por lo tanto no harían falta cambios especiales en HPCAP.
+
+}
 \end{frame}
 
 \end{document}
