@@ -91,7 +91,7 @@
 \selectlang{\@use@lang}
 
 \ifdraftdoc\else
-	\@draftbannerfalse
+	\@draftbannerfalse % Do not activate the banner in the titlepage unless we're in draft mode.
 \fi
 
 % Paragraph formatting
@@ -121,16 +121,19 @@
 \def\titlefootstyle{\footnotesize}
 \def\pagenumberstyle{\small}
 
+% Footer for odd pages
 \makeoddfoot{ruled}
-	{\ifdraftdoc\textit{\tiny\@nameuse{draft-spa}}\fi}
-	{\titlefootstyle\@nameuse{title-spa}}
-	{\pagenumberstyle\thepage}
+	{\ifdraftdoc\textit{\tiny\@nameuse{draft-spa}}\fi}	% left
+	{\titlefootstyle\@nameuse{title-spa}}				% center
+	{\pagenumberstyle\thepage}							% right
 
+% Same as above: left, center, right footers on even pages.
 \makeevenfoot{ruled}
 	{\pagenumberstyle\thepage}
 	{\titlefootstyle\@nameuse{title-eng}}
 	{\ifdraftdoc\textit{\tiny\@nameuse{draft-eng}}\fi}
 
+% Same, just with the headers.
 \makeevenhead{ruled}
 	{\sffamily\scshape\leftmark}
 	{}
@@ -141,11 +144,13 @@
 	{}
 	{\sffamily\small\rightmark}
 
+% Put a horizontal line above the footers.
 \makefootrule{ruled}{\textwidth}{0.7pt}{2pt}
 
+% Set plain pagestyle for chapter pages.
 \copypagestyle{chapter}{plain}
 
-% Fix styling in chapter pages
+% Fix styling in chapter pages to add the footers.
 \def\@fixchapterstyle{
 	\makeoddfoot{chapter}
 		{\ifdraftdoc\textit{\tiny\@nameuse{draft-spa}}\fi}
@@ -220,6 +225,7 @@
 \renewcommand{\chaptitlefont}{\HUGE\sffamily\scshape}
 \renewcommand{\afterchapskip}{200pt}
 
+% Change the chapter number style
 \renewcommand*{\printchapternum}{% Align baselines with the chapter title
 \sidebar{
 	\raisebox{-1.2\baselineskip}[0pt][0pt]{
@@ -232,9 +238,11 @@
 \setsubsecheadstyle{\sffamily\bfseries}
 \setparaheadstyle{\sffamily\bfseries}
 
+% Reduce the spacing before the sections and subsections
 \renewcommand{\beforesecskip}{15pt}
 \renewcommand{\beforesubsecskip}{10pt}
 
+% Show subsections in the table of contents
 \setsecnumdepth{subsection}
 \setcounter{tocdepth}{3}
 
@@ -250,6 +258,7 @@
 }
 
 % For input of gnuplot files. Automatically resizes the image based on linewidth.
+% Note: use latexmk to compile so it detects the dependency with .gp wiles.
 \newcommand{\inputgnuplot}[2][1]{
 	\vspace{-2ex}
 	\resizebox{#1\linewidth}{!}{
