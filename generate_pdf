@@ -1,0 +1,2 @@
+#!/bin/bash
+latexmk -shell-escape -synctex=1 -pdf -silent -interaction=errorstopmode -pvc $@

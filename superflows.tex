@@ -1,0 +1,161 @@
+\documentclass[twoside, 12pt]{epstfg}
+
+\usepackage{lipsum}
+\usepackage[numbers]{natbib}
+\usepackage{fancysprefs}
+\usepackage{booktabs}
+\usepackage{wrapfig}
+\usepackage{enumitem}
+\usepackage{xfrac}
+\usepackage{multirow}
+
+\usepackage{tikz}
+
+\usetikzlibrary{arrows}
+\usetikzlibrary{patterns}
+\usetikzlibrary{intersections}
+\usetikzlibrary{calc}
+\usetikzlibrary{fadings}
+
+\definecolor{palette1}{HTML}{1B9E77}
+\definecolor{palette2}{HTML}{D95F02}
+\definecolor{palette3}{HTML}{7570B3}
+\definecolor{palette4}{HTML}{E7298A}
+\definecolor{palette5}{HTML}{66A61E}
+\definecolor{palette6}{HTML}{E6AB02}
+\definecolor{palette7}{HTML}{A6761D}
+\definecolor{palette8}{HTML}{666666}
+
+\tikzstyle{vnlin}=[rectangle, inner sep=0pt, minimum height=6pt, minimum width=0pt, draw, fill=black]
+\tikzstyle{hnlin}=[rectangle, inner sep=0pt, minimum height=0pt, minimum width=6pt, draw, fill=black]
+\tikzset{>=latex}
+
+\bibliographystyle{abbrv}
+
+\title[spa]{Reconstrucción de caminos}
+\title[eng]{Path reconstruction}
+\author{David Moreno Maldonado}
+\tutor{Guillermo Julián Moreno}
+\date[spa]{Mayo 2020}
+\date[eng]{May 2020}
+\group[spa]{Naudit}
+\group[eng]{Naudit}
+\department[spa]{Tecnología Electrónica y de las comunicaciones}
+\department[eng]{Department}
+
+\setdegreeDouble
+
+%Resumen
+%Abstract (resumen en ingles)
+
+%Glosario
+
+\begin{document}
+
+\selectlanguage{spanish}
+
+\frontmatter
+
+\maketitle[spa]
+% \maketitle[eng]
+
+\makeinnertitle[spa]
+% \makeinnertitle[eng]
+
+%\makeabstract[spa]
+%\makeabstract[eng]
+
+\tableofcontents
+\clearpage
+\listoftables
+\clearpage
+\listoffigures
+\cleardoublepage
+
+\printnoidxglossaries
+
+\mainmatter
+
+\chapter{Introducción y motivación}
+
+\section{Motivación}
+
+\section{Objetivos}
+
+\section{Estructura del documento}
+
+
+\chapter{Estado del arte}
+
+
+\chapter{Desarrollo e implementación}
+\label{chap:Desarrollo}
+
+\section{Estructura del módulo en C}
+El análisis de tráfico se realiza mediante un módulo escrito en C. El módulo forma parte de un programa más grande llamado fisher. Dicha aplicación se centraba en el análisis de trazas pcap mediante la definición de funciones que se encargan de la inicialización, preprocesado, análisis, postprocesado y salida de los registros de la traza pcap. Se han utilizado y modificado varias de las librerias de este programa, haciendose uso de facilidades como el log, utilidades para estructuras ip y mac o el gestor de memoria para generar 'pools' de memoria.
+
+\subsection{Librerias usadas pertenecientes a fisher}
+Durante el desarrollo del módulo de análisis de superflujos se aprovecho el código ya escrito de fisher y la estructura interna del programa para facilitar el manejo de estructuras, el análisis de fallos y las pruebas de código. Las librerias de las que se hizo uso directo se enumeran a continuación y se describe el uso que se dio de cada una.
+\begin{itemize}[itemsep=0pt, topsep = 5pt]
+  \item Types y errors: Librerias básicas para la definición de macros que se usaron para que el módulo implementado fuera coherente con el resto del programa.
+  \item Log: Libreria para el manejo de la información de flujo del programa con diferentes niveles de profundidad que se podian seleccionar al ejecutar. Útil para distinguir en el log entre errores más graves y consideraciones solo usadas para la depuración de código.
+  \item Static mem: Libreria para la gesión de la memoria estática. Evitar el uso de reservas de memoria continuamente fue uno de los requisitos exigidos para el desarrollo del módulo. Se consideró que la gestión dinámica de memoria mediante las funciones estandar de C (malloc y free) era muy lenta dado la cantidad de estas reservas que habria que hacer. Es por esto que la gestión se dejo a una libreria ya desarrollada. 
+
+  Conceptualmente lo que se realiza es solo una reserva de memoria mediante la función malloc en la que, mediante la libreria 'static mem', se definía la cantidad total de entidades de un mismo tipo de estructura se van a reservar a lo largo de la ejecución del programa. Esto conlleva realizar un 'pool' diferente para cada tipo de estructura, pero resulta en una mejora en la eficiencia general del programa.
+  %Meter referencia para analizar mas detenidamente el uso de high performance y el rechazo de los mallocs, ademas de como se gestiona la memoria total que se le quiere dedicar al programa para realizar la reserva de memoria
+  \item IP y MAC utils: Estas librerias ya existentes fueron modificadas incluyendo nuevas funciones que eran necesarias para el uso de la libreria de lista de capas que se desarrolló. Las funciones incluidas eran comparadores, copiadores y conversores a cadenas de carácteres con una estructura definida. Estas funciones son las que se pasaban como punteros para que la libreria desarrollada fuera lo mas abstracta posible.
+  \item Packet parser: Libreria con las funciones necesarias para leer la información del paquete a nivel de byte y pasarla a una estructura manejable por el programa. También se amplió la funcionalidad de esta libreria introduciendo la extracción de la información a nivel MAC y la extracción de las opciones dentro de la capa TCP.
+  \item Tests: Fisher contaba con un sistema de tests para el código desarrollado totalmente automatizado en el Makefile. Se hizo uso de esta posibilidad para tener tests unitarios que aseguraran el funcionamiento básico de la libreria principal de lista por capas. Esto hizo que se pudiera comprobar con mucha facilidad el funcionamiento correcto del programa, así como localizar los errores con mayor facilidad.
+  %Hablar sobre el CI
+\end{itemize}
+
+\subsection{Modularización del programa desarrollado}
+En un comienzo se pensó que con el análisis de trazas pcap sería suficiente. Sin embargo, se consideró que sería útil que fuera posible realizar el análisis de superflujos a partir de otros ficheros de origen. El ejemplo más claro fue el de la salida de 'Procesa' un programa que lee y extrae información del tráfico de red y la presenta como registros por flujo. En este momento fue cuando la estructura y la relacion entre los diferentes módulos cobró forma y sentido. 
+
+\subsection{Libreria de ordenación de superflujos}
+
+Estructura de datos usada:
+\begin{itemize} 
+\item Nodos y aristas para la lista. 
+\item Información de la capa para las funciones de cada capa (punteros a funciones).
+\item Caminos para tener una estructura que comunica con el exterior y que sea la que se inserta
+\item Estructura general para la lista por capas.
+\end{itemize}
+
+Algoritmo para ordenar cada camino del superflujo:
+\begin{itemize}
+\item Caso camino repetido
+\item Caso camino huérfano
+\item Caso bifurcación
+\item Caso inserción estándar
+\end{itemize}
+
+\subsection{Libreria de flujos IP/MAC}
+Calculo de coeficientes para la reserva de los 'pools' de memoria
+
+Diferentes tipos de salida del programa
+
+Estructura de funciones
+
+\subsection{Libreria para entrada por trazas pcap}
+
+
+\subsection{Libreria para entrada por ficheros de 'Procesa'}
+
+
+
+\chapter{Conclusiones}
+\label{chap:Conclusiones}
+
+\backmatter
+\appendix
+
+\cleardoublepage
+
+\nocite{*}
+\bibliography{superflows}{}
+
+\cleardoublepage
+\printindex
+
+\end{document}
