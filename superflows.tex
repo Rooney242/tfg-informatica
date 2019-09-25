@@ -77,74 +77,145 @@
 \mainmatter
 
 \chapter{Introducción y motivación}
+%todo
 
 \section{Motivación}
+%todo
 
 \section{Objetivos}
+%todo
 
 \section{Estructura del documento}
-
+%todo
 
 \chapter{Estado del arte}
-
+%todo
 
 \chapter{Desarrollo e implementación}
 \label{chap:Desarrollo}
-
-\section{Estructura del módulo en C}
-El análisis de tráfico se realiza mediante un módulo escrito en C. El módulo forma parte de un programa más grande llamado fisher. Dicha aplicación se centraba en el análisis de trazas pcap mediante la definición de funciones que se encargan de la inicialización, preprocesado, análisis, postprocesado y salida de los registros de la traza pcap. Se han utilizado y modificado varias de las librerias de este programa, haciendose uso de facilidades como el log, utilidades para estructuras ip y mac o el gestor de memoria para generar 'pools' de memoria.
-
-\subsection{Librerias usadas pertenecientes a fisher}
-Durante el desarrollo del módulo de análisis de superflujos se aprovecho el código ya escrito de fisher y la estructura interna del programa para facilitar el manejo de estructuras, el análisis de fallos y las pruebas de código. Las librerias de las que se hizo uso directo se enumeran a continuación y se describe el uso que se dio de cada una.
-\begin{itemize}[itemsep=0pt, topsep = 5pt]
-  \item Types y errors: Librerias básicas para la definición de macros que se usaron para que el módulo implementado fuera coherente con el resto del programa.
-  \item Log: Libreria para el manejo de la información de flujo del programa con diferentes niveles de profundidad que se podian seleccionar al ejecutar. Útil para distinguir en el log entre errores más graves y consideraciones solo usadas para la depuración de código.
-  \item Static mem: Libreria para la gesión de la memoria estática. Evitar el uso de reservas de memoria continuamente fue uno de los requisitos exigidos para el desarrollo del módulo. Se consideró que la gestión dinámica de memoria mediante las funciones estandar de C (malloc y free) era muy lenta dado la cantidad de estas reservas que habria que hacer. Es por esto que la gestión se dejo a una libreria ya desarrollada. 
-
-  Conceptualmente lo que se realiza es solo una reserva de memoria mediante la función malloc en la que, mediante la libreria 'static mem', se definía la cantidad total de entidades de un mismo tipo de estructura se van a reservar a lo largo de la ejecución del programa. Esto conlleva realizar un 'pool' diferente para cada tipo de estructura, pero resulta en una mejora en la eficiencia general del programa.
-  %Meter referencia para analizar mas detenidamente el uso de high performance y el rechazo de los mallocs, ademas de como se gestiona la memoria total que se le quiere dedicar al programa para realizar la reserva de memoria
-  \item IP y MAC utils: Estas librerias ya existentes fueron modificadas incluyendo nuevas funciones que eran necesarias para el uso de la libreria de lista de capas que se desarrolló. Las funciones incluidas eran comparadores, copiadores y conversores a cadenas de carácteres con una estructura definida. Estas funciones son las que se pasaban como punteros para que la libreria desarrollada fuera lo mas abstracta posible.
-  \item Packet parser: Libreria con las funciones necesarias para leer la información del paquete a nivel de byte y pasarla a una estructura manejable por el programa. También se amplió la funcionalidad de esta libreria introduciendo la extracción de la información a nivel MAC y la extracción de las opciones dentro de la capa TCP.
-  \item Tests: Fisher contaba con un sistema de tests para el código desarrollado totalmente automatizado en el Makefile. Se hizo uso de esta posibilidad para tener tests unitarios que aseguraran el funcionamiento básico de la libreria principal de lista por capas. Esto hizo que se pudiera comprobar con mucha facilidad el funcionamiento correcto del programa, así como localizar los errores con mayor facilidad.
-  %Hablar sobre el CI
-\end{itemize}
-
-\subsection{Modularización del programa desarrollado}
+\section{Decisiones generales de desarrollo}
+%%todo: Expandir el sentido de porque se realizo la modularizacion
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%todo: Reorganizar parrafos%%%%%%%%%%%%
 En un comienzo se pensó que con el análisis de trazas pcap sería suficiente. Sin embargo, se consideró que sería útil que fuera posible realizar el análisis de superflujos a partir de otros ficheros de origen. El ejemplo más claro fue el de la salida de 'Procesa' un programa que lee y extrae información del tráfico de red y la presenta como registros por flujo. En este momento fue cuando la estructura y la relacion entre los diferentes módulos cobró forma y sentido. 
 
-\subsection{Libreria de ordenación de superflujos}
+El análisis de tráfico se realiza mediante un módulo escrito en C. El módulo forma parte de un programa más grande llamado fisher. Dicha aplicación se centraba en el análisis de trazas pcap mediante la definición de funciones que se encargan de la inicialización, preprocesado, análisis, postprocesado y salida de los registros de la traza pcap. Se han utilizado y modificado varias de las librerias de este programa, haciendose uso de facilidades como el log, utilidades para estructuras ip y mac o el gestor de memoria para generar pools de memoria.
 
-Estructura de datos usada:
-\begin{itemize} 
+El desarrollo del módulo completo de análisis de superflujos ha supuesto para fisher un aprovechamiento de su potencial y una ampliación de su funcionalidad. Como se ha especificado, fisher es un programa centrado en el procesamiento de trazas pcap; fue por esto que se considero la implementación del analizador de superflujos como una parte de este programa. Más adelante, se añadieron nuevas funcionalidades acordes a las necesidades específicas del proyecto, como fue el análisis de la salida de Procesa además de la de trazas pcap
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Librerias usadas pertenecientes a fisher}
+Durante el desarrollo del módulo de análisis de superflujos se aprovecho el código ya escrito de fisher y la estructura interna del programa para facilitar el manejo de estructuras, el análisis de fallos y las pruebas de código. Las librerias de las que se hizo uso directo se enumeran a continuación y se describe el uso que se dio de cada una:
+\subsection{Types y errors}
+Librerias básicas para la definición de macros que se usaron para que el módulo implementado fuera coherente con el resto del programa.
+\subsection{Log} 
+Libreria para el manejo de la información de flujo del programa con diferentes niveles de profundidad que se podian seleccionar al ejecutar. Útil para distinguir en el log entre errores más graves y consideraciones solo usadas para la depuración de código.
+\subsection{Static mem}
+Libreria para la gesión de la memoria estática. Evitar el uso de reservas de memoria continuamente fue uno de los requisitos exigidos para el desarrollo del módulo. Se consideró que la gestión dinámica de memoria mediante las funciones estandar de C (malloc y free) era muy lenta dado la cantidad de estas reservas que habria que hacer. Es por esto que la gestión se dejo a una libreria ya desarrollada. 
+
+Conceptualmente lo que se realiza es solo una reserva de memoria mediante la función malloc en la que, mediante la libreria 'static mem', se definía la cantidad total de entidades de un mismo tipo de estructura se van a reservar a lo largo de la ejecución del programa. Esto conlleva realizar un 'pool' diferente para cada tipo de estructura, pero resulta en una mejora en la eficiencia general del programa. 
+%todo: Meter referencia para analizar mas detenidamente el uso de high performance y el rechazo de los mallocs, ademas de como se gestiona la memoria total que se le quiere dedicar al programa para realizar la reserva de memoria
+\subsection{IP y MAC utils}
+Estas librerias ya existentes fueron modificadas incluyendo nuevas funciones que eran necesarias para el uso de la libreria de lista de capas que se desarrolló. Las funciones incluidas eran comparadores, copiadores y conversores a cadenas de carácteres con una estructura definida. Estas funciones son las que se pasaban como punteros para que la libreria desarrollada fuera lo mas abstracta posible.
+\subsection{Packet parser}
+Libreria con las funciones necesarias para leer la información del paquete a nivel de byte y pasarla a una estructura manejable por el programa. También se amplió la funcionalidad de esta libreria introduciendo la extracción de la información a nivel MAC y la extracción de las opciones dentro de la capa TCP.
+\subsection{Tests}
+Fisher contaba con un sistema de tests para el código desarrollado totalmente automatizado en el Makefile. Se hizo uso de esta posibilidad para tener tests unitarios que aseguraran el funcionamiento básico de la libreria principal de lista por capas. Esto hizo que se pudiera comprobar con mucha facilidad el funcionamiento correcto del programa, así como localizar los errores con mayor facilidad.
+%todo: Hablar sobre el CI
+
+
+\section{Módulo de ordenación de superflujos}
+
+%%todo: Descripcion general del módulo%%
+
+\subsection{Estructura de datos usada}
+%todo
+\begin{enumerate}[itemsep=0pt, topsep = 0pt]
 \item Nodos y aristas para la lista. 
 \item Información de la capa para las funciones de cada capa (punteros a funciones).
 \item Caminos para tener una estructura que comunica con el exterior y que sea la que se inserta
 \item Estructura general para la lista por capas.
-\end{itemize}
+\end{enumerate}
 
-Algoritmo para ordenar cada camino del superflujo:
-\begin{itemize}
+\subsection{Algoritmo para ordenar cada camino del superflujo}
+%todo
+\begin{enumerate}[itemsep=0pt, topsep = 0pt]
 \item Caso camino repetido
 \item Caso camino huérfano
 \item Caso bifurcación
 \item Caso inserción estándar
-\end{itemize}
-
-\subsection{Libreria de flujos IP/MAC}
-Calculo de coeficientes para la reserva de los 'pools' de memoria
-
-Diferentes tipos de salida del programa
-
-Estructura de funciones
-
-\subsection{Libreria para entrada por trazas pcap}
+\end{enumerate}
 
 
-\subsection{Libreria para entrada por ficheros de 'Procesa'}
 
+\section{Módulo de flujos IP/MAC}
+Este módulo utiliza directamente todas las estructuras y funcionalidades del módulo de ordenación de superflujos. Se realiza de manera abstracta para que se pueda seleccionar la estructura de entrada de donde se sacará la información para los nodos y aristas del grafo ordenado. En este módulo se fijan la inicializacion de las estructuras necesarias para el análisis de superflujos, la adición de nuevos caminos al grafo y la salida que genera el programa. Se comentan los aspectos más relevantes de este módulo.
 
+\subsection{Calculo de coeficientes para la reserva de los 'pools' de memoria}
+El programa esta capacitado para usar solo la memoria que se considere necesaria en el momento de la ejecución (por defecto es 32 MB) para las estructuras que se encargan de la ordenación de los superflujos. Como se ha comentado anteriormente, se tiene que definir un pool de memoria diferente para cada estructura y definir cuantas de estas estructuras se van a querer reservar concurrentemente como máximo. Las estructuras para las que es necesario definir un pool de memoria son: superflujos, nodos de grafo, aristas de grafo, elementos IP y elementos MAC. 
+
+\begin{table}[hbtp]
+	\centering
+	\small
+	\begin{tabular}{lcc}
+		\toprule \textbf{Estructura} & \textbf{Número de estructuras}  & \textbf{Número de estructuras por superflujo} \\ \midrule
+		Superflujos & s & 1 \\
+		Elementos IP & i & 2 \\
+		Elementos MAC & m & \alpha \\
+		Nodos & n & i + m = 2 + \alpha \\
+		Aristas & a & \beta \\ \bottomrule
+	\end{tabular}
+	\caption{Coeficientes de reserva de memoria ṕor cada superflujo}
+	\label{tab:Desarrollo:Coeficientes memoria}
+\end{table} 
+
+La manera de estimar el número de estructuras que reservar de cada tipo se basa en que por cada superflujo podemos estimar la cantidad de los demás elementos que necesitamos en promedio. Esto se traduce en unos coeficientes que se pueden ver en \fref{tab:Desarrollo:Coeficientes memoria}. Es claro que por cada superflujo habra 2 elementos IP (IP origen e IP destino) y que el número de nodos será la suma de los elementos IP y los elementos MAC. Existen los casos especiales de $\alpha$ y $\beta$.
+%%Explicar como se escogen los coeficientes de ratio de macs y aristas por superflujo
+
+Conociendo el tamaño de memoria del que disponemos para nuestras estructuras así como el tamaño de cada una (denotado como $x_{tam}$) podemos conocer cual es la manera óptima de repartir la memoria. Utilizando los superflujos como unidad de memoria (denotada como $u$) podemos obtener la cantidad de unidades de memoria que podemos reservar de esta manera.
+
+\begin{array}{lcl}
+	s \cdot s_{tam} + i \cdot i_{tam} + m \cdot m_{tam} + n \cdot n_{tam} + a \cdot a_{tam} & = & memoria\\
+	u \cdot s_{tam} + 2u \cdot i_{tam} + \alpha u \cdot m_{tam} + (2u+\alpha) \cdot n_{tam} + \beta \cdot a_{tam} & = & memoria
+\end{array}
+
+\begin{array}{lcl}
+	u & = & \frac{memoria}{s_{tam} + 2 \cdot i_{tam} + \alpha \cdot m_{tam} + (2u+\alpha) \cdot n_{tam} + \beta \cdot a_{tam}}
+\end{array}
+
+Y de esta manera podemos calcular cuantas estructuras reservar de cada tipo en funcion de la unidad de memoria elegida, que en este caso es el numero de superflujos.
+
+\begin{cases}
+	s = u\\ 
+	i = 2u\\ 
+	m = \alpha u\\
+	n = (2+\alpha)u\\
+	a = \beta u\\
+\end{cases}
+
+\subsection{Diferentes tipos de salida del programa}
+%todo
+
+\subsection{Estructura de funciones}
+%todo
+
+\subsection{Identificación de los elementos de red}
+%todo
+\begin{enumerate}[itemsep=0pt, topsep = 0pt]
+\item Router NAT
+\item Firewall
+\item Balanceador de carga
+\end{enumerate}
+
+\section{Módulo para entrada por trazas pcap}
+%%todo: Descripcion general del módulo%%
+
+\section{Módulo para entrada por ficheros de 'Procesa'}
+%%todo: Descripcion general del módulo%%
 
 \chapter{Conclusiones}
+%%todo
 \label{chap:Conclusiones}
 
 \backmatter
