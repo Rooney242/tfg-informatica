@@ -1,0 +1,4 @@
+Nat detection:
+-TTL decrement (https://sflow.org/detectNAT/)
+-IP ID
+-OS fingerprint

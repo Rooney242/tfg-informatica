@@ -149,7 +149,7 @@ Fisher contaba con un sistema de tests para el código desarrollado totalmente a
 
 
 
-\section{Módulo de flujos IP/MAC}
+\section{Módulo de superflujos IP/MAC}
 Este módulo utiliza directamente todas las estructuras y funcionalidades del módulo de ordenación de superflujos. Se realiza de manera abstracta para que se pueda seleccionar la estructura de entrada de donde se sacará la información para los nodos y aristas del grafo ordenado. En este módulo se fijan la inicializacion de las estructuras necesarias para el análisis de superflujos, la adición de nuevos caminos al grafo y la salida que genera el programa. Se comentan los aspectos más relevantes de este módulo.
 
 \subsection{Calculo de coeficientes para la reserva de los 'pools' de memoria}
@@ -210,6 +210,15 @@ Y de esta manera podemos calcular cuantas estructuras reservar de cada tipo en f
 
 \section{Módulo para entrada por trazas pcap}
 %%todo: Descripcion general del módulo%%
+El módulo para el análisis de trazas pcap tiene una estructura basada en el sistema de punteros a funciones de fisher. En dicho programa se puede hacer un procesado de una trazas únicamente definiendo una serie de funciones. Este módulo, además, utiliza las funciones del módulo de superflujos IP/MAC, por lo que se puede entender como un puetne entre la entrada pcap y la estructura más abstracta del análisis IP/MAC. La funcionalidad que se le da a cada una de las funciones que fisher utiliza se describe a continuación:
+\begin{itemlist}
+	\item{Inicialización de variables}
+	\item{Preprocesado}
+	\item{Análisis de paquete}
+	\item{Postprocesado}
+	\item{Salida del análisis}
+	\item{Destruccion de las estructuras}
+\end{itemlist}
 
 \section{Módulo para entrada por ficheros de 'Procesa'}
 %%todo: Descripcion general del módulo%%
