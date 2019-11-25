@@ -122,32 +122,53 @@ Estas librerias ya existentes fueron modificadas incluyendo nuevas funciones que
 \subsection{Packet parser}
 Libreria con las funciones necesarias para leer la información del paquete a nivel de byte y pasarla a una estructura manejable por el programa. También se amplió la funcionalidad de esta libreria introduciendo la extracción de la información a nivel MAC y la extracción de las opciones dentro de la capa TCP.
 \subsection{Tests}
-Fisher contaba con un sistema de tests para el código desarrollado totalmente automatizado en el Makefile. Se hizo uso de esta posibilidad para tener tests unitarios que aseguraran el funcionamiento básico de la libreria principal de lista por capas. Esto hizo que se pudiera comprobar con mucha facilidad el funcionamiento correcto del programa, así como localizar los errores con mayor facilidad.
+Fisher contaba con un sistema de tests para el código desarrollado totalmente automatizado en el Makefile. Se hizo uso de esta posibilidad para tener tests unitarios que aseguraran el funcionamiento básico de la librería principal de lista por capas. Esto hizo que se pudiera comprobar con mucha facilidad el funcionamiento correcto del programa, así como localizar los errores con mayor facilidad.
 %todo: Hablar sobre el CI
 
 
 \section{Módulo de ordenación de superflujos}
 
-%%todo: Descripcion general del módulo%%
+%%todo: Descripcion general del módulo
+Este módulo encargará de la inserción de nuevos elementos a los superflujos, manteniendo el orden, respetando la información perteneciente a cada capa (MAC o IP) y actualizando la información tanto de nodos como de aristas. Además, tendrá en cuenta los atributos de orden que se le indiquen para inferir el lugar de los nodos que no puedan ser reconocidos directamente. Guarda también información de nodos que no se puedan insertar por sus características, para que en otro momento de la ejecución se puedan volver a intentar insertar.
 
 \subsection{Estructura de datos usada}
+A un nivel abstracto, este módulo representa un grafo orientado con un único nodo inicial y un único nodo final. Cada nodo puede pertenecer a una de las capas que se indican al inicializar la estructura y puede comunicarse con nodos de su misma capa o de las adyacentes. En el caso de superflujos las capas serán IP y MAC. Para la implementación de este módulo se han creado 5 estructuras que se relacionan entre ellas. Se describen a continuación:
+
+\begin{itemize}
+    \item Lista: Es la estructura general donde se almacena la información de la lista. En su inicialización se debe indicar: los \textit{pools} de memoria para los nodos y las aristas, la información de cada capa, su orden y el número de estas, el número de atributos de orden y las funciones para actualizarlos y usarlos para ordenar nodos y la función que pasa de la estructura de donde se sacará la información de cada camino a la estructura de camino en sí. Una vez definida e inicializada una estructura de lista de capas, se puede insertar caminos estandarizados con la función antes mencionada (\textit{parse\_to\_path}) simplemente llamando a la función de añadir caminos.
+    Aparte de esto guarda información sobre los caminos huérfanos y el inicio del grafo.
+    (\textit{layer\_list\_add\_path}).
+    \item Información de capa: Se guarda la información relacionada con cada capa. Así, cada nodo únicamente tiene un puntero a la información y a la estructura de información de su capa. La información que se almacena es: funciones para comparar, copiar y pasar a cadena de caracteres elementos de la capa, así como el \textit{pool} de memoria.
+    \item Nodos de la lista: Se almacena información sobre el elemento, los atributos de orden de ese nodo y las siguientes aristas que conectan este nodo con el resto del grafo.
+    \item Aristas: Guardan la información de las aristas (vlans, paquetes, bytes, rtt) que se va actualizando al añadir nuevos caminos y el tipo de conexión que establece entre nodos (real, virtual o cambio de capa).
+    \item Caminos: Esta estructura es el enlace entre estructuras exteriores al módulo y las que pertenecen. Es necesaria para mantener la cohesión y funcionamiento del resto de funcionalidades. Como se ha indicado antes, se debe de indicar una función que rellene la información necesaria de esta estructura en función de los datos que se consideren convenientes.
+\end{itemize}
+
 %todo
-\begin{enumerate}[itemsep=0pt, topsep = 0pt]
-\item Nodos y aristas para la lista. 
-\item Información de la capa para las funciones de cada capa (punteros a funciones).
-\item Caminos para tener una estructura que comunica con el exterior y que sea la que se inserta
-\item Estructura general para la lista por capas.
-\end{enumerate}
+%\begin{enumerate}[itemsep=0pt, topsep = 0pt]
+%\item Nodos y aristas para la lista. 
+%\item Información de la capa para las funciones de cada capa (punteros a funciones).
+%\item Caminos para tener una estructura que comunica con el exterior y que sea la que se inserta
+%\item Estructura general para la lista por capas.
+%\end{enumerate}
 
 \subsection{Algoritmo para ordenar cada camino del superflujo}
-%todo
-\begin{enumerate}[itemsep=0pt, topsep = 0pt]
-\item Caso camino repetido
-\item Caso camino huérfano
-\item Caso bifurcación
-\item Caso inserción estándar
-\end{enumerate}
+El grafo ordenado representa los diferentes caminos que puede seguir un paquete para llegar desde el nodo de inicio hasta el nodo final. Dependiendo de la red, el número de capas y la longitud de los caminos vistos la complejidad de estos grafos puede variar. En el caso más general intervendrán únicamente dos capas (IP y MAC) y la longitud de los caminos es de 4 (Nodo IP -> Nodo MAC -> Nodo MAC -> Nodo IP). Asumiendo esto nos esrvirá de ejemplo para la explicación del algoritmo de inserción y ordenación de caminos.
 
+Partimos de una lista por capas inicializada, en la que aún no se han insertado caminos. Por cada información de camino que nos llegue, se llamará a la función \textit{parse\_to\_path} para pasar a una estructura estándar que entienda la función \textit{layer\_list\_add\_path}. Una vez dentro de esta función, miramos que nodos del nuevo camino se encuentran en el grafo. Cobran especial relevancia el último nodo del nuevo camino que ya esté en el grafo antes de encontrar un nodo que no esta en el grafo y el primer nodo del nuevo camino que ya está en el grafo después de encontrar nodos  que no están en el grafo. Entre estos dos se encontrará la información nueva que podemos introducir en el grafo.
+
+Tenemos cuatro escenarios en función de los valores de estas dos variables:
+\begin{itemize}
+    \item Si todos los nodos del nuevo camino ya se encontraban en el grafo tenemos un CAMINO REPETIDO. En este caso actualizamos la información de los nodos y aristas repetidos.
+    \item Si los únicos nodos del nuevo camino que se encuentran en el grafo son el primero y el último, entonces tenemos un CAMINO HUÉRFANO. En este caso intentamos ordenarlo en base a los atributos de orden.
+    \begin{itemize}
+        \item Si conseguimos ordenarlo, lo insertamos en el grafo actualizamos la información de los nodos y aristas repetidas.
+        \item Si no se puede ordenar, lo añadimos a la lista de caminos huérfanos.
+    \end{itemize}
+    \item Si los nodos del nuevo camino que conocemos no son adyacentes en el grafo tenemos una BIFURCACIÓN. Añadimos los nuevos nodos al grafo y actualizamos la información de los nodos y aristas repetidas.
+    \item Si no es ninguno de los casos anteriores tenemos una INSERCIÓN NORMAL. Insertamos los nuevos nodos en el grafo y actualizamos la información de los nodos y aristas repetidas.
+\end{itemize}
+Tras cada inserción exitosa, se realiza una pasada por los caminos huérfanos acumulados para ver si es posible ordenarlos ahora con la nueva información recabada.
 
 
 \section{Módulo de superflujos IP/MAC}
@@ -163,37 +184,39 @@ El programa esta capacitado para usar solo la memoria que se considere necesaria
 		\toprule \textbf{Estructura} & \textbf{Número de estructuras}  & \textbf{Número de estructuras por superflujo} \\ \midrule
 		Superflujos & s & 1 \\
 		Elementos IP & i & 2 \\
-		Elementos MAC & m & \alpha \\
-		Nodos & n & i + m = 2 + \alpha \\
-		Aristas & a & \beta \\ \bottomrule
+		Elementos MAC & m & $\alpha$ \\
+		Nodos & n & i + m = 2 + $\alpha$ \\
+		Aristas & a & $\beta$ = (n - 1)+(n - 2)p \\ \bottomrule
 	\end{tabular}
-	\caption{Coeficientes de reserva de memoria ṕor cada superflujo}
+	\caption{Coeficientes de reserva de memoria por cada superflujo}
 	\label{tab:Desarrollo:Coeficientes memoria}
-\end{table} 
+\end{table}
 
 La manera de estimar el número de estructuras que reservar de cada tipo se basa en que por cada superflujo podemos estimar la cantidad de los demás elementos que necesitamos en promedio. Esto se traduce en unos coeficientes que se pueden ver en \fref{tab:Desarrollo:Coeficientes memoria}. Es claro que por cada superflujo habra 2 elementos IP (IP origen e IP destino) y que el número de nodos será la suma de los elementos IP y los elementos MAC. Existen los casos especiales de $\alpha$ y $\beta$.
-%%Explicar como se escogen los coeficientes de ratio de macs y aristas por superflujo
+
+Para estos dos casos se ha recurrido a la observación en casos experimentales. Los parámetros que hay que ajustar son el ratio de MACs que hay por cada superflujo y la probabilidad de que haya una bifurcación. Estos parámetros son variables y se pueden ajustar en función de las características de los datos que se vayan a analizar.
+%%Incluir datos para verificar que se cumplen estos coeficientes
 
 Conociendo el tamaño de memoria del que disponemos para nuestras estructuras así como el tamaño de cada una (denotado como $x_{tam}$) podemos conocer cual es la manera óptima de repartir la memoria. Utilizando los superflujos como unidad de memoria (denotada como $u$) podemos obtener la cantidad de unidades de memoria que podemos reservar de esta manera.
 
-\begin{array}{lcl}
+$\begin{array}{lcl}
 	s \cdot s_{tam} + i \cdot i_{tam} + m \cdot m_{tam} + n \cdot n_{tam} + a \cdot a_{tam} & = & memoria\\
 	u \cdot s_{tam} + 2u \cdot i_{tam} + \alpha u \cdot m_{tam} + (2u+\alpha) \cdot n_{tam} + \beta \cdot a_{tam} & = & memoria
-\end{array}
+\end{array}$
 
-\begin{array}{lcl}
+$\begin{array}{lcl}
 	u & = & \frac{memoria}{s_{tam} + 2 \cdot i_{tam} + \alpha \cdot m_{tam} + (2u+\alpha) \cdot n_{tam} + \beta \cdot a_{tam}}
-\end{array}
+\end{array}$
 
 Y de esta manera podemos calcular cuantas estructuras reservar de cada tipo en funcion de la unidad de memoria elegida, que en este caso es el numero de superflujos.
 
-\begin{cases}
+$\begin{cases}
 	s = u\\ 
 	i = 2u\\ 
 	m = \alpha u\\
 	n = (2+\alpha)u\\
-	a = \beta u\\
-\end{cases}
+	a = \beta u
+\end{cases}$
 
 \subsection{Diferentes tipos de salida del programa}
 %todo
@@ -210,19 +233,19 @@ Y de esta manera podemos calcular cuantas estructuras reservar de cada tipo en f
 \end{enumerate}
 
 \section{Módulo para entrada por trazas pcap}
-%%todo: Descripcion general del módulo%%
-El módulo para el análisis de trazas pcap tiene una estructura basada en el sistema de punteros a funciones de fisher. En dicho programa se puede hacer un procesado de una trazas únicamente definiendo una serie de funciones. Este módulo, además, utiliza las funciones del módulo de superflujos IP/MAC, por lo que se puede entender como un puetne entre la entrada pcap y la estructura más abstracta del análisis IP/MAC. La funcionalidad que se le da a cada una de las funciones que fisher utiliza se describe a continuación:
-\begin{itemlist}
+%%todo: Descripción general del módulo%%
+El módulo para el análisis de trazas pcap tiene una estructura basada en el sistema de punteros a funciones de fisher. En dicho programa se puede hacer un procesado de una trazas únicamente definiendo una serie de funciones. Este módulo, además, utiliza las funciones del módulo de superflujos IP/MAC, por lo que se puede entender como un puente entre la entrada pcap y la estructura más abstracta del análisis IP/MAC. La funcionalidad que se le da a cada una de las funciones que fisher utiliza se describe a continuación:
+\begin{itemize}
 	\item{Inicialización de variables}
 	\item{Preprocesado}
 	\item{Análisis de paquete}
-	\item{Postprocesado}
+	\item{Post-procesado}
 	\item{Salida del análisis}
-	\item{Destruccion de las estructuras}
-\end{itemlist}
+	\item{Distracción de las estructuras}
+\end{itemize}
 
 \section{Módulo para entrada por ficheros de 'Procesa'}
-%%todo: Descripcion general del módulo%%
+%%todo: Descripción general del módulo%%
 
 \chapter{Conclusiones}
 %%todo
