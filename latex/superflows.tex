@@ -9,31 +9,32 @@
 \usepackage{enumitem}
 \usepackage{xfrac}
 \usepackage{multirow}
-
 \usepackage{tikz}
 
-\usetikzlibrary{arrows}
-\usetikzlibrary{patterns}
-\usetikzlibrary{intersections}
-\usetikzlibrary{calc}
-\usetikzlibrary{fadings}
+%\usetikzlibrary{arrows}
+%\usetikzlibrary{patterns}
+%\usetikzlibrary{intersections}
+%\usetikzlibrary{calc}
+%\usetikzlibrary{fadings}
 
-\definecolor{palette1}{HTML}{1B9E77}
-\definecolor{palette2}{HTML}{D95F02}
-\definecolor{palette3}{HTML}{7570B3}
-\definecolor{palette4}{HTML}{E7298A}
-\definecolor{palette5}{HTML}{66A61E}
-\definecolor{palette6}{HTML}{E6AB02}
-\definecolor{palette7}{HTML}{A6761D}
-\definecolor{palette8}{HTML}{666666}
+%\definecolor{palette1}{HTML}{1B9E77}
+%\definecolor{palette2}{HTML}{D95F02}
+%\definecolor{palette3}{HTML}{7570B3}
+%\definecolor{palette4}{HTML}{E7298A}
+%\definecolor{palette5}{HTML}{66A61E}
+%\definecolor{palette6}{HTML}{E6AB02}
+%\definecolor{palette7}{HTML}{A6761D}
+%\definecolor{palette8}{HTML}{666666}
 
-\tikzstyle{vnlin}=[rectangle, inner sep=0pt, minimum height=6pt, minimum width=0pt, draw, fill=black]
-\tikzstyle{hnlin}=[rectangle, inner sep=0pt, minimum height=0pt, minimum width=6pt, draw, fill=black]
+\tikzstyle{IpNode}=[rectangle, draw=black, thick, inner sep=12pt]
+\tikzstyle{MacNode}=[circle, draw=black, thick, inner sep=7pt]
+\tikzstyle{OpenEdge}=[->, ultra thick]
+\tikzstyle{CloseEdge}=[->, red, ultra thick]
 \tikzset{>=latex}
 
 \bibliographystyle{abbrv}
 
-\title[spa]{Reconstrucción de caminos}
+\title[spa]{Reconstrucción de caminos y deteción de dispositivos}
 \title[eng]{Path reconstruction}
 \author{David Moreno Maldonado}
 \tutor{Guillermo Julián Moreno}
@@ -78,57 +79,132 @@
 \mainmatter
 
 \chapter{Introducción y motivación}
-%todo
 
 \section{Motivación}
-%todo
 
 \section{Objetivos}
-%todo
 
 \section{Estructura del documento}
-%todo
+
 
 \chapter{Estado del arte}
-%todo
+A lo largo de este capítulo se expondrán diferentes herramientas actuales que se utilizan para el análisis de redes con especial atención al análisis de flujos IP, así como métodos para la detección de distintos tipos de dispositivos.
 
-\chapter{Desarrollo e implementación}
+\section{Herramientas de análisis de redes pasivas}
+El análisis de redes desde el punto de vista de la reconstrucción del flujo IP de los paquetes y la detección de dispositivos intermedios de una manera pasiva se basa en la utilización de trazas pcap ya capturadas. Estas se abren con diferentes programas que nos aportan información relevante sobre los paquetes y los hosts que se conectan. Se presentan ahora algunas de las más populares y más interesantes que se han encontrado \cite{Gandhi2014} \cite{bestNetAna}
+
+\subsection{Wireshark}
+\subsection{Netflow}
+\subsection{Capsa}
+\subsection{Etherape}
+\subsection{GlassWire}
+
+\section{Herramientas de análisis de redes activas}
+Aunque no es muy relevante para la realización de este trabajo, cabe mencionar que existen maneras de analizar redes de una manera activa. Esto es especialmente útil para la reconstrucción de los caminos y la detección de dispositivos. Obviamente, esto será mucho más intrusivo que el análisis pasivo, pero se tiene un mayor control de los datos obtenidos y el procesado posterior es menor. Algunos ejemplos son los siguientes.
+
+\subsection{OpenFlow (protocolo)}
+
+\section{Métodos de detección de dispositivos}
+%Esta seccion variara en funcion de los dispositivos que se detecten finalmente
+\subsection{Detección de routers NAT}
+\cite{Krmicek}
+\subsection{Detección de firewalls}
+\subsection{Detección de balanceadores de carga}
+
+\section{Conclusiones del capítulo}
+
+\chapter{Análisis del problema}
+\label{chap:Analisis}
+A lo largo de este capítulo se expondrán los dos grandes problemas que se abordan durante la implementación del programa, así como el razonamiento que se siguió para hallar sus soluciones. 
+
+\section{Reconstrucción de caminos}
+%Especificar mejor que no se presupone que los paquetes son recibidos en orden salvo cuando no hay mas remedio
+El primer problema que afrontamos es el de inferir el camino que realizan los paquetes de un determinado flujo IP en base a la observación de los saltos individuales. Dada la naturaleza de una red en concreto este proceso puede ser complicado debido a la existencia de dispositivos intermedios (que más adelante pretendemos detectar) o bifurcaciones en los caminos que llevan de una IP a otra. Esto se puede dar por la caida temporal de enlaces entre nodos de la red o simplemente por las características de la red en sí.
+
+\subsection{Planteamiento del problema y caso inicial}
+Para poder plantearnos una solución, tenemos primero que establecer las bases del problema. Dadas dos nodos IPs (IPA e IPB) tenemos una visión parcial o total de los saltos que se hacen entre estos dos nodos y que les permiten comunicarse. En general, la información que recibiremos será con la forma de un paquete estandar, es decir, con una IP origen, MAC origen, MAC destino e IP destino. Vamos a recurrir a grafos para visualizar mejor el problema y enfocar la resolución del camino. Dado un par de IPs podemos expresar el flujo de información que hay entre ellas mediante un grafo unidireccional. Cada IP y cada MAC se representan como un nodo (rectangulares y circulares, respectivamente) y las aristas orientadas representan la conexión entre dos nodos. Diferenciamos, además, entre dos tipos de aristas: las cerradas (en rojo), entre las que ya no se podrán insertar más nodos, y las abiertas (en negro), entre las que aún se pueden insertar más nodos. En realidad, para cada flujo en específico no nos es importante la IP origen e IP destino, ya que al estar reconstruyendo flujos IP estas van a ser constantes. Por lo tanto, sin perdida de generalidad, podemos asumir que en cada paquete la información que nos interesa es la de MAC origen y MAC destino, y a partir de ahí razonaremos que nodos y aristas se deben de insertar en el grafo. 
+
+Una vez que vemos el primer paquete entre IPA e IPB con una MAC origen (MAC1) y una MAC destino (MAC2) asumimos que ese salto existe físicamente y que no puede existir ningún otro salto intermedio, ya que dado el caso lo habríamos visto. Marcamos ese salto como cerrado. De esta manera, cada vez que veamos un nuevo salto entre IPA e IPB expandirá el flujo en cualquiera de las dos aristas restantes con nuevos nodos, pero estos nunca se interpondrán entre MAC1 y MAC2. Este caso queda representado en el grafo de la \fref{fig:Analisis:BasicFlow}
+
+\begin{figure}
+\centering
+\input{tikz/basic_flow.tex}
+\caption[Flujo básico entre dos IPs]{Flujo básico entre IPA e IPB}
+\label{fig:Analisis:BasicFlow}
+\end{figure}
+
+Este escenario nos deja con varias posibilidades que tenemos que tener en cuenta de manera especial: inserciones estándar de nuevos nodos, bifurcaciones y caminos huérfanos. De aquí en adelante se supondrá siempre el grafo en la situación de \fref{fig:Analisis:BasicFlow} como situación inicial. Decidiremos el caso en el que nos encontramos según la relación de las MACs origen y destino del nuevo paquete con las MACs ya introducidas en el grafo.
+
+\subsection{Inserción estándar}
+Con una inserción estándar nos referimos al caso en el que simplemente estamos añadiendo información al grafo en alguna de las aristas abiertas. Este es el caso en el que el nuevo paquete cumple una de estas dos condiciones:
+\begin{itemize}
+    \item La MAC origen coincide con la última MAC del grafo. Suponiendo la situación inicial y la llegada de un paquete con MAC origen igual a MAC2 y MAC destino igual a MAC3 el resultado es el del grafo de la \fref{fig:Analisis:AddingLast}.
+    \item La MAC destino coincide con la primera MAC del grafo. Suponiendo la situación inicial y la llegada de un paquete con MAC origen igual a MAC0 y MAC destino igual a MAC1 el resultado es el del grafo de la \fref{fig:Analisis:AddingFirst}.
+\end{itemize}
+
+\begin{figure}
+\centering
+\input{latex/tikz/adding_last.tex}
+\caption[Resultado de añadir MAC3 al final del flujo]{Añadimos una nueva MAC al final del flujo}
+\label{fig:Analisis:AddingLast}
+\end{figure}
+
+\begin{figure}
+\centering
+\input{latex/tikz/adding_first.tex}
+\caption[Resultado de añadir MAC0 al comienzo del flujo]{Añadimos una nueva MAC al comienzo del flujo}
+\label{fig:Analisis:AddingFirst}
+\end{figure}
+
+En ambos casos únicamente se añade información de un nodo y se cierra la arista correspondiente al salto físico que hemos visto. Utilizando esta operación de inserción básica podemos seguir añadiendo nodos MAC al flujo indefinidamente.
+
+\subsection{Bifurcación}
+
+\subsection{Camino huérfano}
+
+\subsection{Relación entre el número de nodos y el número de aristas}
+
+\section{Identificación de elementos en el superflujo}
+
+\chapter{Estructura y desarrollo}
 \label{chap:Desarrollo}
 \section{Decisiones generales de desarrollo}
-%%todo: Expandir el sentido de porque se realizo la modularizacion
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%todo: Reorganizar parrafos%%%%%%%%%%%%
-En un comienzo se pensó que con el análisis de trazas pcap sería suficiente. Sin embargo, se consideró que sería útil que fuera posible realizar el análisis de superflujos a partir de otros ficheros de origen. El ejemplo más claro fue el de la salida de 'Procesa' un programa que lee y extrae información del tráfico de red y la presenta como registros por flujo. En este momento fue cuando la estructura y la relacion entre los diferentes módulos cobró forma y sentido. 
+La primera parte del desarrollo consistió en implementar la parte de reconstrucción de caminos. Esto se realizó como parte de un programa más amplio llamado fisher, programa escrito en C. La decisión de utilizar este lenguaje es por las características del proyecto, ya que se analizarán archivos de un gran tamaño. Lo que nos permite C es gestionar la memoria a un nivel más bajo, con lo que podemos realizar los mismos procesos que con otros lenguajes de más alto nivel, pero con una mayor eficiencia. Ya en la descripción de la motivación del proyecto se mencionó que uno de los problemas que se encontró en el anterior intento de desarrollar un programa similar en Python fue la lentitud del mismo. Se pretende que con este cambio en el lenguaje de desarrollo se lleguen a las velocidades esperadas en el análisis así como a una mayor eficiencia en memoria.
 
-El análisis de tráfico se realiza mediante un módulo escrito en C. El módulo forma parte de un programa más grande llamado fisher. Dicha aplicación se centraba en el análisis de trazas pcap mediante la definición de funciones que se encargan de la inicialización, preprocesado, análisis, postprocesado y salida de los registros de la traza pcap. Se han utilizado y modificado varias de las librerias de este programa, haciendose uso de facilidades como el log, utilidades para estructuras ip y mac o el gestor de memoria para generar pools de memoria.
+El análisis de tráfico forma parte de un programa más grande llamado fisher. Dicha aplicación se centraba en el análisis de trazas pcap mediante la definición de funciones que se encargan de la inicialización, preprocesado, análisis, postprocesado y salida de los registros de la traza pcap. Se disponen de diferentes lectores de trazas (NDLeeTrazas, lpcap, mmpcap y hpcap), en general se usará NDLeeTrazas por defecto. Se han utilizado y modificado varias de las librerias de este programa, haciendose uso de facilidades como el log, utilidades para estructuras ip y mac, el gestor de memoria para generar pools de memoria o la estructura de tests ya desarrollada para garantizar la funcionalidad del código escrito.
 
-El desarrollo del módulo completo de análisis de superflujos ha supuesto para fisher un aprovechamiento de su potencial y una ampliación de su funcionalidad. Como se ha especificado, fisher es un programa centrado en el procesamiento de trazas pcap; fue por esto que se considero la implementación del analizador de superflujos como una parte de este programa. Más adelante, se añadieron nuevas funcionalidades acordes a las necesidades específicas del proyecto, como fue el análisis de la salida de Procesa además de la de trazas pcap
+En un comienzo se pensó que con el análisis de trazas pcap sería suficiente. Sin embargo, se consideró que sería útil que fuera posible realizar el análisis de superflujos a partir de otros ficheros de origen. No siempre se iba a disponer de la traza pcap en bruto y la librería tiene la flexibilidad suficiente para adaptarse a diferentes tipos de entrada que le aporten más o menos información. El ejemplo más claro fue el de la salida de 'Procesa' un programa que lee y extrae información del tráfico de red y la presenta como registros por flujo. El programa ha quedado modularizado para que la incorporación de nuevos tipos de archivos de entrada sea cómoda y rápida, es decir, fácilmente escalable. 
+
+El desarrollo del módulo completo de análisis de superflujos ha supuesto para fisher un aprovechamiento de su potencial y una ampliación de su funcionalidad. Como se ha especificado, fisher es un programa centrado en el procesamiento de trazas pcap; fue por esto que se considero la implementación del analizador de superflujos como una parte de este programa. Más adelante, se añadieron nuevas funcionalidades acordes a las necesidades específicas del proyecto, como fue el análisis de la salida de Procesa además de la de trazas pcap.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Librerias usadas pertenecientes a fisher}
+%Igual en esta sección se añade información demasiado específica de las librerias usadas que se puede eliminar. Por el momento queda aquí escrita.
 Durante el desarrollo del módulo de análisis de superflujos se aprovecho el código ya escrito de fisher y la estructura interna del programa para facilitar el manejo de estructuras, el análisis de fallos y las pruebas de código. Las librerias de las que se hizo uso directo se enumeran a continuación y se describe el uso que se dio de cada una:
 \subsection{Types y errors}
 Librerias básicas para la definición de macros que se usaron para que el módulo implementado fuera coherente con el resto del programa.
 \subsection{Log} 
-Libreria para el manejo de la información de flujo del programa con diferentes niveles de profundidad que se podian seleccionar al ejecutar. Útil para distinguir en el log entre errores más graves y consideraciones solo usadas para la depuración de código.
+Libreria para el manejo de la información de flujo del programa con diferentes niveles de profundidad que se pueden seleccionar al ejecutar. Útil para distinguir en el log entre errores más graves y consideraciones solo usadas para la depuración de código.
 \subsection{Static mem}
 Libreria para la gesión de la memoria estática. Evitar el uso de reservas de memoria continuamente fue uno de los requisitos exigidos para el desarrollo del módulo. Se consideró que la gestión dinámica de memoria mediante las funciones estandar de C (malloc y free) era muy lenta dado la cantidad de estas reservas que habria que hacer. Es por esto que la gestión se dejo a una libreria ya desarrollada. 
 
 Conceptualmente lo que se realiza es solo una reserva de memoria mediante la función malloc en la que, mediante la libreria 'static mem', se definía la cantidad total de entidades de un mismo tipo de estructura se van a reservar a lo largo de la ejecución del programa. Esto conlleva realizar un 'pool' diferente para cada tipo de estructura, pero resulta en una mejora en la eficiencia general del programa. 
 %todo: Meter referencia para analizar mas detenidamente el uso de high performance y el rechazo de los mallocs, ademas de como se gestiona la memoria total que se le quiere dedicar al programa para realizar la reserva de memoria
 \subsection{IP y MAC utils}
-Estas librerias ya existentes fueron modificadas incluyendo nuevas funciones que eran necesarias para el uso de la libreria de lista de capas que se desarrolló. Las funciones incluidas eran comparadores, copiadores y conversores a cadenas de carácteres con una estructura definida. Estas funciones son las que se pasaban como punteros para que la libreria desarrollada fuera lo mas abstracta posible.
+Estas librerias ya existentes fueron modificadas incluyendo nuevas funciones que eran necesarias para el uso de la libreria de lista de capas que se desarrolló. Las funciones incluidas eran comparadores, copiadores y conversores a cadenas de carácteres con una estructura definida. Estas funciones son las que se pasaban como punteros para que la libreria desarrollada fuera lo mas abstracta posible y de las que hacen uso también las estructuras de listas y diccionarios.
 \subsection{Packet parser}
 Libreria con las funciones necesarias para leer la información del paquete a nivel de byte y pasarla a una estructura manejable por el programa. También se amplió la funcionalidad de esta libreria introduciendo la extracción de la información a nivel MAC y la extracción de las opciones dentro de la capa TCP.
 \subsection{Tests}
-Fisher contaba con un sistema de tests para el código desarrollado totalmente automatizado en el Makefile. Se hizo uso de esta posibilidad para tener tests unitarios que aseguraran el funcionamiento básico de la librería principal de lista por capas. Esto hizo que se pudiera comprobar con mucha facilidad el funcionamiento correcto del programa, así como localizar los errores con mayor facilidad.
+Fisher contaba con un sistema de tests para el código desarrollado totalmente automatizado en el Makefile. Se hizo uso de esta posibilidad para tener tests unitarios que aseguraran el funcionamiento básico de la librería principal de lista por capas y, más adelante, del análisis de trazas y la detección de dispositivos. Esto hizo que se pudiera comprobar con mucha facilidad el funcionamiento correcto del programa, así como localizar los errores con mayor facilidad.
 %todo: Hablar sobre el CI
+%todo: Hablar aqui sobre los tests desarrollados o incluir un apartado en específico??
 
+\subsection{Estructuras de listas y diccionarios}
+Fisher ya contaba con estructuras más complejas implementadas. En concreto, se hizo uso de las listas y de los diccionarios simples y de dos claves. En este último caso, se realizaron modificaciones para evitar el uso excesivo de mallocs en el postprocesado y aprovechar una vez más la libreria static\_mem.
 
 \section{Módulo de ordenación de superflujos}
 
-%%todo: Descripcion general del módulo
 Este módulo encargará de la inserción de nuevos elementos a los superflujos, manteniendo el orden, respetando la información perteneciente a cada capa (MAC o IP) y actualizando la información tanto de nodos como de aristas. Además, tendrá en cuenta los atributos de orden que se le indiquen para inferir el lugar de los nodos que no puedan ser reconocidos directamente. Guarda también información de nodos que no se puedan insertar por sus características, para que en otro momento de la ejecución se puedan volver a intentar insertar.
 
 \subsection{Estructura de datos usada}
@@ -224,7 +300,9 @@ $\begin{cases}
 \subsection{Estructura de funciones}
 %todo
 
-\subsection{Identificación de los elementos de red}
+\section{Identificación de los elementos de red}
+\subsection{Identificación general de dispositivos}
+\subsection{Identificación específica de dispositivos}
 %todo
 \begin{enumerate}[itemsep=0pt, topsep = 0pt]
 \item Router NAT
@@ -232,8 +310,8 @@ $\begin{cases}
 \item Balanceador de carga
 \end{enumerate}
 
-\section{Módulo para entrada por trazas pcap}
-%%todo: Descripción general del módulo%%
+\section{Diferentes tipos de entradas}
+\subsection{Trazas pcap}
 El módulo para el análisis de trazas pcap tiene una estructura basada en el sistema de punteros a funciones de fisher. En dicho programa se puede hacer un procesado de una trazas únicamente definiendo una serie de funciones. Este módulo, además, utiliza las funciones del módulo de superflujos IP/MAC, por lo que se puede entender como un puente entre la entrada pcap y la estructura más abstracta del análisis IP/MAC. La funcionalidad que se le da a cada una de las funciones que fisher utiliza se describe a continuación:
 \begin{itemize}
 	\item{Inicialización de variables}
@@ -244,11 +322,11 @@ El módulo para el análisis de trazas pcap tiene una estructura basada en el si
 	\item{Distracción de las estructuras}
 \end{itemize}
 
-\section{Módulo para entrada por ficheros de 'Procesa'}
-%%todo: Descripción general del módulo%%
+\subsection{Ficheros de 'Procesa'}
+
+\chapter{Pruebas y resultados}
 
 \chapter{Conclusiones}
-%%todo
 \label{chap:Conclusiones}
 
 \backmatter
