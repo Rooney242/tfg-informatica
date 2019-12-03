@@ -27,9 +27,16 @@
 %\definecolor{palette8}{HTML}{666666}
 
 \tikzstyle{IpNode}=[rectangle, draw=black, thick, inner sep=12pt]
+\tikzstyle{NewIpNode}=[IpNode, fill=green]
 \tikzstyle{MacNode}=[circle, draw=black, thick, inner sep=7pt]
+\tikzstyle{NewMacNode}=[MacNode, fill=green]
+
 \tikzstyle{OpenEdge}=[->, ultra thick]
-\tikzstyle{CloseEdge}=[->, red, ultra thick]
+\tikzstyle{CloseEdge}=[OpenEdge, red]
+\tikzstyle{VirtualEdge}=[CloseEdge, double]
+\tikzstyle{NewOpenEdge}=[OpenEdge, densely dashed]
+\tikzstyle{NewCloseEdge}=[CloseEdge, densely dashed]
+\tikzstyle{NewVirtualEdge}=[VirtualEdge, densely dashed]
 \tikzset{>=latex}
 
 \bibliographystyle{abbrv}
@@ -115,10 +122,11 @@ Aunque no es muy relevante para la realización de este trabajo, cabe mencionar 
 
 \chapter{Análisis del problema}
 \label{chap:Analisis}
-A lo largo de este capítulo se expondrán los dos grandes problemas que se abordan durante la implementación del programa, así como el razonamiento que se siguió para hallar sus soluciones. 
+A lo largo de este capítulo se expondrán los dos grandes problemas que se abordan durante la implementación del programa, así como el razonamiento que se siguió para hallar sus soluciones. El primero de ellos es la reconstrucción de caminos basándonos en la información que nos llega paquete a paquete. Se exponen unos cuantos casos básicos y otros de ejemplo para una mayor comprensión. El segundo es el de detectar los diferentes dispositivos en la red una vez que ya se han reconstruido los caminos ...
 
 \section{Reconstrucción de caminos}
 %Especificar mejor que no se presupone que los paquetes son recibidos en orden salvo cuando no hay mas remedio
+%Relacionar tambien los casos como grafo en general con los que no nos encontraremos nunca por como son las redes
 El primer problema que afrontamos es el de inferir el camino que realizan los paquetes de un determinado flujo IP en base a la observación de los saltos individuales. Dada la naturaleza de una red en concreto este proceso puede ser complicado debido a la existencia de dispositivos intermedios (que más adelante pretendemos detectar) o bifurcaciones en los caminos que llevan de una IP a otra. Esto se puede dar por la caida temporal de enlaces entre nodos de la red o simplemente por las características de la red en sí.
 
 \subsection{Planteamiento del problema y caso inicial}
@@ -145,24 +153,79 @@ Con una inserción estándar nos referimos al caso en el que simplemente estamos
 \begin{figure}
 \centering
 \input{latex/tikz/adding_last.tex}
-\caption[Resultado de añadir MAC3 al final del flujo]{Añadimos una nueva MAC al final del flujo}
+\caption[Ejemplo inserción básica 1]{Añadimos una nueva MAC al final del flujo}
 \label{fig:Analisis:AddingLast}
 \end{figure}
 
 \begin{figure}
 \centering
 \input{latex/tikz/adding_first.tex}
-\caption[Resultado de añadir MAC0 al comienzo del flujo]{Añadimos una nueva MAC al comienzo del flujo}
+\caption[Ejemplo inserción básica 2]{Añadimos una nueva MAC al comienzo del flujo}
 \label{fig:Analisis:AddingFirst}
 \end{figure}
 
 En ambos casos únicamente se añade información de un nodo y se cierra la arista correspondiente al salto físico que hemos visto. Utilizando esta operación de inserción básica podemos seguir añadiendo nodos MAC al flujo indefinidamente.
 
 \subsection{Bifurcación}
+En el caso de que alguna de las dos MAC del nuevo paquete se encuentre ya en nuestro grafo, pero no nos hallemos en ninguno de los casos anteriores tenemos una bifurcación. De esta manera, el nuevo nodo se insertará entre el nodo que ya está en el grafo y la IP correspondiente. A continuación se muestran un par de ejemplos de bifurcaciones en base al estado inicial en los grafos de la \fref{fig:Analisis:Bifurcation1} y de la \fref{fig:Analisis:Bifurcation2}.
 
+\begin{figure}
+\centering
+\input{latex/tikz/bifurcation1.tex}
+\caption[Ejemplo de bifurcación 1]{Bifurcación al añadir paquete con MAC origen igual a MAC1 y MAC destino igual a MAC3}
+\label{fig:Analisis:Bifurcation1}
+\end{figure}
+
+\begin{figure}
+\centering
+\input{latex/tikz/bifurcation2.tex}
+\caption[Ejemplo de bifurcación 2]{Bifurcación al añadir paquete con MAC origen igual a MAC0 y MAC destino igual a MAC2}
+\label{fig:Analisis:Bifurcation2}
+\end{figure}
+
+Utilizando las dos maneras de insertar que se han descrito hasta el momento se puede llegar a cualquier grafo de los que describen un flujo entre dos IPs relacionado con MACs. Se propone un ejemplo en base al estado inicial añadiendo unos cuantos paquetes y observando como avanza el grafo. Se puede observar en la \fref{fig:Analisis:ComplexFlow}.%Que grafos podemos tener en la realidad???
+
+\begin{figure}
+\centering
+\input{latex/tikz/complexFlow.tex}
+\caption[Ejemplo de superflujo compuesto]{Evolución del grafo tras añadir diferentes paquetes.}
+\label{fig:Analisis:ComplexFlow}
+\end{figure}
+
+\newpage
 \subsection{Camino huérfano}
 
+Existe un caso particular en el que hay que prestar especial atención, los caminos huérfanos. Esta situación se da cuando el paquete que analizamos no tiene ninguna MAC incluida en el grafo. LLegados a este punto no tenemos manera de saber en que lugar colocar la nueva información que se nos da si no asumimos alguna condición más o extraemos más información del paquete. Es aquí donde entran en juego los atributos de orden que nos servirán para, dados dos nodos, saber cual se encuentra antes o después en el grafo y así poder insertarlo. El procedimiento será intentar ordenar la MAC origen del nuevo paquete ya que la MAC destino tiene una relación física directa con el otro e irá justo después; lo que en nuestro grafo se traduciría en una arista cerrada entre los nuevos nodos. En el caso de que el paquete nuevo no pueda ser ordenado podemos proceder de dos maneras: guardar la información del paquete para volver a intentar insertarlo en un futuro cuando existan más nodos en el grafo o descartarlo, perdiendo así la información.
+
+El atributo de orden que vamos a utilizar es el TTL de los paquetes. Es claro ver que, dados dos paquetes, si uno tiene un TTL menor que otro podemos determinar que el primer enlace está antes en el flujo IP. Supongámos que nos encontramos en el estado inicial del grafo de la \fref{fig:Analisis:BasicFlow}, si tenemos información de que los nodos de MAC1 y MAC2 tenían un TTL=64 y nos llega un paquete con MAC origen = MAC3, MAC destino = MAC4 y TTL=63. Como ya hemos dicho, no tenemos una manera de introducir su información en el grafo, pero utilizando la información del TTL sabemos que este paquete está situado después de lo que ya teníamos. El estado del grafo quedaría como se oberva en la \fref{fig:Analisis:OrphanPath}. Cabe resaltar que la  arista entre MAC2 y MAC3 queda cerrada, pero es una arista especial en cuanto a que hemos inferido el salto entre MAC2 y MAC3 gracias a la información del TTL, es por esto que la marcaremos como arista virtual (arista con doble linea). Esto tendrá su utilidad a la hora de detectar dispositivos.
+
+\begin{figure}
+\centering
+\input{latex/tikz/orphanPath1.tex}
+\caption[Ejemplo de resolución de camino huérfano]{Insetamos el paquete huérfano gracias a la información del TTL.}
+\label{fig:Analisis:OrphanPath}
+\end{figure}
+
+\subsection{Problemas con el orden de los paquetes.}
+
 \subsection{Relación entre el número de nodos y el número de aristas}
+%Indicar mas formalmente como y por que hemos estimado que las bifurcaciones siguen una distribución de Poisson y hemos estimado lambda por maxima verosimilitud (media poblacional con respecto a varias trazas). Posiblemente esto vaya en un anexo y haya que referenciar algun libro de texto
+A la hora de la implementación, como se verá más adelante, tendrá utilidad el conocer cual es la relación entre la cantidad de nodos y la cantidad de aristas que tiene nuestro grafo. La notación que seguiremos en este apartado sera la siguiente:
+\begin{align*}
+	n =& \mathbin{\#}\{\textit{nodos en un grafo}\} \\
+	a =& \mathbin{\#}\{\textit{aristas en un grafo}\} \\
+	b =& \mathbin{\#}\{\textit{bifurcaciones en un grafo}\}
+\end{align*}
+Es claro ver que para un grafo sin bifurcaciones \(a = n-1\), ya que todo nodo estará unido con el siguiente por una arista salvo el último. Por cada bifurcación, añadiremos al grafo un nodo y dos aristas, la que bifurca el nuevo camino y la que lo vuelve a unir, es decir, estamos añadiendo una arista de más. Nos es indiferente cuanto de largo sea el camino de una bifurcación ya que siempre se mantendrá la relación de que añadimos una arista por cada nodo. En conclusión, podemos afirmar que la relación entre el número de aristas y nodos es:
+\begin{equation*}
+    a = (n - 1) + b
+\end{equation*}
+El número de bifurcaciones es uan variable aleatoria que depende de las características de cada red en específico, pero podemos ver que sigue una distribución de Poisson. De esta manera, podemos calcular el número de aristas que esperamos ver en función de los nodos. 
+\begin{align*}
+ \mathbb{E}(a) =&\ (n - 1) + \mathbb{E}(\bb Poisson(\lambda))\\
+ \mathbb{E}(a) =&\ (n - 1) + \lambda
+\end{align*}
+Para poder calcular el número de aritas necesitamos saber cuanto vale el parámetro $\lambda$, pero este valor no es general y debemos estimarlo. El procedimiento para estimarlo es por máxima verosimilitud. Calculamos $\lambda = \widehat{\lambda} = \bar{b}$, siendo $\bar{b}$ la media muestral de bifurcaciones en función de los nodos que hay en un flujo. Hay que tener en cuenta que, por las características de los grafos que utilizamos, los nodos IP no pueden tener bifurcaciones. Los resultados de las medidas son $\bar{b} = 0,0034$. Vemos que el número de bifurcaciones es muy bajo, pudiendo tomar como resultado final $\mathbb{E}(a) \approx n - 1$ sobre todo teniendo en cuenta que el número de nodos en total será grande.
 
 \section{Identificación de elementos en el superflujo}
 
@@ -262,7 +325,7 @@ El programa esta capacitado para usar solo la memoria que se considere necesaria
 		Elementos IP & i & 2 \\
 		Elementos MAC & m & $\alpha$ \\
 		Nodos & n & i + m = 2 + $\alpha$ \\
-		Aristas & a & $\beta$ = (n - 1)+(n - 2)p \\ \bottomrule
+		Aristas & a & $\beta$ = (n - 1) \\ \bottomrule
 	\end{tabular}
 	\caption{Coeficientes de reserva de memoria por cada superflujo}
 	\label{tab:Desarrollo:Coeficientes memoria}

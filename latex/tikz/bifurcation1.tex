@@ -1,0 +1,13 @@
+\begin{tikzpicture}
+\node[IpNode](IPA) at (0,1) {IPA};
+\node[MacNode](MAC1) at (3,1) {MAC1};
+\node[MacNode](MAC2) at (6,2) {MAC2};
+\node[NewMacNode](MAC3) at (6,0) {MAC3};
+\node[IpNode](IPB) at (9,1) {IPB};
+
+\draw[OpenEdge](IPA) -- (MAC1);
+\draw[CloseEdge](MAC1) -- (MAC2);
+\draw[NewCloseEdge](MAC1) -- (MAC3);
+\draw[NewOpenEdge](MAC3) -- (IPB);
+\draw[OpenEdge](MAC2) -- (IPB);
+\end{tikzpicture}

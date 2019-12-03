@@ -1,0 +1,56 @@
+\begin{tikzpicture}
+\node[draw] at (6,0) {Añadimos paquete con MAC origen = MAC2 y MAC destino = MAC3};
+
+\node[IpNode](1IPA) at (0,-2) {IPA};
+\node[MacNode](1MAC1) at (3,-2) {MAC1};
+\node[MacNode](1MAC2) at (6,-2) {MAC2};
+\node[NewMacNode](1MAC3) at (9,-2) {MAC3};
+\node[IpNode](1IPB) at (12,-2) {IPB};
+
+\draw[OpenEdge](1IPA) -- (1MAC1);
+\draw[CloseEdge](1MAC1) -- (1MAC2);
+\draw[NewCloseEdge](1MAC2) -- (1MAC3);
+\draw[NewOpenEdge](1MAC3) -- (1IPB);
+
+\draw (-1,-4) -- (13,-4);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\node[draw] at (6,-5) {Añadimos paquete con MAC origen = MAC1 y MAC destino = MAC4};
+
+\node[IpNode](2IPA) at (0,-8) {IPA};
+\node[MacNode](2MAC1) at (3,-8) {MAC1};
+\node[MacNode](2MAC2) at (6,-7) {MAC2};
+\node[NewMacNode](2MAC4) at (7.5,-9) {MAC4};
+\node[MacNode](2MAC3) at (9,-7) {MAC3};
+\node[IpNode](2IPB) at (12,-8) {IPB};
+
+\draw[OpenEdge](2IPA) -- (2MAC1);
+\draw[CloseEdge](2MAC1) -- (2MAC2);
+\draw[NewCloseEdge](2MAC1) -- (2MAC4);
+\draw[CloseEdge](2MAC2) -- (2MAC3);
+\draw[OpenEdge](2MAC3) -- (2IPB);
+\draw[NewOpenEdge](2MAC4) -- (2IPB);
+
+\draw (-1,-11) -- (13,-11);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\node[draw] at (6, -12) {Añadimos paquete con MAC origen = MAC4 y MAC destino = MAC5};
+
+\node[IpNode](3IPA) at (0,-15) {IPA};
+\node[MacNode](3MAC1) at (3,-15) {MAC1};
+\node[MacNode](3MAC2) at (6,-14) {MAC2};
+\node[MacNode](3MAC4) at (6,-16) {MAC4};
+\node[MacNode](3MAC3) at (9,-14) {MAC3};
+\node[NewMacNode](3MAC5) at (9,-16) {MAC5};
+\node[IpNode](3IPB) at (12,-15) {IPB};
+
+\draw[OpenEdge](3IPA) -- (3MAC1);
+\draw[CloseEdge](3MAC1) -- (3MAC2);
+\draw[CloseEdge](3MAC1) -- (3MAC4);
+\draw[CloseEdge](3MAC2) -- (3MAC3);
+\draw[NewCloseEdge](3MAC4) -- (3MAC5);
+\draw[OpenEdge](3MAC3) -- (3IPB);
+\draw[NewOpenEdge](3MAC5) -- (3IPB);
+\end{tikzpicture}
