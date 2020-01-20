@@ -2,13 +2,13 @@
 \node[IpNode](IPA) at (0,0) {IP\textsubscript{A}};
 \node[MacNode](MAC1) at (1,-2) {MAC\textsubscript{1}};
 \node[MacNode](MAC2) at (4,-2) {MAC\textsubscript{2}};
-\node[NewMacNode](MAC3) at (7,-2) {MAC\textsubscript{3}};
-\node[NewMacNode](MAC4) at (10,-2) {MAC\textsubscript{4}};
+\node[MacNode](MAC3) at (7,-2) {MAC\textsubscript{3}};
+\node[MacNode](MAC4) at (10,-2) {MAC\textsubscript{4}};
 \node[IpNode](IPB) at (11,0) {IP\textsubscript{B}};
 
 \draw[OpenEdge](IPA) -- (MAC1);
 \draw[CloseEdge](MAC1) -- (MAC2);
-\draw[NewVirtualEdge](MAC2) -- (MAC3);
-\draw[NewCloseEdge](MAC3) -- (MAC4);
-\draw[NewOpenEdge](MAC4) -- (IPB);
+\draw[CloseEdge](MAC2) -- (MAC3);
+\draw[CloseEdge](MAC3) -- (MAC4);
+\draw[OpenEdge](MAC4) -- (IPB);
 \end{tikzpicture}
