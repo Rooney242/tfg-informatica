@@ -1,15 +1,15 @@
 \documentclass[twoside, 12pt]{epstfg}
 
-
 \usepackage{lipsum}
 \usepackage[numbers]{natbib}
-\usepackage{fancysprefs}
+%\usepackage{fancysprefs}
 \usepackage{booktabs}
 \usepackage{wrapfig}
 \usepackage{enumitem}
 \usepackage{xfrac}
 \usepackage{multirow}
 \usepackage{tikz}
+
 
 %\usetikzlibrary{arrows}
 %\usetikzlibrary{patterns}
@@ -42,17 +42,16 @@
 \bibliographystyle{abbrv}
 
 \title[spa]{Reconstrucción de caminos y detección de dispositivos}
-\title[eng]{Path reconstruction}
+\title[eng]{Path reconstruction and device detection}
 \author{David Moreno Maldonado}
 \tutor{Guillermo Julián Moreno}
-\date[spa]{Mayo 2020}
-\date[eng]{May 2020}
+\date[spa]{Junio 2020}
+\date[eng]{June 2020}
 
-% TODO (Guillermo): Revisa lo de grupo/departamento.
 \group[spa]{Naudit}
 \group[eng]{Naudit}
-\department[spa]{Tecnología Electrónica y de las comunicaciones}
-\department[eng]{Department}
+\department[spa]{Ingeniería Informática}
+\department[eng]{Information Technology}
 
 \setdegreeDouble
 
@@ -60,7 +59,76 @@
 %Abstract (resumen en ingles)
 
 %Glosario
-%IP, TTL, router, MAC, pcap, NAT, CI, TCP, UDP, buffer, JSON
+\newglossaryentry{ip}{
+	name = {IP},
+	description = {\textit{Internet Protocol}. En general, usado para referirse a una dirección IP}
+}
+
+\newglossaryentry{ttl}{
+	name = {TTL},
+	description = {\textit{Time To Live}. Contador del protocolo IP que decrementa al pasar de un nodo a otro}
+}
+
+\newglossaryentry{router}{
+	name = {\textit{Router}},
+	description = {Enrutador. Dispositivo que permite conectar hosts en una red. Se encarga de establecer la ruta de cada paquete dentro de dicha red}
+}
+
+\newglossaryentry{mac}{
+	name = {MAC},
+	description = {\textit{Media Access Control}. En general, usado para referirse a una dirección MAC que se corresponde de forma única con una tarjeta o dispositivo de red}
+}
+
+\newglossaryentry{pcap}{
+	name = {Pcap},
+	description = {Interfaz de una aplicación de programación para captura de paquetes. Su implementación para sistemas Unix es libpcap y el port para Windows es WinPcap}
+}
+
+\newglossaryentry{nat}{
+	name = {NAT},
+	description = {\textit{Network Address Translation}. Mecanismo utilizado por los \textit{routers} para intercambiar paquetes entre dos redes que asignan mutuamente direcciones IP incompatibles}
+}
+
+\newglossaryentry{ci}{
+	name = {CI},
+	description = {\textit{Continuous Integration}. Modelo informático que consiste en realizar integraciones continuas en un proyecto con el objetivo de detectar los fallos cuanto antes}
+}
+
+\newglossaryentry{tcp}{
+	name = {TCP},
+	description = {\textit{Transmission Control Protocol}. Protocolo de transporte fiable y bidireccional}
+}
+
+\newglossaryentry{udp}{
+	name = {UDP},
+	description = {\textit{User Datagram Protocol}. Protocolo de transporte cuya función es el intercambio de datagramas en una red}
+}
+
+\newglossaryentry{buffer}{
+	name = {\textit{Buffer}},
+	description = {Espacio de memoria en el que se almacenan datos de manera temporal para un único uso}
+}
+
+\newglossaryentry{json}{
+	name = {JSON},
+	description = {\textit{JavaScript Object Notetion}. Formato de texto para el intercambio sencillo de datos}
+}
+
+\newglossaryentry{syn}{
+	name = {SYN},
+	description = {\textit{Synchronization} Bit de control dentro del protocolo TCP utilizado para sinconizar los números de secuencia iniciales de una conexion en el procedimiento de establecimiento en tres fases}
+}
+
+\newglossaryentry{ack}{
+	name = {ACK},
+	description = {\textit{ACKnowledgement}. Mensaje que el destino de la comunicación envía al origen para confirmar la recepción de un mensaje. En este caso usado por el protocolo TCP}
+}
+
+\newglossaryentry{pool}{
+	name = {\textit{Pool} de memoria},
+	description = {Espacio reservado para almacenar datos correspondientes todos al mismo tipo de estructura}
+}
+\glsaddall
 
 \begin{document}
 
@@ -82,7 +150,7 @@
 \listoftables
 \clearpage
 \listoffigures
-\cleardoublepage
+%\cleardoublepage
 
 \printnoidxglossaries
 
@@ -90,9 +158,14 @@
 
 \chapter{Introducción y motivación}
 
-\section{Motivación}
+\section{Motivación y objetivos}
+Como proyecto interno en la empresa se había comenzado a realizar un proyecto similar en \textit{Python}. Este se rechazo dado que el tiempo de ejecución era demasiado elevado. Debido a las características del proyecto se propuso comenzar el proyecto desde cero en C para comprobar si se satisfacían las condiciones de tiempo. Esta fue una de las premisas tenidas en cuenta durante el análisis y desarrollo del proyecto: asegurar la mayor eficiencia en la medida de lo posible tanto en memoria como en tiempo de ejecución.
 
-\section{Objetivos}
+Por otro lado, la motivación general del proyecto es la de conseguir reconstruir las topología de una red simplemente con la información que se consigue desde un número limitado de puntos de esta. En estos lugares se colocan las sondas desde las que se recopila la información de los paquetes que se están mandando por la red. El propósito de analizar las redes de esta manera es el de facilitar la localización de fallos. El programa además sería de utilidad real para la empresa ya que se adapta a su estructuras de aplicaciones internas. Utiliza datos que se generan con herramientas desarrolladas por Naudit y recopila información de tal manera que esta puede ser utilizada por herramientas a más alto nivel dentro de la propia empresa. En resumen, la utilidad real del proyecto fue otro de los puntos a favor que propiciaron que se realizara.
+
+La detección de dispositivos fue un objetivo que se propuso más tarde, durante la realización del TFG. Se observó que podía ser una aplicación interesante y que se disponía del tiempo necesario para comenzarla. Es el punto que más queda por desarrollar y del que más ampliaciones se pueden hacer. Se deja como trabajo futuro el aumentar la cantidad de dispositivos que detectamos en una red ya que solo se ha dispuesto del tiempo para detectar dispositivos más básicos.
+
+Por último, otro de los motivos por los que se realizo este TFG es porque para llevarlo a cabo se requiere de comprender y dominar conceptos que se han ido adquiriendo durante el grado. En especial, se requiere de conocimientos en los ámbitos de las redes informáticas, estructuras de datos, programación, análisis y diseño de software, ingeniería de software y análisis de algoritmos. Se trataba de un proyecto perfecto para asentar estos conocimientos y demostrar su dominio en un entorno más profesional.
 
 \section{Estructura del documento}
 El documento esta estructurado en seis capítulos diferenciados. El primero es esta introducción donde se explican la motivación y objetivos que propiciaron la realización de este TFG. En ella se establecen las bases que se desarrollarán a lo largo del resto del texto y las conclusiones y finalidad de este.
@@ -107,37 +180,30 @@ El quinto capítulo describe los tests que se han ido realizando tras el desarro
 
 Por último, se pueden encontrar las conclusiones del TFG donde se recogen los principales conocimientos y razonamientos a los que se ha llegado tras la realización del mismo. Tras esto, se puede encontrar la bibliografía con todas las referencias utilizadas durante el texto.
 
-
 \chapter{Estado del arte}
 A lo largo de este capítulo se expondrán diferentes herramientas actuales que se utilizan para el análisis de redes con especial atención al análisis de flujos IP e información acerca de los dispositivos que dicha red contiene. También, se expondrán distintos métodos o características que pueden aprovecharse para la detección de distintos tipos de dispositivos.
 
 \section{Herramientas de reconstrucción de flujos IP}
-%%Revisar si falta informacion en esta parte sobre si alguno de los programas mencionados tiene funcionalidad para reconstruccion de caminos. Puede ser interesante tambien citar documentacion o similar. Puede ser necesario añadir alguna referencia más
-
 El análisis de redes desde el punto de vista de la reconstrucción del flujo IP de los paquetes se basa en la utilización de trazas pcap ya capturadas. Estas se abren con diferentes programas que nos aportan información relevante sobre los paquetes y los equipos que se conectan. Aunque ninguna de estas aplicaciones ofrece una reconstrucción de caminos en específico, si que se pueden utilizar como herramientas auxiliares para ver el estado del tráfico IP dada una traza pcap. Es por esto que se presenta una lista de las herramientas más utilizadas y con una mayor relación con el tema que estamos tratando. \cite{Gandhi2014}
 
 \subsection{\textit{Wireshark}}
-% TODO (Guillermo) Wireshark está también para Windows y macOS. Yo quitaría lo de "dentro del SO linux" para evitar que te hagan una pregunta para tocar las narices con esto.
-Es el analizador de redes más conocido dentro del sistema operativo Linux. Aunque presenta una gran variedad de funcionalidades, no presenta ninguna que extraiga e infiera los flujos IP que recorren los paquetes de una traza. Mediante su interfaz y sus sistema de filtrado puede ayudarnos a realizar esta tarea manualmente, pero nada cerca de la automatización de este trabajo. Además, el uso de trazas realmente grandes (>20GB) hace sufrir a la aplicación en términos de tiempo e incluso el uso de su similar sin interfaz, \textit{tcpdump}, resulta lento para el resultado que se busca.
+Es el analizador de redes más conocido, aunque presenta una gran variedad de funcionalidades, no presenta ninguna que extraiga e infiera los flujos IP que recorren los paquetes de una traza. Mediante su interfaz y sus sistema de filtrado puede ayudarnos a realizar esta tarea manualmente, pero nada cerca de la automatización de este trabajo. Además, el uso de trazas realmente grandes (>20GB) hace sufrir a la aplicación en términos de tiempo e incluso el uso de su similar sin interfaz, \textit{tcpdump}, resulta lento para el resultado que se busca.
 
 \subsection{\textit{Netflow}}
-\textit{Netflow} (citar) es un protocolo de red que fue desarrollado por Cisco Systems y que recolecta información sobre tráfico IP. Las herramientas que hacen uso de \textit{Netflow} son las que más se podrían acercar a los objetivos que se persiguen en este TFG. Sin embargo, existen una serie de cuestiones por lo que no se considera válido. % TODO (Guillermo) Apropiado mejor que válido, que puede dar la impresión que dices que netflow no vale para nada, cuando lo que quieres decir es que no vale para este TFG.
+\textit{Netflow} (citar) es un protocolo de red que fue desarrollado por Cisco Systems y que recolecta información sobre tráfico IP. Las herramientas que hacen uso de \textit{Netflow} son las que más se podrían acercar a los objetivos que se persiguen en este TFG. Sin embargo, existen una serie de cuestiones por lo que no se considera apropiado.
 
-% TODO (Guillermo) lo de 'se trata de un protocolo' creo que no hace falta, porque aaparte Netflow no es sólo un protocolo.
-En primer lugar, se trata de un protocolo, los dispositivos deben de tener capacidad de activar \textit{Netflow} para comenzar a generar registros propios que son los que nos darán la información del tráfico IP posteriormente. Esto choca enormemente con la intención de realizar una reconstrucción de caminos en base a cualquier traza pcap ya que se necesitarían unas características
-específicas en los dispositivos de la red. Aunque la extensión de Netflow se ha convertido en un estándar de la industria no es lo más conveniente para nuestros objetivos.
+Los dispositivos deben de tener capacidad de activar \textit{Netflow} para comenzar a generar registros propios que son los que nos darán la información del tráfico IP posteriormente. Esto choca enormemente con la intención de realizar una reconstrucción de caminos en base a cualquier traza pcap ya que se necesitarían unas características específicas en los dispositivos de la red. Aunque la extensión de Netflow se ha convertido en un estándar de la industria no es lo más conveniente para nuestros objetivos.
 
 \subsection{\textit{Capsa}} 
 Capsa \cite{ColasoftCapsa} es un software desarrollado por Colasoft para el análisis de redes que funciona únicamente para sistemas operativos Windows. Partiendo de que esta limitación puede ser ya lo suficientemente potente como para descartarlo, nos interesa especialmente su potencial para el análisis de flujos TCP.
 
-En el programa se incluye una visualización de las interconexiones existentes entre diferentes IPs y lo muestra en forma de matriz con las IPs como nodos y las conexiones entre ellas como aristas. Aunque la información que se nos da es similar a lo que buscamos, no se profundiza lo suficiente en los saltos individuales que va realizando cada paquete y no se da información de dispositivos intermedios. Además, el programa puede sufrir en cuanto a tiempos en trazas grandes debido a no estar especificado en la reconstrucción de caminos. % TODO (Guillermo) "debido a no estar orientado a la reconstrucción de caminos" o "debido a no ser específico para la reconstrucción de caminos" mejor.
+En el programa se incluye una visualización de las interconexiones existentes entre diferentes IPs y lo muestra en forma de matriz con las IPs como nodos y las conexiones entre ellas como aristas. Aunque la información que se nos da es similar a lo que buscamos, no se profundiza lo suficiente en los saltos individuales que va realizando cada paquete y no se da información de dispositivos intermedios. Además, el programa puede sufrir en cuanto a tiempos en trazas grandes debido a no estar orientado en la reconstrucción de caminos.
 
 \section{Métodos de detección de dispositivos}
 Tras la realización de una búsqueda en la literatura acerca de la detección específica de distintos dispositivos de una manera similar a la que se pretende, no se han encontrado grandes resultados. Aunque existen métodos en algunos casos, no son ni estándar ni con una extensión significativa. Por lo tanto, esta sección se centrará más en un análisis de las características de los dispositivos que queremos detectar. De esta manera podremos aprovecharnos de sus propiedades y como estas afectan al tráfico para poder inferir que en un punto determinado tenemos uno de estos dispositivos.
 
-\subsection{\textit{Routers} NAT} % TODO (Guillermo) Mejor 'Routers y Routers NAT', que se vea que son dos cosas distintas aunque relacionadas.
+\subsection{\textit{Routers} y \textit{Routers} NAT}
 Un \textit{router} genérico es un dispositivo de red que se encarga de la interconexión de equipos en la capa de red. Los \textit{routers} se encargan de establecer las rutas de los paquetes dentro de una red. En especial, los \textit{routers} NAT son aquellos que realizan modificaciones a las direcciones IP (e incluso los puertos) y realizan un mapeo de estos cambios. Generalmente, se trata de relaciones entre IP públicas e IP privadas y se utiliza para agrupar rangos de IPs privadas bajo una misma IP pública. Existen diferentes métodos para detectar un \textit{router} NAT \cite{Krmicek}. A nosotros el que más nos va a interesar es el de decremento de TTL para la detección de un \textit{router} en general y, a partir de ahí, inferir si se está realizando un proceso NAT.
-%%Explicar mejor como se detectará si se esta realizando un nateo (igual no usamos decremento de TTL para detectar el NAT en si)
 
 \subsection{\textit{Firewalls} o cortafuegos}
 \label{subsec:Estado:Deteccion:Firewalls}
@@ -163,8 +229,6 @@ En conclusión, se considera justificada y de gran interés tanto académico com
 A lo largo de este capítulo se expondrán los dos grandes problemas que se abordan durante la implementación del programa, así como el razonamiento que se siguió para hallar sus soluciones. El primero de ellos es la reconstrucción de caminos basándonos en la información que nos llega paquete a paquete. Se exponen unos cuantos casos básicos y otros de ejemplo para una mayor comprensión. El segundo es el de detectar los diferentes dispositivos en la red una vez que ya se han reconstruido los caminos ...
 
 \section{Reconstrucción de caminos}
-%Especificar mejor que no se presupone que los paquetes son recibidos en orden salvo cuando no hay mas remedio
-%Relacionar tambien los casos como grafo en general con los que no nos encontraremos nunca por como son las redes
 El primer problema que afrontamos es el de inferir el camino que realizan los paquetes de un determinado flujo IP en base a la observación de los saltos individuales. Dada la naturaleza de una red en concreto este proceso puede ser complicado debido a la existencia de dispositivos intermedios (que más adelante pretendemos detectar) o bifurcaciones en los caminos que llevan de una IP a otra. Esto se puede dar por la caída temporal de enlaces entre nodos de la red o simplemente por las características de la red en sí.
 
 \subsection{Planteamiento del problema y caso inicial}
@@ -173,7 +237,7 @@ Para poder plantearnos una solución, tenemos primero que establecer las bases d
 
 Una vez que vemos el primer paquete entre IP\textsubscript{A} e IP\textsubscript{B} con una MAC origen (MAC\textsubscript{1}) y una MAC destino (MAC\textsubscript{2}) asumimos que ese salto existe físicamente y que no puede existir ningún otro salto intermedio, ya que dado el caso lo habríamos visto. Marcamos ese salto como cerrado. De esta manera, cada vez que veamos un nuevo salto entre IP\textsubscript{A} e IP\textsubscript{B} expandirá el flujo en cualquiera de las dos aristas restantes con nuevos nodos, pero estos nunca se interpondrán entre MAC\textsubscript{1} y MAC\textsubscript{2}. Este caso queda representado en el grafo de la \fref{fig:Analisis:BasicFlow}
 
-\begin{figure}
+\begin{figure}[H]
 \centering
 \input{tikz/basic_flow.tex}
 \caption[Flujo básico entre dos IPs]{Flujo básico entre IP\textsubscript{A} e IP\textsubscript{B}}
@@ -186,24 +250,20 @@ Este escenario nos deja con varias posibilidades que tenemos que tener en cuenta
 Con una inserción estándar nos referimos al caso en el que simplemente estamos añadiendo información al grafo en alguna de las aristas abiertas. Este es el caso en el que el nuevo paquete cumple una de estas dos condiciones:
 \begin{itemize}
     \item La MAC origen coincide con la última MAC del grafo. Suponiendo la situación inicial y la llegada de un paquete con MAC origen igual a MAC\textsubscript{2} y MAC destino igual a MAC\textsubscript{3} se procede de la siguiente manera. Añadimos un nuevo nodo, MAC\textsubscript{3}, que se situa entre MAC\textsubscript{2} e IP\textsubscript{B}. Queda unido a  MAC\textsubscript{2} por una arista cerrada ya que hemos visto el salto físico y a IP\textsubscript{B} por una arista abierta ya que nos puede llegar más información. El resultado se muestra en el del grafo de la \fref{fig:Analisis:AddingLast}.
+    \begin{figure}[H]
+    \centering
+    \input{latex/tikz/adding_last.tex}
+    \caption[Ejemplo inserción básica 1]{Añadimos una nueva MAC al final del flujo}
+    \label{fig:Analisis:AddingLast}
+    \end{figure}
     \item La MAC destino coincide con la primera MAC del grafo. Suponiendo la situación inicial y la llegada de un paquete con MAC origen igual a MAC\textsubscript{0} y MAC destino igual a MAC\textsubscript{1} se procede de la siguiente manera. Añadimos un nuevo nodo, MAC\textsubscript{0}, que se sitúa entre IP\textsubscript{A} y MAC\textsubscript{1}. Queda unido a IP\textsubscript{A} por una arista abierta ya que nos puede llegar más información y a  MAC\textsubscript{2} por una arista cerrada ya que hemos visto el salto físico. El resultado se muestra en el del grafo de la \fref{fig:Analisis:AddingFirst}.
+    \begin{figure}[H]
+    \centering
+    \input{latex/tikz/adding_first.tex}
+    \caption[Ejemplo inserción básica 2]{Añadimos una nueva MAC al comienzo del flujo}
+    \label{fig:Analisis:AddingFirst}
+    \end{figure}
 \end{itemize}
-
-% TODO (Guillermo): Intenta que las figuras queden más cerca del texto que las describen. Útil: https://www.overleaf.com/learn/latex/Positioning_of_Figures
-
-\begin{figure}
-\centering
-\input{latex/tikz/adding_last.tex}
-\caption[Ejemplo inserción básica 1]{Añadimos una nueva MAC al final del flujo}
-\label{fig:Analisis:AddingLast}
-\end{figure}
-
-\begin{figure}
-\centering
-\input{latex/tikz/adding_first.tex}
-\caption[Ejemplo inserción básica 2]{Añadimos una nueva MAC al comienzo del flujo}
-\label{fig:Analisis:AddingFirst}
-\end{figure}
 
 En ambos casos únicamente se añade información de un nodo y se cierra la arista correspondiente al salto físico que hemos visto. Utilizando esta operación de inserción básica podemos seguir añadiendo nodos MAC al flujo indefinidamente.
 
@@ -212,30 +272,29 @@ Tanto en los flujos TCP como UDP, ambos manejados sobre IP, podemos encontrarnos
 
 El modo de proceder para la inserción de una bifurcación será el siguiente. El estado inicial del grafo se corresponde con el camino que ya hemos visto y en un momento dado nos llega un paquete que ha pasado por un camino alternativo. Este es el caso de que alguna de las dos MAC del nuevo paquete se encuentre ya en nuestro grafo, pero no nos hallemos en ninguno de los casos anteriores. De esta manera, el nuevo nodo se insertará entre el nodo que ya está en el grafo y la IP correspondiente. A continuación se muestran un par de ejemplos de bifurcaciones en base al estado inicial en los grafos de la \fref{fig:Analisis:Bifurcation1} y de la \fref{fig:Analisis:Bifurcation2}.
 
-\begin{figure}
+\begin{figure}[H]
 \centering
 \input{latex/tikz/bifurcation1.tex}
 \caption[Ejemplo de bifurcación 1]{Bifurcación al añadir paquete con MAC origen igual a MAC\textsubscript{1} y MAC destino igual a MAC\textsubscript{3}}
 \label{fig:Analisis:Bifurcation1}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[H]
 \centering
 \input{latex/tikz/bifurcation2.tex}
 \caption[Ejemplo de bifurcación 2]{Bifurcación al añadir paquete con MAC origen igual a MAC\textsubscript{0} y MAC destino igual a MAC\textsubscript{2}}
 \label{fig:Analisis:Bifurcation2}
 \end{figure}
 
-Utilizando las dos maneras de insertar que se han descrito hasta el momento se puede llegar a cualquier grafo de los que describen un flujo entre dos IPs relacionado con MACs. Se propone un ejemplo en base al estado inicial añadiendo unos cuantos paquetes y observando como avanza el grafo. Se puede observar en la \fref{fig:Analisis:ComplexFlow}.%Que grafos podemos tener en la realidad???
+%Utilizando las dos maneras de insertar que se han descrito hasta el momento se puede llegar a cualquier grafo de los que describen un flujo entre dos IPs relacionado con MACs. Se propone un ejemplo en base al estado inicial añadiendo unos cuantos paquetes y observando como avanza el grafo. Se puede observar en la \fref{fig:Analisis:ComplexFlow}.
 
-\begin{figure}
-\centering
-\input{latex/tikz/complexFlow.tex}
-\caption[Ejemplo de superflujo compuesto]{Evolución del grafo tras añadir diferentes paquetes.}
-\label{fig:Analisis:ComplexFlow}
-\end{figure}
+%\begin{figure}[h]
+%%\centering
+%\input{latex/tikz/complexFlow.tex}
+%\caption[Ejemplo de superflujo compuesto]{Evolución del grafo tras añadir diferentes paquetes.}
+%\label{fig:Analisis:ComplexFlow}
+%\end{figure}
 
-\newpage
 \subsection{Camino huérfano}
 \label{subsec:Analisis:Reconstruccion:Huerfano}
 
@@ -243,20 +302,19 @@ Existe un caso particular en el que hay que prestar especial atención, los cami
 
 El atributo de orden que vamos a utilizar es el TTL de los paquetes. Es claro ver que, dados dos paquetes, si uno tiene un TTL menor que otro podemos determinar que el primer enlace está antes en el flujo IP. Supongamos que nos encontramos en el estado inicial del grafo de la \fref{fig:Analisis:BasicFlow}, si tenemos información de que los nodos de MAC\textsubscript{1} y MAC\textsubscript{2} tenían un TTL=64 y nos llega un paquete con MAC origen = MAC\textsubscript{3}, MAC destino = MAC\textsubscript{4} y TTL=63. Como ya hemos dicho, no tenemos una manera de introducir su información en el grafo, pero utilizando la información del TTL sabemos que este paquete está situado después de lo que ya teníamos. El estado del grafo quedaría como se oberva en la \fref{fig:Analisis:OrphanPath}. Cabe resaltar que la  arista entre MAC\textsubscript{2} y MAC\textsubscript{3} queda cerrada, pero es una arista especial en cuanto a que hemos inferido el salto entre MAC\textsubscript{2} y MAC\textsubscript{3} gracias a la información del TTL, es por esto que la marcaremos como arista virtual (arista con doble linea). Esto tendrá su utilidad a la hora de detectar dispositivos. (referencia a la seccion siguiente)
 
-\begin{figure}
+\begin{figure}[H]
 \centering
 \input{latex/tikz/orphanPath1.tex}
 \caption[Ejemplo de resolución de camino huérfano]{Insertamos el paquete huérfano gracias a la información del TTL.}
 \label{fig:Analisis:OrphanPath}
 \end{figure}
 
-\subsection{Problemas con el orden y la completitud de los paquetes} % TODO (Guillermo): Completitud de los flujos, no?
+\subsection{Problemas con el orden de los paquetes y la completitud de los flujos}
 La resolución del problema propuesta no depende de que los paquetes se hallen ordenados para funcionar correctamente. De esta manera, si vemos un salto que es posterior en el flujo antes de tiempo puede quedar guardado como camino huérfano y ser insertado más adelante cuando llegue la información correspondiente. Esto sí que se basa en una visión completa del flujo IP; necesitamos recoger información de todos los saltos para poder inferir de manera correcta el propio flujo.
 
 El único problema que podemos tener con el orden es a la hora de detectar firewalls. Esto es debido a que, en muchos casos, los firewalls no decrementan el TTL, viendo así dos paquetes con el mismo TTL pero con MACs origen y destino distintas respectivamente. Para solucionar este problema tenemos dos enfoques, cada uno con sus problemas. Podemos simplemente no detectar estos dispositivos, el salto que llegue antes se incluirá en el grafo y el otro se quedará como un camino huérfano que no se añadirá nunca. Esto tiene el problema de que no estamos detectando el flujo en su totalidad, lo que dará una salida errónea. La otra opción apuesta por introducir el firewall al grafo, pero esto nos lleva al caso de estar comparando dos paquetes que tienen el mismo TTL. En este caso no tenemos ninguna manera que nos diga cual de los dos va antes, y es por esto que debemos asumir que los paquetes van a llegar en orden. Así, en la comparación de dos paquetes con el mismo TTL podremos decir que el que ha llegado más tarde se encuentra después en el grafo.
 
-Aunque finalmente se ha tenido que suponer que los paquetes están ordenados, esto solo afecta a una parte muy pequeña del algoritmo y no es necesario para la totalidad del funcionamiento. Se considera que la probabilidad de que los paquetes se hallen en desorden es baja, y que justo esto coincida con el momento que afecta a la solución propuesta es ínfimo. Por estos motivos la suposición es asumible y está basada en las fuentes de datos observadas. %(Guillermo): La suposición no está justificada, es una suposición. Puedes decir que la suposición se basa en las fuentes de datos que has visto, pero vamos, yo quitaría esta última frase.
-%%David: No estoy muy convencido y si que es posible que suprima la ultima frase
+Aunque finalmente se ha tenido que suponer que los paquetes están ordenados, esto solo afecta a una parte muy pequeña del algoritmo y no es necesario para la totalidad del funcionamiento. Se considera que la probabilidad de que los paquetes se hallen en desorden es baja, y que justo esto coincida con el momento que afecta a la solución propuesta es ínfimo. Por estos motivos la suposición es asumible y está basada en las fuentes de datos observadas.
 
 \subsection{Relación entre el número de nodos y el número de aristas.}
 \label{sec:Analisis:Edges per node}
@@ -272,11 +330,13 @@ Es claro ver que para un grafo sin bifurcaciones \(a = n-1\), ya que todo nodo e
     a = (n - 1) + b
 \end{equation*}
 El número de bifurcaciones por flujo IP es una variable aleatoria que depende de las características de cada red en específico, pero podemos ver que sigue una distribución de Poisson. De esta manera, podemos calcular el número de aristas que esperamos ver en función de los nodos. 
+
 \begin{align*}
     \mathbb{E}(a) =&\ (n - 1) + \mathbb{E}(\bb Poisson(\lambda))\\
-    \mathbb{E}(a) =&\ (n - 1) + \lambda
+    \mathbb{E}(a) =&\ (n - 1) + \lambda \
 \end{align*}
-Para poder calcular el número de aritas necesitamos saber cuanto vale el parámetro $\lambda$, pero este valor no es general y debemos estimarlo. El procedimiento para estimarlo es por máxima verosimilitud. Calculamos $\lambda = \widehat{\lambda} = \bar{b}$, siendo $\bar{b}$ la media muestral de bifurcaciones por superflujo que hay en un flujo. Hay que tener en cuenta que, por las características de los grafos que utilizamos, los nodos IP no pueden tener bifurcaciones. En la \fref{tab:Analisis:Media bifurcaciones} se muestran los datos extraidos de empresas reales y los cálculos de la media muestral.
+
+Para poder calcular el número de aristas necesitamos saber cuanto vale el parámetro $\lambda$, pero este valor no es general y debemos estimarlo. El procedimiento para estimarlo es por máxima verosimilitud. Calculamos $\lambda = \widehat{\lambda} = \bar{b}$, siendo $\bar{b}$ la media muestral de bifurcaciones por superflujo que hay en un flujo. Hay que tener en cuenta que, por las características de los grafos que utilizamos, los nodos IP no pueden tener bifurcaciones. En la \fref{tab:Analisis:Media bifurcaciones} se muestran los datos extraídos de empresas reales y los cálculos de la media muestral.
 \begin{table}[hbtp]
 	\centering
 	\begin{tabular}{lccc}
@@ -308,13 +368,6 @@ El problema que se plantea ahora es el de recopilar toda la información acerca 
 
 Para resolverlos, se llevará a cabo un algoritmo recursivo que itera sobre todos los dispositivos individuales encontrados. Apoyándose en dos listas (\texttt{remain\_in\_macs} y \texttt{remain\_out\_macs}) resuelve las dependencias existentes entre las MAC\textsubscript{entrada} y MAC\textsubscript{salida}. Los dispositivos ya resueltos se van almacenando en la lista \texttt{devices}. El pseudocódigo puede verse en el algoritmo \fref{lst:AlgoritmoResolucionDispositivos}
 
-%%Preguntar por claridad y correccion del pseudocodigo. Hay que revisarlo, creo que queda muy complicado asi explicado.
-%%Los forall de unresolved_devices son iteraciones en el diccionario de dos claves, no se muy bien como expresarlo en pseudocodigo
-% Guillermo: 
-%  - El forall de unresolved_devices yo lo veo bien. En el fondo iterator sobre el diccionario de dos claves es como iterar por una lista de pares (in_mac, out_mac).
-%  - Puedes poner comentarios dentro del pseudocódigo si ves que es útil.
-%  - En lugar de device[in_mac] pon device.in_mac, por ser consistente con lo de new_device.in_macs. 
-%  - Por lo demás yo lo veo bien y se entiende sin problemas. También puede ser que yo estoy más familiarizado con el tema este, pero vamos, que no me preocuparía demasiado.
 \begin{algorithm}[btp]
 \begin{algorithmic}
 \Function{resolve\_devices}{superflows}
@@ -423,7 +476,7 @@ Libreria para el manejo de la información de flujo del programa con diferentes 
 Libreria para la gestión de la memoria estática. Evitar el uso de reservas de memoria continuamente fue uno de los requisitos exigidos para el desarrollo del módulo. Se consideró que la gestión dinámica de memoria mediante las funciones estándar de C (malloc y free) era muy lenta dado la cantidad de estas reservas que habría que hacer. Es por esto que la gestión se dejo a una librería ya desarrollada. 
 
 Conceptualmente lo que se realiza es solo una reserva de memoria mediante la función malloc en la que, mediante la librería 'static mem', se definía la cantidad total de entidades de un mismo tipo de estructura se van a reservar a lo largo de la ejecución del programa. Esto conlleva realizar un \textit{pool} diferente para cada tipo de estructura, pero resulta en una mejora en la eficiencia general del programa. 
-%todo: Meter referencia para analizar mas detenidamente el uso de high performance y el rechazo de los mallocs, ademas de como se gestiona la memoria total que se le quiere dedicar al programa para realizar la reserva de memoria
+%TODO: Meter referencia para analizar mas detenidamente el uso de high performance y el rechazo de los mallocs, ademas de como se gestiona la memoria total que se le quiere dedicar al programa para realizar la reserva de memoria
 \subsection{IP y MAC utils}
 Estas librerías ya existentes fueron modificadas incluyendo nuevas funciones que eran necesarias para el uso de la librería de lista de capas que se desarrolló. Las funciones incluidas eran comparadores, copiadores y conversores a cadenas de caracteres con una estructura definida. Estas funciones son las que se pasaban como punteros para que la librería desarrollada fuera lo mas abstracta posible y de las que hacen uso también las estructuras de listas y diccionarios.
 \subsection{Packet parser}
@@ -440,7 +493,6 @@ Este módulo encargará de la inserción de nuevos elementos a los superflujos, 
 
 \subsection{Estructura de datos usada}
 A un nivel abstracto, este módulo representa un grafo orientado con un único nodo inicial y un único nodo final. Cada nodo puede pertenecer a una de las capas que se indican al inicializar la estructura y puede comunicarse con nodos de su misma capa o de las adyacentes. En el caso de superflujos las capas serán IP y MAC. Para la implementación de este módulo se han creado 5 estructuras que se relacionan entre ellas. Se describen a continuación:
-%todo: quiza plantear esta subseccion como una lista no es correcto ya que queda muy larga y se podria estructurar en parrafos.
 \begin{itemize}
     \item Lista: Es la estructura general donde se almacena la información de la lista y se definirá una por cada superflujo. En su inicialización se debe indicar: los \textit{pools} de memoria para los nodos y las aristas, la información de cada capa, su orden y el número de estas, el número de atributos de orden y las funciones para actualizarlos y usarlos para ordenar nodos y la función que pasa de la estructura de donde se sacará la información de cada camino a la estructura de camino en sí. Una vez definida e inicializada una estructura de lista de capas, se puede insertar caminos estandarizados con la función (\textit{parse\_to\_path}), que ha tenido que ser previamente definida, simplemente llamando a la función de añadir caminos. Aparte de esto guarda información sobre los caminos huérfanos y el inicio del grafo.
     (\textit{layer\_list\_add\_path}).
@@ -483,6 +535,7 @@ Se generan dos ficheros de salida con formato de registros. El primero de ellos 
 Este módulo utiliza directamente todas las estructuras y funcionalidades del módulo de ordenación de superflujos. Se realiza de manera abstracta para que se pueda seleccionar la estructura de entrada de donde se sacará la información para los nodos y aristas del grafo ordenado. En este módulo se fijan la inicialización de las estructuras necesarias para el análisis de superflujos, la adición de nuevos caminos al grafo y la salida que genera el programa. Se comentan los aspectos más relevantes de este módulo.
 
 \subsection{Calculo de coeficientes para la reserva de los \textit{pools} de memoria}
+\label{subsec:Desarrollo:IPMAC:CoefPools}
 El programa esta capacitado para usar solo la memoria que se considere necesaria en el momento de la ejecución (por defecto es 32 MB) para las estructuras que se encargan de la ordenación de los superflujos. Como se ha comentado anteriormente, se tiene que definir un \textit{pool} de memoria diferente para cada estructura y definir cuantas de estas estructuras se van a querer reservar concurrentemente como máximo. Las estructuras para las que es necesario definir un \textit{pool} de memoria son: superflujos, nodos de grafo, aristas de grafo, elementos IP y elementos MAC.
 
 \begin{table}[hbtp]
@@ -502,12 +555,10 @@ El programa esta capacitado para usar solo la memoria que se considere necesaria
 
 La manera de estimar el número de estructuras que reservar de cada tipo se basa en que por cada superflujo podemos estimar la cantidad de los demás elementos que necesitamos en promedio. Esto se traduce en unos coeficientes que se pueden ver en \fref{tab:Desarrollo:Coeficientes memoria}. Es claro que por cada superflujo habrá 2 elementos IP (IP origen e IP destino) y que el número de nodos será la suma de los elementos IP y los elementos MAC. Existen dos casos especiales: el promedio de MACs por superflujo y el promedio de aristas por superflujo.
 
-Para estos dos casos se ha recurrido a la observación en casos experimentales. Hay que resaltar que estos parámetros son variables y que se pueden ajustar en función de las características específicas de cada red. En la \fref{sec:Analisis:Edges per node} se razonó el valor tomado para $\lambda$. Para el calculo del parámetro $\alpha$...
-%Incluir calculo del parametro alpha
+Para estos dos casos se ha recurrido a la observación en casos experimentales. Hay que resaltar que estos parámetros son variables y que se pueden ajustar en función de las características específicas de cada red. En la \fref{sec:Analisis:Edges per node} se razonó el valor tomado para $\lambda$. Para el calculo del parámetro $\alpha$ se recurre a la observación en trazas reales. En la tabla \ref{tab:Pruebas:Ratios estructuras} puede comprobarse como se realiza ese cálculo.
 
 Conociendo el tamaño de memoria del que disponemos para nuestras estructuras así como el tamaño de cada una (denotado como $x_{tam}$) podemos conocer cual es la manera óptima de repartir la memoria. Utilizando los superflujos como unidad de memoria (denotada como $u$) podemos obtener la cantidad de unidades de memoria que podemos reservar de esta manera.
 
-%(Guillermo): Truco: puedes usar \mathrm{} para poner texto dentro del modo matemático y que quede algo mejor. He cambiado el primer 'memoria' para que veas cómo queda.
 $\begin{array}{lcl}
 	\mathrm{memoria} & = & s \cdot s_{tam} + i \cdot i_{tam} + m \cdot m_{tam} + n \cdot n_{tam} + a \cdot a_{tam}\\
 	\mathrm{memoria} & = & u \cdot s_{tam} + 2u \cdot i_{tam} + \alpha u \cdot m_{tam} + (2u+\alpha) \cdot n_{tam} + \beta \cdot a_{tam} \\
@@ -535,7 +586,7 @@ Como ya se describió en la sección \ref{sec:Analisis:Dispositivos} posteriorme
 \subsection{Identificación general de dispositivos}
 La identificación de dispositivos se corresponde con el postprocesado dentro de la estructura de funciones que se ha desarrollado. Consiste simplemente en seguir el algoritmo \ref{lst:AlgoritmoResolucionDispositivos} con las consideraciones usuales para el lenguaje de programación C. Las estructuras correspondientes a almacenar la información de dispositivos se declaran en el módulo IP/MAC, haciéndolo así abstracto a la entrada que se elija. Las funciones, aunque pertenecientes al mismo módulo, se sitúan en un fichero diferente para así tenerlas localizadas de una manera más sencilla y facilitar las pruebas que se realizaron.
 
-Es importante mencionar que en esta parte del desarrollo no se ha usado la librería \texttt{static\_mem} ya que el número de dispositivos no escala linealmente con el tamaño de la traza y llega un punto en el que se mantiene estable. Es por esto que los tiempos de ejecución no son tan altos y no era necesario su uso. De lo que si se ha hecho uso es de los diccionarios de una y dos claves que ya estaban implementados en \textit{fihser}. COncretamente, el diccionario de dos claves ha sido de especial utilidad para la resolución de los dispositivos, ya que nos permitía iterar por cualquiera de las dos claves (MAC\textsubscript{entrada} y MAC\textsubscript{salida} en nuestro caso).
+Es importante mencionar que en esta parte del desarrollo no se ha usado la librería \texttt{static\_mem} ya que el número de dispositivos no escala linealmente con el tamaño de la traza y llega un punto en el que se mantiene estable. Es por esto que los tiempos de ejecución no son tan altos y no era necesario su uso. De lo que si se ha hecho uso es de los diccionarios de una y dos claves que ya estaban implementados en \textit{fihser}. Concretamente, el diccionario de dos claves ha sido de especial utilidad para la resolución de los dispositivos, ya que nos permitía iterar por cualquiera de las dos claves (MAC\textsubscript{entrada} y MAC\textsubscript{salida} en nuestro caso).
 
 \subsection{Clasificación de dispositivos}
 La clasificación de dispositivos se realiza en dos pasos: primero identificamos los \textit{firewalls} y después los balanceadores de carga a nivel MAC. Los elementos que no queden clasificados en ninguno de los dos casos se identificarán como \textit{routers} a falta de añadir más elementos a clasificar en un futuro.
@@ -571,24 +622,117 @@ El caso de Procesa no es más que una muestra de la adaptabilidad que posee el a
 
 
 \chapter{Pruebas y resultados}
-\section{Tests y uso del CI}
+\section{Testeo del código}
 \label{chap:Pruebas:Test}
-\textit{Fisher} contaba con un módulo de tests automatizado del que se ha hecho uso para facilitar la comprobación de la corrección del código. Las pruebas se han centrado mayoritariamente en: comprobar que la librería de ordenación de superflujos ordena correctamente en casos básicos y complejos, que el módulo IP/MAC detecta superflujos y maneja correctamente las estructuras y que la librería de detección de dispositivos detecta diferentes tipos. Además de esto, se utilizo CI para automatizar los tests en cada actualización de código y valgrind para comprobar las posibles pérdidas de memoria.
+\textit{Fisher} contaba con un módulo de tests automatizado del que se ha hecho uso para facilitar la comprobación de la corrección del código. Las pruebas se han centrado mayoritariamente en: comprobar que la librería de ordenación de superflujos ordena correctamente en casos básicos y complejos, que el módulo IP/MAC detecta superflujos y maneja correctamente las estructuras y que la librería de detección de dispositivos detecta diferentes tipos. Además de esto, se utilizo CI para automatizar los tests en cada actualización de código y Valgrind para comprobar las posibles pérdidas de memoria.
+
+Tras esto, se han utilizado trazas de empresas reales para probar el potencial del programa y ver como se comporta con archivos de gran tamaño tanto en memoria como en tiempo de ejecución. 
 
 \subsection{Tests}
+\label{subsec:Pruebas:Tests:Tests}
+
+Para los dos módulos con la funcionalidad más crítica de todo el proyecto, se realizaron tests unitarios específicos para garantizar su funcionamiento. Más adelante (referencia a CI), se describirá como se han integrado estos  y los ya existentes con GitLab (referencia al CI de GitLab). En ambos casos se ha comprobado tanto la inicialización de variables y estructuras internas, como el funcionamiento de estas en casos conocidos. En estos casos se realizaron los cálculos manualmente para hallar la solución a cada caso y compararla con la que sacaba el programa.
+
+En primer lugar, tenemos el módulo de ordenación de superflujos. Aunque alguno de los tests puede corresponderse con situaciones poco usuales, hay que tenerlas en cuenta y son de gran utilidad para detectar errores y garantizar la robustez del módulo. Los tests que se han realizado son los siguientes:
+\begin{itemize}
+	\item Creación y comprobación de variables para una estructura \texttt{layer\_info} (que contiene la información de capa) para una capa MAC.
+	\item Creación y comprobación de variables para una estructura \texttt{layer\_info} (que contiene la información de capa) para una capa \textit{string}. Esta estructura se creó internamente en los tests y se utilizará en el resto para facilitar su codificación.
+	\item Creación y comprobación de variables para la estructura general \texttt{layer\_list}. Las opciones que se pueden elegir y los tamaños de los \textit{pools} de memoria son comprobados aquí.
+	\item Creación de un camino simple. Solo dos IPs con dos MACs intermedias.
+	\item Creación de un camino con múltiples MACs entre las IPs.
+	\item Creación de un camino con saltos repetidos. Esto sirve para ver que la información se actualiza correctamente.
+	\item Creación de un camino con múltiples bifurcaciones. Así se comprueba que se resuelven correctamente.
+	\item Creación de un camino con saltos que quedan huérfanos. De esta manera se observa que se guardan para más tarde ser añadidos cuando se tiene la información necesaria.
+	\item Creación de un camino que combina bifurcaciones y caminos huérfanos para ver que el programa responde correctamente a ordenaciones más complejas.
+	\item Creación de un camino en el que la ordenación se realiza mediante atributos de orden.
+	\item Creación de un camino donde en RTT se calcula mediante su asignación directa de valor. Por ejemplo, en el caso de Procesa se utiliza este método ya que en los registros viene ya calculado.
+	\item Creación de un camino en el que se calcula en RTT mediante paquetes SYN y ACK. Esto es usado en el análisis paquete a paquete de una traza pcap.
+	\item Creación de un camino en el que se mezclan saltos huérfanos y repetidos. Este test comprueba que la información se actualiza correctamente en estos casos.
+\end{itemize}
+
+Además de esto, se han realizado tests para comprobar que el número de superflujos y de dispositivos que se detectan. Esta batería de tests deberá ser ampliada según se vaya aumentando el número de dispositivos que se detectan. Estos tests se basan en la creación de trazas pcap artificiales en las que se controlan los resultados que debería dar el programa. Los que existen por el momento son los siguientes:
+
+\begin{itemize}
+    \item Creación y comprobación de las variables y estructuras correspondientes a \texttt{superflows}.
+    \item Detección del número de superflujos que hay en la traza pcap. 
+    \item Detección de un único \textit{firewall}.
+    \item Detección de un único \textit{router}.
+    \item Detección de un único balanceador de carga a nivel MAC.
+    \item Detección de un \textit{firewall} y un \textit{router} en paralelo.
+    \item Detección de un dispositivo con mayor cantidad de tráfico. Esto nos permite ver que la información interna del dispositivo se actualiza correctamente.
+    \item Detección de un dispositivo con múltiples interfaces.
+\end{itemize}
+
+\subsection{Uso del CI}
+Dado que el código se desarrolló como parte de un proyecto interno de Naudit, se almacenó de manera remota en Gitlab. Como parte de esta plataforma se utilizó el CI para asegurar el buen funcionamiento del código \cite{GitLabDocs2019}. De esta manera, se comprueba que el proyecto pasa todas las pruebas descritas en la sección \ref{subsec:Pruebas:Tests:Tests}. Como en \textit{fisher} ya se incluían diferentes tests para el código ya implementado, estos también se incluyeron en el CI para su comprobación con cada cambio realizado.
+
+El script que se realizó es muy simple ya que aprovecha totalmente la estructura de tests que existe en \textit{fisher}. Simplemente se compila el código por medio del Makefile y se ejecuta \textit{textit} en modo test. Si la ejecución falla en cualquiera de los tests se manda un mensaje al desarrollador que realizo los cambios en el código para que sepa del problema. Se considera especialmente útil esta función ya que así no es necesario realizar las pruebas a mano y queda constancia en el propio repositorio del funcionamiento de los tests.
+
 \subsection{Valgrind}
 Para probar y garantizar que el flujo del programa y la memoria usada era eficiente se uso Valgrind. Esto fue especialmente importante en el caso de la ordenación de superflujos ya que la cantidad de memoria que se puede llegar a manejar es del rango de centenares de GB en algunos casos. 
-\subsection{Uso del CI}
-\section{Resultados con trazas reales}
 
-\begin{figure}[hbtp]
-\inputgnuplot{gnuplot/memory-usage}
-\caption{Uso de la memoria en función del número de paquetes analizados.}
-\label{fig:Validacion:DiskStore}
+\subsection{Benchmark}
+
+\section{Resultados con trazas reales}
+Para terminar el capítulo correspondiente a las pruebas que se han realizado en el proyecto, se proponen una serie de resultados en base a trazas reales. Estas trazas se han obtenido gracias a diversos proyectos que está llevando a cabo Naudit y demuestran el grado de aplicación real que tiene el programa desarrollado. Todas las pruebas se han realizado
+
+\subsection{Tiempo y memoria}
+Los dos principales valores que tendremos en cuenta son el tiempo y la memoria. Mediante ejecuciones progresivas en diferentes trazas se han estimado las gráficas correspondientes. Es necesario tener en cuenta que estas medidas son dependientes de la traza específica que se analice puesto que el número de superflujos, saltos con paquetes repetidos, bifurcaciones y demás parámetros dependen de las características intrínsecas de cada red. Sin embargo, las gráficas que se muestran a continuación pueden servir como referencia de la eficiencia que supone en tiempo y memoria.
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.8]{latex/gnuplot/png/time.png}
+\caption[Gráfica de tiempo de ejecución]{Tiempo de ejecución en función del tamaño de traza.}
+\label{fig:Pruebas:Tiempo}
 \end{figure}
+
+Como se puede ver en la figura \ref{fig:Pruebas:Tiempo}, la relación entre el tiempo y el tamaño de la traza es claramente lineal. Se considera que el tiempo de procesado de los paquetes es rápido. Los 500 MB de memoria se corresponden a unos 10.000.000 de paquetes. Esta cantidad de paquetes puede entenderse como un rango de xxxxx tiempo en una empresa real. %TODO: ver a que cantidad de tiempo se corresponde para terminar el analisis
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.8]{latex/gnuplot/png/memory-usage.png}
+\caption[Gráfica de memoria usada]{Memoria utilizada para la reserva de las estructuras en función del tamaño de traza.}
+\label{fig:Pruebas:Memoria}
+\end{figure}
+
+En la figura \ref{fig:Pruebas:Memoria} podemos ver que el programa desarrollado es muy eficiente en memoria. Su eficiencia es mejor que $o(\sqrt{n})$ y, en general, la memoria usada en las estructuras durante el análisis es en promedio del 17\%, llegando a ser de solo el 0.9\% cuando se analizan 500 MB de traza. Se considera que la eficiencia en memoria es muy buena ya que se estarían usando cantidades de memoria muy inferiores a los tamaños de las trazas usadas. %TODO: Puede que haya que expresar estos datos de manera diferente e incluso hallar exactamente la relacion de eficiencia
+
+\subsection{Estructuras reservadas}
+En la sección \ref{subsec:Desarrollo:IPMAC:CoefPools} se desarrollo la idea de estimar la cantidad de estructuras que se iban a reservar de cada tipo para hacer el programa más eficiente en memoria. El cálculo del coeficiente $\alpha$ se puede hacer ahora experimentalmente gracias a las trazas reales en las que se ha usado el programa. Podemos comprobar ahora como evolucionan estas medidas en la figura \ref{fig:Pruebas:Estructuras}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.8]{latex/gnuplot/png/structures.png}
+\caption[Gráfica de estructuras utilizadas]{Cantidad de estructuras reservadas en función del tamaño de traza.}
+\label{fig:Pruebas:Estructuras}
+\end{figure}
+
+Se puede observar que los elementos que más estructuras acumulan son los nodos y las aristas. Esto es normal ya que el grafo de cada superflujo incluye varias de estas estructuras. Tras esto están las MACs y las IPs. Recordemos que en cada superflujo habrá únicamente dos IPs y que la relación de MACs por superflujo quedaba por estimar experimentalmente. Si tomamos todos los datos obtenidos y miramos los ratios de cada estructura por superflujo en promedio nos queda la tabla \ref{tab:Pruebas:Ratios estructuras}.
+
+\begin{table}[hbtp]
+	\centering
+	\begin{tabular}{lccc}
+		\toprule & \textbf{Ratio Teórico}  & \textbf{Ratio Teórico Estimado} & \textbf{Ratio Real} \\ 
+		\midrule
+		Superflujos & 1 & 1 & 1 \\
+		Nodos & $2+\alpha$ & 4,94 & 4,94 \\
+		Aristas & $(n-1)+\lambda$ & 3,94 & 4,87 \\
+		MACs & $\alpha$ & 2,94 & 2,94 \\
+		IPs & 2 & 2 & 2 \\ 
+		\bottomrule
+	\end{tabular}
+	\caption{Ratios teóricos y experimentales de estructuras}
+	\label{tab:Pruebas:Ratios estructuras}
+\end{table}
+
+Sustituimos los parámetros $\alpha = 0.0078$ (como se vio en \ref{sec:Analisis:Edges per node}) y $\alpha = 2,94$ (tomado del ratio real observado en la traza). Podemos ver que, aplicando las fórmulas de ratio teóricas la única diferencia se presenta en las aristas, donde las estimadas son menos que las reales. Esto se puede deber a que la primera aproximación que realizamos no fuera lo suficientemente exacta o a que, como ya se mencionó, las bifurcaciones que puede haber en cada red son muy diferentes y dependen de las características específicas de cada una. A nivel práctico, la conclusión que sacamos es que el parámetro $\lambda$ debe ajustarse para soportar redes con una gran cantidad de bifurcaciones. De esta manera, la pérdida de eficiencia en memoria será mínima en las redes con pocas bifurcaciones y el programa seguirá funcionando en redes con muchas bifurcaciones.
 
 \chapter{Conclusiones}
 \label{chap:Conclusiones}
+
+\section{Conclusiones generales del proyecto}
+
+\section{Trabajo futuro}
 
 \backmatter
 \appendix

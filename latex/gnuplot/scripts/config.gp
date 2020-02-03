@@ -50,6 +50,4 @@ set style line 103 lc rgb '#A0A0A0' dashtype 3 lw 0.5
 set grid xtics mxtics ls 102, ls 103
 set grid ytics mytics ls 102, ls 103
 
-## Functions
-max(x,y) = (x < y) ? y : x
-min(x,y) = (x < y) ? x : y
+set key autotitle columnhead
