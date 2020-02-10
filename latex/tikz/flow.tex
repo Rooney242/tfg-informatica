@@ -1,0 +1,69 @@
+\makeatletter
+
+\pgfdeclareshape{document}{
+\inheritsavedanchors[from=rectangle] % this is nearly a rectangle
+\inheritanchorborder[from=rectangle]
+\inheritanchor[from=rectangle]{center}
+\inheritanchor[from=rectangle]{north}
+\inheritanchor[from=rectangle]{south}
+\inheritanchor[from=rectangle]{west}
+\inheritanchor[from=rectangle]{east}
+% ... and possibly more
+\backgroundpath{% this is new
+% store lower right in xa/ya and upper right in xb/yb
+\southwest \pgf@xa=\pgf@x \pgf@ya=\pgf@y
+\northeast \pgf@xb=\pgf@x \pgf@yb=\pgf@y
+% compute corner of ‘‘flipped page’’
+\pgf@xc=\pgf@xb \advance\pgf@xc by-10pt % this should be a parameter
+\pgf@yc=\pgf@yb \advance\pgf@yc by-10pt
+% construct main path
+\pgfpathmoveto{\pgfpoint{\pgf@xa}{\pgf@ya}}
+\pgfpathlineto{\pgfpoint{\pgf@xa}{\pgf@yb}}
+\pgfpathlineto{\pgfpoint{\pgf@xc}{\pgf@yb}}
+\pgfpathlineto{\pgfpoint{\pgf@xb}{\pgf@yc}}
+\pgfpathlineto{\pgfpoint{\pgf@xb}{\pgf@ya}}
+\pgfpathclose
+% add little corner
+\pgfpathmoveto{\pgfpoint{\pgf@xc}{\pgf@yb}}
+\pgfpathlineto{\pgfpoint{\pgf@xc}{\pgf@yc}}
+\pgfpathlineto{\pgfpoint{\pgf@xb}{\pgf@yc}}
+\pgfpathlineto{\pgfpoint{\pgf@xc}{\pgf@yc}}
+}
+}
+\makeatother
+
+\tikzstyle{Input}=[shape=document, draw=black, fill=palette1, thick, align=center, opacity=.8, text opacity=1, draw opacity=1, minimum width=15mm, minimum height=20mm]
+\tikzstyle{Module}=[rectangle, draw=black, fill=palette2, thick, inner sep=10pt, align=center, opacity=.8,text opacity=1, draw opacity=1]
+\tikzstyle{Library}=[rounded corners, draw=black, fill=palette3, thick, inner sep=7pt, align=center, opacity=.8,text opacity=1, draw opacity=1]
+\tikzstyle{Output}=[shape=document, draw=black, fill=palette4, thick, inner sep=7pt, align=center, opacity=.8,text opacity=1, draw opacity=1, minimum width=15mm, minimum height=20mm]
+\tikzstyle{connection}=[->, line width=1mm, draw=black]
+\tikzstyle{double connection}=[<->, line width=1mm, draw=black]
+
+
+\begin{tikzpicture}
+\begin{scope}
+
+%\node[anchor = north] at (1.5, -6.5) {\textit{fisher}};
+\fill[dashed, palette5, opacity=.5, draw opacity=1,  draw=black, ultra thick] (1.5, 2) rectangle (11, -6.5);
+
+\node[Input](pcap) at (0,0) {Traza\\ pcap};
+\node[Input](procesa) at (0,-3) {Fichero\\ \textit{Procesa}};
+\node[Module](sfpcap) at (3.2,0) {Módulo\\ PCAP};
+\node[Module](sfprocesa) at (3.2,-3) {Módulo\\ \textit{Procesa}};
+\node[Module](sfipmac) at (7.5,-1.5) {Módulo\\ IPMAC};
+\node[Library](layerlist) at (6, -5) {Librería\\ ordenación\\ superflujos};
+\node[Library](devicesdetection) at (9, -5) {Librería\\ detección\\ dispositivos};
+\node[Output](superflows) at (13, 0) {Salida\\superflujos\\ (registros)};
+\node[Output](devices) at (13, -3) {Salida\\ dispositivos\\ (json)};
+
+\draw[connection] (pcap.east) -- (sfpcap.west);
+\draw[connection] (procesa.east) -- (sfprocesa.west);
+\draw[connection] (sfpcap.east) -- (sfipmac.west);
+\draw[connection] (sfprocesa.east) -- (sfipmac.west);
+\draw[connection] (sfipmac.east) -- (superflows.west);
+\draw[connection] (sfipmac.east) -- (devices.west);
+\draw[double connection] (sfipmac.south) -- (layerlist.north);
+\draw[double connection] (sfipmac.south) -- (devicesdetection.north);
+
+\end{scope}
+\end{tikzpicture}
