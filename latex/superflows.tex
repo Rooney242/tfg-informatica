@@ -9,6 +9,8 @@
 \usepackage{xfrac}
 \usepackage{multirow}
 \usepackage{tikz}
+\usepackage[utf8]{inputenc}
+\usepackage{glossaries}
 
 
 \usetikzlibrary{arrows}
@@ -23,8 +25,6 @@
 \definecolor{palette3}{HTML}{fb8d62}
 \definecolor{palette4}{HTML}{fd2eb3}
 \definecolor{palette5}{HTML}{a7e9af}
-
-
 
 \tikzstyle{IpNode}=[rectangle, draw=black, thick, inner sep=12pt]
 \tikzstyle{NewIpNode}=[IpNode, fill=green]
@@ -56,10 +56,11 @@
 
 \setdegreeDouble
 
-%Resumen
-%Abstract (resumen en ingles)
+%TODO: Resumen
+%TODO: Abstract (resumen en ingles)
 
 %Glosario
+\makeglossaries
 \newglossaryentry{ip}{
 	name = {IP},
 	description = {\textit{Internet Protocol}. En general, usado para referirse a una dirección IP}
@@ -161,27 +162,33 @@
 \listoffigures
 %\cleardoublepage
 
+
 \printnoidxglossaries
 %TODO: El glosario no se imprime correctamente
 
 \mainmatter
 
-\chapter{Introducción y motivación}
+\chapter{Introducción}
 
-\section{Motivación y objetivos}
+\section{Motivación}
 
-% TODO (Guillermo): La motivación tiene que ser mucho más clara. El primer párrafo debería de explicar cuál es el problema a resolver y por qué es de interés. En este caso, el problema es que no hay herramientas que permitan reconstruir el camino de de un paquete en la red. Es un problema de interés porque estudiando ese camino podemos entender qué fallos se producen y dónde. Por lo tanto, es especialmente interesante para redes grandes y complejas. Ahí ya puedes introducir que eso de analizar redes es lo que se hace en Naudit y que era aunque había una prueba de concepto no tenía un rendmiento suficiente.
+% (Guillermo): La motivación tiene que ser mucho más clara. El primer párrafo debería de explicar cuál es el problema a resolver y por qué es de interés. En este caso, el problema es que no hay herramientas que permitan reconstruir el camino de de un paquete en la red. Es un problema de interés porque estudiando ese camino podemos entender qué fallos se producen y dónde. Por lo tanto, es especialmente interesante para redes grandes y complejas. Ahí ya puedes introducir que eso de analizar redes es lo que se hace en Naudit y que era aunque había una prueba de concepto no tenía un rendmiento suficiente.
 % Igualmente, lo de la detección de dispositivos no lo dejaría como algo ahí aparte. Es cierto que lo hemos puesto a posteriori pero hay que motivarlo bien. Por ejemplo, se puede mencionar que la reconstrucción de caminos abre la puerta a detectar dispositivos centrales de la red (routers, firewalls) y poder sacar estadísticas de su funcionamiento, lo que ayuda a simplificar y acelerar la detección de fallos y anomalías.
 % Con todo eso explicado, ya puedes centrarte en el resto de motivación más específica: es de utilidad para la empresa, es interesante para revisar los conceptos y abarca muchas áreas del grado (buena idea mencionando eso de las áreas que tocas, por cierto). Yo no mencionaría aquí todavía cosas de trabajo futuro. Podrías poner algo en el resumen pero aquí cuadra poco.
 % La conclusión de la sección deberían de ser los objetivos del TFG expresados de manera concisa (por ejemplo: desarrollar un programa que haga X, que el programa tenga rendimiento suficiente, desarrollar algoritmos de detección de dispositivos, implementar y probar esos algoritmos), de tal forma que cuando alguien acabe de leer el TFG pueda volver a esta parte y decir "ok, ha logrado todos los objetivos".
 
-Como proyecto interno en la empresa se había comenzado a realizar un proyecto similar en \textit{Python}. Este se rechazo dado que el tiempo de ejecución era demasiado elevado. Debido a las características del proyecto se propuso comenzar el proyecto desde cero en C para comprobar si se satisfacían las condiciones de tiempo. Esta fue una de las premisas tenidas en cuenta durante el análisis y desarrollo del proyecto: asegurar la mayor eficiencia en la medida de lo posible tanto en memoria como en tiempo de ejecución.
 
-Por otro lado, la motivación general del proyecto es la de conseguir reconstruir las topología de una red simplemente con la información que se consigue desde un número limitado de puntos de esta. En estos lugares se colocan las sondas desde las que se recopila la información de los paquetes que se están mandando por la red. El propósito de analizar las redes de esta manera es el de facilitar la localización de fallos. El programa además sería de utilidad real para la empresa ya que se adapta a su estructuras de aplicaciones internas. Utiliza datos que se generan con herramientas desarrolladas por Naudit y recopila información de tal manera que esta puede ser utilizada por herramientas a más alto nivel dentro de la propia empresa. En resumen, la utilidad real del proyecto fue otro de los puntos a favor que propiciaron que se realizara.
 
-La detección de dispositivos fue un objetivo que se propuso más tarde, durante la realización del TFG. Se observó que podía ser una aplicación interesante y que se disponía del tiempo necesario para comenzarla. Es el punto que más queda por desarrollar y del que más ampliaciones se pueden hacer. Se deja como trabajo futuro el aumentar la cantidad de dispositivos que detectamos en una red ya que solo se ha dispuesto del tiempo para detectar dispositivos más básicos.
+El problema al que este TFG plantea una solución es la inexistencia de herramientas específica que permita reconstruir el camino que recorre un paquete en una red informática. Esto es un problema de gran interés porque estudiando ese camino se puede entender qué fallos se producen en la red y localizarlos para su posterior reparación. Además, la reconstrucción de caminos abre la puerta a detectar dispositivos centrales de la red como \textit{routers} o \textit{firewalls} y sacar estadísticas de su funcionamiento. Esto simplificaría y aceleraría la detección de fallos y anomalías en redes. Estas herramientas serías de especial utilidad en redes de gran tamaño y complejidad que podemos encontrar en el ámbito empresarial donde su análisis y comprensión no resulta siempre sencillo a simple vista.
 
-Por último, otro de los motivos por los que se realizo este TFG es porque para llevarlo a cabo se requiere de comprender y dominar conceptos que se han ido adquiriendo durante el grado. En especial, se requiere de conocimientos en los ámbitos de las redes informáticas, estructuras de datos, programación, análisis y diseño de software, ingeniería de software y análisis de algoritmos. Se trataba de un proyecto perfecto para asentar estos conocimientos y demostrar su dominio en un entorno más profesional.
+El análisis y monitorización de tráfico de redes informáticas y de los datos medidos en ellas es la principal actividad de Naudit. Como proyecto interno, se desarrollo un prototipo para la reconstrucción de caminos en Python, pero este no cumplía con los requisitos de rendimiento que se le exigían. Es por esto, que tras la realización de las prácticas curriculares en esta misma empresa se propuso como TFG el realizar un reconstructor de caminos que detectara dispositivos en C. Este programa sería de gran utilidad para la empresa ya que utilizaría datos que se generan con herramientas desarrolladas por Naudit y recopila información de tal manera que esta puede ser utilizada por herramientas a más alto nivel dentro de la propia empresa. Además, el proyecto tendría una aplicación directa e inmediata, pudiendo ser usado por empresas reales tras su finalización.
+
+Sacar adelante un proyecto de estas características se considera de gran interés desde el punto de vista académico. Al realizarlo se demuestra haber comprendido y dominado los conceptos que se han ido adquiriendo durante el grado. En especial, se requiere de conocimientos en los ámbitos de las redes informáticas, estructuras de datos, programación, análisis y diseño de software, ingeniería de software y análisis de algoritmos. Además, al realizarlo como parte de una empresa se considera alcanzada una de las finalidades del grado, la inserción laboral dentro de los campos estudiados. 
+
+Realizar este TFGs e trataba, en conclusión, de una solución útil desde el punto de vista tecnológico, profesional y académico. Resuelve un problema de interés actual ya que ayuda a la detección de fallos y anomalías en redes de gran tamaño que se pueden encontrar en el mundo empresarial apoyándose en los conocimientos adquiridos durante el grado, demostrando su comprensión y dominio. 
+
+\section{Objetivos}
+Desde un punto de vista más técnico, el principal objetivo de este TFG es el de desarrollar un programa que consiga reconstruir el camino que sigue un paquete dentro de una red de ordenadores, así como detectar dispositivos intermedios que compongan dicha red. A partir de trazas pcap o de otro tipo de ficheros que se asemejen a una estructura \textit{paquete a paquete} se debe de inferir dichos caminos y dispositivos y recopilar la información obtenida de una manera estructurada. Se implementarán algoritmos y estructuras que faciliten esta tarea y se deberá argumentar y comprobar su correcto funcionamiento. Además, se deberá de tener siempre en cuenta que el rendimiento y la eficiencia son factores determinantes dentro del desarrollo del proyecto y se tendrán que utilizar las herramientas necesarias para asegurar la eficiencia de lo implementado.
 
 \section{Estructura del documento}
 El documento está estructurado en seis capítulos diferenciados. El primero es esta introducción donde se explican la motivación y objetivos que propiciaron la realización de este TFG. Tras esto, encontramos el estado del arte, donde se analizan herramientas actuales que pueden utilizarse para la reconstrucción de flujos IP y métodos existentes. Se comentan tecnologías de cara a ver qué se puede aprovechar para el análisis y desarrollo del TFG y que puedan informar de las decisiones que se han tomado durante él.
@@ -299,7 +306,7 @@ Un caso similar ocurre si nos llegara un paquete con MAC origen igual a MAC\text
 \end{figure}
 
 %TODO: Ver si se añade esto aqui, como anexo o no se llega a añadir.
-%Utilizando las dos maneras de insertar que se han descrito hasta el momento se puede llegar a cualquier grafo de los que describen un flujo entre dos IPs relacionado con MACs. Se propone un ejemplo en base al estado inicial añadiendo unos cuantos paquetes y observando como avanza el grafo. Se puede observar en la \fref{fig:Analisis:ComplexFlow}.
+%Utilizando las dos maneras de insertar que se han descrito hasta el momento se puede llegar a cualquier grafo de los que describen un flujo entre dos IPs relacionado con MACs. Se propone un ejemplo en base al estado inicial añadiendo unos cuantos paquetes y observando como avanza el grafo. Se puede observar en la \ref{fig:Analisis:ComplexFlow}.
 
 %\begin{figure}[h]
 %%\centering
@@ -348,7 +355,7 @@ Es claro ver que para un grafo sin bifurcaciones $a = n-1$, ya que todo nodo est
     \mathbb{E}(a) =&\ (n - 1) + \mathbb{E}(\bb Poisson(\lambda))\\
     \mathbb{E}(a) =&\ (n - 1) + \lambda \
 \end{align*}
-Para poder calcular el número de aristas necesitamos saber cuanto vale el parámetro $\lambda$. Para ajustar el modelo y estimar el parámetro $\lambda$, utilizaremos el método de estimación por máxima verosimilitud. Calculamos $\lambda = \widehat{\lambda} = \bar{b}$, siendo $\bar{b}$ la media muestral de bifurcaciones por flujo. Hay que tener en cuenta que, por las características de los grafos que utilizamos, los nodos IP no pueden tener bifurcaciones. En la \fref{tab:Analisis:Media bifurcaciones} se muestran los datos extraídos de empresas reales y los cálculos de la media muestral.
+Para poder calcular el número de aristas necesitamos saber cuanto vale el parámetro $\lambda$. Para ajustar el modelo y estimar el parámetro $\lambda$, utilizaremos el método de estimación por máxima verosimilitud. Calculamos $\lambda = \widehat{\lambda} = \bar{b}$, siendo $\bar{b}$ la media muestral de bifurcaciones por flujo. Hay que tener en cuenta que, por las características de los grafos que utilizamos, los nodos IP no pueden tener bifurcaciones. En la Figura \ref{tab:Analisis:Media bifurcaciones} se muestran los datos extraídos de empresas reales y los cálculos de la media muestral.
 \begin{table}[hbtp]
 	\centering
 	\begin{tabular}{lccc}
@@ -537,6 +544,8 @@ Como se puede ver en la Figura \ref{fig:Desarrollo:Flujo del programa} el flujo 
 
 Se generan dos ficheros de salida tras la ejecución del programa. El primero de ellos contiene la información correspondiente a los superflujos, sus conexiones y parámetros. Está en forma de registros a nivel de un registro por arista del grafo. El segundo recoge la información correspondiente a los dispositivos, su tipo y parámetros recopilados. Este es un fichero JSON con todos los detalles de cada dispositivo. A partir de estos ficheros se puede utilizar la información por otros programas teniendo en cuenta el formato que presenta y que queda definido en la documentación del código.
 
+En las siguientes secciones y a lo largo de este capítulo se van analizando en profundidad cada uno de los módulos, la procedencia de los archivos de entrada y las características de los de salida. Se especifica en cada caso las consideraciones más importantes que se tuvieron en cuenta durante el desarrollo.
+
 \section{Módulo de superflujos IP/MAC}
 \label{sec:Desarrollo:IPMAC}
 Este módulo utiliza directamente todas las estructuras y funcionalidades del módulo de ordenación de superflujos. Se realiza de manera abstracta para que se pueda seleccionar la estructura de entrada de donde se sacará la información para los nodos y aristas del grafo ordenado. En este módulo se fijan la inicialización de las estructuras necesarias para el análisis de superflujos, la adición de nuevos caminos al grafo y la salida que genera el programa. Se comentan los aspectos más relevantes de este módulo.
@@ -560,9 +569,9 @@ El programa esta capacitado para usar solo la memoria que se considere necesaria
 	\label{tab:Desarrollo:Coeficientes memoria}
 \end{table}
 
-La manera de estimar el número de estructuras que reservar de cada tipo se basa en que por cada superflujo podemos estimar la cantidad de los demás elementos que necesitamos en promedio. Esto se traduce en unos coeficientes que se pueden ver en \fref{tab:Desarrollo:Coeficientes memoria}. Es claro que por cada superflujo habrá 2 elementos IP (IP origen e IP destino) y que el número de nodos será la suma de los elementos IP y los elementos MAC. Existen dos casos especiales: el promedio de MACs por superflujo y el promedio de aristas por superflujo.
+La manera de estimar el número de estructuras que reservar de cada tipo se basa en que por cada superflujo podemos estimar la cantidad de los demás elementos que necesitamos en promedio. Esto se traduce en unos coeficientes que se pueden ver en la Figura \ref{tab:Desarrollo:Coeficientes memoria}. Es claro que por cada superflujo habrá 2 elementos IP (IP origen e IP destino) y que el número de nodos será la suma de los elementos IP y los elementos MAC. Existen dos casos especiales: el promedio de MACs por superflujo y el promedio de aristas por superflujo.
 
-Para estos dos casos se ha recurrido a la observación en casos experimentales. Hay que resaltar que estos parámetros son variables y que se pueden ajustar en función de las características específicas de cada red. En la \fref{sec:Analisis:Edges per node} se razonó el valor tomado para $\lambda$. Para el calculo del parámetro $\alpha$ se recurre a la observación en trazas reales. En la tabla \ref{tab:Pruebas:Ratios estructuras} puede comprobarse como se realiza ese cálculo.
+Para estos dos casos se ha recurrido a la observación en casos experimentales. Hay que resaltar que estos parámetros son variables y que se pueden ajustar en función de las características específicas de cada red. En la Figura \ref{sec:Analisis:Edges per node} se razonó el valor tomado para $\lambda$. Para el calculo del parámetro $\alpha$ se recurre a la observación en trazas reales. En la tabla \ref{tab:Pruebas:Ratios estructuras} puede comprobarse como se realiza ese cálculo.
 
 Conociendo el tamaño de memoria del que disponemos para nuestras estructuras así como el tamaño de cada una (denotado como $x_{tam}$) podemos conocer cual es la manera óptima de repartir la memoria. Utilizando los superflujos como unidad de memoria (denotada como $u$) podemos obtener la cantidad de unidades de memoria que podemos reservar de esta manera.
 
@@ -624,18 +633,16 @@ La mayor diferencia a tener en cuenta es que distintos formatos de archivos no t
 
 \subsection{Adaptabilidad del programa}
 El caso de \textit{Procesa} no es más que una muestra de la adaptabilidad que posee el analizador de superflujos. La estructura que se muestra en \ref{subsec:Desarrollo:Ordenacion:EstructuraFunciones}, proporciona la cohesión suficiente para que se puedan repetir situaciones en las que haya que añadir entradas de diferente tipo de una manera sencilla y rápida. Además, se facilita el desarrollo de diferentes tipos de salida que puedan ser necesarias en el futuro y el uso de este módulo de análisis de superflujos como parte de otro proyecto más amplio.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \chapter{Pruebas y resultados}
 \section{Testeo del código}
 \label{chap:Pruebas:Test}
-\textit{Fisher} contaba con un módulo de tests automatizado del que se ha hecho uso para facilitar la comprobación de la corrección del código. Las pruebas se han centrado mayoritariamente en comprobar que la librería de ordenación de superflujos ordena correctamente en casos básicos y complejos, que el módulo IP/MAC detecta superflujos y maneja correctamente las estructuras y que la librería de detección de dispositivos detecta diferentes tipos. Además de esto, se utilizó CI para automatizar los tests en cada actualización de código y Valgrind para comprobar las posibles pérdidas de memoria.
-
-Tras esto, se han utilizado trazas de empresas reales para probar el potencial del programa y ver como se comporta con archivos de gran tamaño tanto en memoria como en tiempo de ejecución. 
+\textit{Fisher} contaba con un módulo de tests automatizado del que se ha hecho uso para asegurar la corrección del código. Las pruebas se han centrado mayoritariamente en comprobar que la librería de ordenación de superflujos ordena correctamente en casos básicos y complejos, que el módulo IP/MAC detecta superflujos y maneja correctamente las estructuras y que la librería de detección de dispositivos detecta diferentes tipos. Además de esto, se utilizó CI para automatizar los tests en cada actualización de código y Valgrind para comprobar las posibles pérdidas de memoria. Tras esto, se han utilizado trazas de empresas reales para probar el potencial del programa y ver como se comporta con archivos de gran tamaño tanto en memoria como en tiempo de ejecución. 
 
 \subsection{Tests}
 \label{subsec:Pruebas:Tests:Tests}
 
-Para los dos módulos con la funcionalidad más crítica de todo el proyecto, se realizaron tests unitarios específicos para garantizar su funcionamiento. Más adelante (referencia a CI), se describirá como se han integrado estos  y los ya existentes con GitLab (referencia al CI de GitLab). En ambos casos se ha comprobado tanto la inicialización de variables y estructuras internas, como el funcionamiento de estas en casos conocidos. En estos casos se realizaron los cálculos manualmente para hallar la solución a cada caso y compararla con la que sacaba el programa.
+Para los dos módulos con la funcionalidad más crítica de todo el proyecto, se realizaron tests unitarios específicos para garantizar su funcionamiento. Más adelante, se describirá como se han integrado estos y los ya existentes con \textit{GitLab}. En ambos casos se ha comprobado tanto la inicialización de variables y estructuras internas, como el funcionamiento de estas en casos conocidos. En estos casos se realizaron los cálculos manualmente para hallar la solución a cada caso y compararla con la que sacaba el programa.
 
 En primer lugar, tenemos el módulo de ordenación de superflujos. Aunque alguno de los tests puede corresponderse con situaciones poco usuales, hay que tenerlas en cuenta y son de gran utilidad para detectar errores y garantizar la robustez del módulo. Los tests que se han realizado son los siguientes:
 \begin{itemize}
@@ -668,12 +675,10 @@ Además de esto, se han realizado tests para comprobar que el número de superfl
 \end{itemize}
 
 \subsection{Uso del CI}
-Dado que el código se desarrolló como parte de un proyecto interno de Naudit, se almacenó de manera remota en Gitlab. Como parte de esta plataforma se utilizó el CI para asegurar el buen funcionamiento del código \cite{GitLabDocs2019}. De esta manera, se comprueba que el proyecto pasa todas las pruebas descritas en la sección \ref{subsec:Pruebas:Tests:Tests}. Como en \textit{fisher} ya se incluían diferentes tests para el código ya implementado, estos también se incluyeron en el CI para su comprobación con cada cambio realizado.
-
-El script que se realizó es muy simple ya que aprovecha totalmente la estructura de tests que existe en \textit{fisher}. Simplemente se compila el código por medio del Makefile y se ejecuta \textit{textit} en modo test. Si la ejecución falla en cualquiera de los tests se manda un mensaje al desarrollador que realizo los cambios en el código para que sepa del problema. Se considera especialmente útil esta función ya que así no es necesario realizar las pruebas a mano y queda constancia en el propio repositorio del funcionamiento de los tests.
+Dado que el código se desarrolló como parte de un proyecto interno de Naudit, se almacenó de manera remota en Gitlab. Como parte de esta plataforma se utilizó el CI para asegurar el buen funcionamiento del código \cite{GitLabDocs2019}. De esta manera, se comprueba que el proyecto pasa todas las pruebas descritas en la sección \ref{subsec:Pruebas:Tests:Tests}. Como en \textit{fisher} ya se incluían diferentes tests para el código ya implementado, estos también se incluyeron en el CI para su comprobación con cada cambio realizado. De esta manera, con cada actualización de código se comprueba su funcionamiento y se informa en caso de no pasar los tests quedando constancia de todo esto en el propio repositorio.
 
 \subsection{Valgrind}
-Para probar y garantizar que el flujo del programa y la memoria usada era eficiente se uso Valgrind. Esto fue especialmente importante en el caso de la ordenación de superflujos ya que la cantidad de memoria que se puede llegar a manejar es del rango de centenares de GB en algunos casos. 
+Para probar y garantizar que el flujo del programa y la memoria usada era eficiente se uso Valgrind. Esto fue especialmente importante en el caso de la ordenación de superflujos ya que la cantidad de memoria que se puede llegar a manejar es del rango de decenas de GB en algunos casos. Para estas trazas tan grandes, errores en la ejecución del programa o quedarse sin memoria en medio de la ejecución puede suponer malgastar todo el tiempo computacional que se hubiera invertido ya que el análisis no acabaría. Se considera que según el proyecto vaya escalando en un futuro se deberá de volver a usar Valgrind para comprobar que todo sigue correcto y no se han producido fugas de memoria al incluir el nuevo código que se haya realizado.
 
 \subsection{Benchmark}
 
@@ -683,7 +688,7 @@ Para terminar el capítulo correspondiente a las pruebas que se han realizado en
 \subsection{Tiempo y memoria}
 Los dos principales valores que tendremos en cuenta son el tiempo y la memoria. Mediante ejecuciones progresivas en diferentes trazas se han estimado las gráficas correspondientes. Es necesario tener en cuenta que estas medidas son dependientes de la traza específica que se analice puesto que el número de superflujos, saltos con paquetes repetidos, bifurcaciones y demás parámetros dependen de las características intrínsecas de cada red. Sin embargo, las gráficas que se muestran a continuación pueden servir como referencia de la eficiencia que supone en tiempo y memoria.
 
-% TODO (Guillermo): No uses sólo lineas, pon puntos también para que se vea qué mediciones has hecho.
+
 \begin{figure}[H]
 \centering
 \includegraphics[scale=0.8]{latex/gnuplot/png/time.png}
@@ -691,23 +696,20 @@ Los dos principales valores que tendremos en cuenta son el tiempo y la memoria. 
 \label{fig:Pruebas:Tiempo}
 \end{figure}
 
-Como se puede ver en la figura \ref{fig:Pruebas:Tiempo}, la relación entre el tiempo y el tamaño de la traza es claramente lineal. Se considera que el tiempo de procesado de los paquetes es rápido. Los 500 MB de memoria se corresponden a unos 10.000.000 de paquetes. Esta cantidad de paquetes puede entenderse como un rango de xxxxx tiempo en una empresa real. %TODO: ver a que cantidad de tiempo se corresponde para terminar el analisis
+Como se puede ver en la Figura \ref{fig:Pruebas:Tiempo}, la relación entre el tiempo y el tamaño de la traza es claramente lineal. Se considera que el tiempo de procesado de los paquetes es rápido ya que la cantidad de información que se está procesando es muy grande y se analizarán trazas que se correspondan a cantidades reales de tiempo mucho mayores. Una vez que el análisis se haya realizado se tendrá una gran cantidad de información ordenada de la que sacar conclusiones acerca del estado de la red.
 
-% TODO (Guillermo): Lo mismo aquí
-
-\begin{figure}[H]
+\begin{figure}[h]
 \centering
 \includegraphics[scale=0.8]{latex/gnuplot/png/memory-usage.png}
 \caption[Gráfica de memoria usada]{Memoria utilizada para la reserva de las estructuras en función del tamaño de traza.}
 \label{fig:Pruebas:Memoria}
 \end{figure}
 
-En la figura \ref{fig:Pruebas:Memoria} podemos ver que el programa desarrollado es muy eficiente en memoria. Su eficiencia es mejor que $o(\sqrt{n})$ y, en general, la memoria usada en las estructuras durante el análisis es en promedio del 17\%, llegando a ser de solo el 0.9\% cuando se analizan 500 MB de traza. Se considera que la eficiencia en memoria es muy buena ya que se estarían usando cantidades de memoria muy inferiores a los tamaños de las trazas usadas. %TODO: Puede que haya que expresar estos datos de manera diferente e incluso hallar exactamente la relacion de eficiencia
+En la Figura \ref{fig:Pruebas:Memoria} podemos ver que el programa desarrollado es muy eficiente en memoria. Su eficiencia es mejor que $o(\sqrt{n})$ y, en general, la memoria usada es asumible por cualquier sistema que ejecute el programa (podemos ver que no supera los 60KB analizando una traza de 300MB) y que el factor más limitante del programa sería el tiempo. Se considera que la eficiencia en memoria es muy buena ya que se estarían usando cantidades de memoria muy inferiores a los tamaños de las trazas usadas. 
 
 \subsection{Estructuras reservadas}
-En la sección \ref{subsec:Desarrollo:IPMAC:CoefPools} se desarrollo la idea de estimar la cantidad de estructuras que se iban a reservar de cada tipo para hacer el programa más eficiente en memoria. El cálculo del coeficiente $\alpha$ se puede hacer ahora experimentalmente gracias a las trazas reales en las que se ha usado el programa. Podemos comprobar ahora como evolucionan estas medidas en la figura \ref{fig:Pruebas:Estructuras}.
+En la sección \ref{subsec:Desarrollo:IPMAC:CoefPools} se desarrollo la idea de estimar la cantidad de estructuras que se iban a reservar de cada tipo para hacer el programa más eficiente en memoria. El cálculo del coeficiente $\alpha$ se puede hacer ahora experimentalmente gracias a las trazas reales en las que se ha usado el programa. Podemos comprobar ahora como evolucionan estas medidas en la Figura \ref{fig:Pruebas:Estructuras}.
 
-% TODO (Guillermo) Y aquí también hay que usar puntos.
 
 \begin{figure}[H]
 \centering
@@ -736,12 +738,34 @@ Se puede observar que los elementos que más estructuras acumulan son los nodos 
 
 Sustituimos los parámetros $\alpha = 0.0078$ (como se vio en \ref{sec:Analisis:Edges per node}) y $\alpha = 2,94$ (tomado del ratio real observado en la traza). Podemos ver que, aplicando las fórmulas de ratio teóricas la única diferencia se presenta en las aristas, donde las estimadas son menos que las reales. Esto se puede deber a que la primera aproximación que realizamos no fuera lo suficientemente exacta o a que, como ya se mencionó, las bifurcaciones que puede haber en cada red son muy diferentes y dependen de las características específicas de cada una. A nivel práctico, la conclusión que sacamos es que el parámetro $\lambda$ debe ajustarse para soportar redes con una gran cantidad de bifurcaciones. De esta manera, la pérdida de eficiencia en memoria será mínima en las redes con pocas bifurcaciones y el programa seguirá funcionando en redes con muchas bifurcaciones.
 
+%TODO: Capítulo de conclusiones
 \chapter{Conclusiones}
 \label{chap:Conclusiones}
 
 \section{Conclusiones generales del proyecto}
 
+En este TFG se ha conseguido implementar un programa que reconstruye el camino que sigue un paquete dentro de una red informática, así como detecta los dispositivos intermedios que compongan dicha red. Se recopila de manera estructurada toda esta información en dos ficheros de salida a partir de trazas pcap o ficheros \textit{Procesa}. Se han analizado los diferentes problemas que se han planteado y se han diseñado algoritmos que los solucionaban de una manera eficiente. Posteriormente se implementaron estas soluciones de una manera eficiente tanto en memoria como en tiempo de ejecución.
+
+En primer lugar, se han explorado las principales herramientas actuales de análisis de tráfico. Ninguna ofrece una solución específica y automatizada ni para la reconstrucción de caminos ni para la detección de dispositivos. Si bien ofrecen información similar, ninguna era lo suficientemente completa para lo que se buscaba. Se han explorado, además, las características de los dispositivos actuales que se quieren detectar para aprovecharlas en nuestro favor a la hora de detectarlos.
+
+Existía un prototipo de reconstructor de caminos en Python, pero no cumplía los requisitos de eficiencia en tiempo exigidas. Se utilizó de base \textit{fisher}, programa desarrollado por Guillermo Julián para Naudit, aprovechando y ampliando su funcionalidad. Esta aplicación escrita en C automatiza el análisis de paquetes a partir de trazas pcap. Gracias al cambio de lenguaje de programación a C y al uso de \textit{pools} de memoria se consiguió llegar a los objetivos de rendimiento en uso de memoria y tiempo de ejecución.
+
+Se ha desarrollado un módulo para la ordenación de superflujos. Se utiliza la información que proporciona cada paquete para localizar su posición dentro del superflujo que conecta dos \textit{hosts}. Se consideran las bifurcaciones que pueden existir y el uso de atributos de orden (como el TTL) para inferir saltos que no se estén viendo físicamente. Además, se guardan paquetes de los que no se tiene información suficiente para ordenarlos para intentarlo en otro momento.
+
+Para la detección de dispositivos se diseñaron algoritmos para solucionarlo en dos fases. Primero se detectan los dispositivos en cada superflujo individualmente y se resuelven las dependencias para tener una visión global a nivel de red. Tras esto, aprovechando las características de cada dispositivo en específico, se clasifican en \textit{firewalls}, \textit{routers} y balanceadores de carga a nivel MAC. La lista de dispositivos clasificados puede aumentar y es el punto principal donde el proyecto puede seguir desarrollándose.
+
+Aparte de trazas pcap, el programa está diseñado para funcionar en base a otros ficheros de entrada. En concreto, funciona con los ficheros de \textit{Procesa} y se ha organizado el código para que sea sencillo ampliar las entradas que se analizan siempre que sigan una estructura similar a los paquetes de una traza pcap.
+
+Como parte del proyecto se crearon tests unitarios para los dos módulos principales que abarcan una gran variedad de casos y aseguran el correcto funcionamiento del código. Se integran estos tests en el CI que ofrece GitLab y se ejecutan automáticamente con cada cambio en el código. Esto evita que se introduzcan cambios que perjudiquen la funcionalidad del programa sin advertirlo.
+
+Por último, se han realizado pruebas con trazas reales de gran tamaño. Esto prueba el correcto funcionamiento del código implementado y que los valores de memoria y tiempo de ejecución se mantienen en entornos reales
+
+En definitiva, se ha alcanzado a una solución funcional al problema de la reconstrucción de caminos y detección de dispositivos, siendo esta eficiente en tiempo y memoria. Puede ser aplicada a redes reales de inmediato facilitando la detección de problemas y anomalías, así como ayudando a la comprensión de la topología y las características de la red
+
 \section{Trabajo futuro}
+el principal frente que queda abierto para continuar con el trabajo es en el ámbito del módulo encargado de los dispositivos. Existen dispositivos de gran interés en redes de gran tamaño que se podrían clasificar como \textit{routers} NAT o balanceadores de carga a nivel IP entre otros. Para ello habría que comprender las características de estos dispositivos y usarlas para clasificarlos, alterando las reglas que están codificadas actualmente.
+
+Otro punto donde se podría avanzar en el futuro es en la información que recopilamos desde el punto de vista de los dispositivos. Puede ser interesante y de gran utilidad que se detecten las IPs en concreto que conectan los dispositivos y agrupar estas por subredes. De esta manera estaremos avanzando hacia un análisis más global de la red que estemos analizando y así tener una perspectiva más amplia que ayude a detectar errores y comprender el comportamiento de dicha red.
 
 \backmatter
 \appendix
