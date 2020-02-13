@@ -1,5 +1,4 @@
 \makeatletter
-
 \pgfdeclareshape{document}{
 \inheritsavedanchors[from=rectangle] % this is nearly a rectangle
 \inheritanchorborder[from=rectangle]
@@ -32,19 +31,9 @@
 }
 \makeatother
 
-\tikzstyle{Input}=[shape=document, draw=black, fill=palette1, thick, align=center, opacity=.8, text opacity=1, draw opacity=1, minimum width=15mm, minimum height=20mm]
-\tikzstyle{Module}=[rectangle, draw=black, fill=palette2, thick, inner sep=10pt, align=center, opacity=.8,text opacity=1, draw opacity=1]
-\tikzstyle{Library}=[rounded corners, draw=black, fill=palette3, thick, inner sep=7pt, align=center, opacity=.8,text opacity=1, draw opacity=1]
-\tikzstyle{Output}=[shape=document, draw=black, fill=palette4, thick, inner sep=7pt, align=center, opacity=.8,text opacity=1, draw opacity=1, minimum width=15mm, minimum height=20mm]
-\tikzstyle{connection}=[->, line width=1mm, draw=black]
-\tikzstyle{double connection}=[<->, line width=1mm, draw=black]
-
-
 \begin{tikzpicture}
 \begin{scope}
-
-%\node[anchor = north] at (1.5, -6.5) {\textit{fisher}};
-\fill[dashed, palette5, opacity=.5, draw opacity=1,  draw=black, ultra thick] (1.5, 2) rectangle (11, -6.5);
+\fill[dashed, vlepsbasedseven, opacity=.5, draw opacity=1,  draw=black, ultra thick] (1.5, 2) rectangle (11, -6.5);
 
 \node[Input](pcap) at (0,0) {Traza\\ pcap};
 \node[Input](procesa) at (0,-3) {Fichero\\ \textit{Procesa}};
@@ -56,7 +45,7 @@
 \node[Output](superflows) at (13, 0) {Salida\\superflujos\\ (registros)};
 \node[Output](devices) at (13, -3) {Salida\\ dispositivos\\ (json)};
 
-\draw[connection] (pcap.east) -- (sfpcap.west);
+\draw[->, connection] (pcap.east) -- (sfpcap.west);
 \draw[connection] (procesa.east) -- (sfprocesa.west);
 \draw[connection] (sfpcap.east) -- (sfipmac.west);
 \draw[connection] (sfprocesa.east) -- (sfipmac.west);
@@ -66,4 +55,5 @@
 \draw[double connection] (sfipmac.south) -- (devicesdetection.north);
 
 \end{scope}
+
 \end{tikzpicture}
