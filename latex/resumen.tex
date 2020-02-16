@@ -1,2 +1,13 @@
-resumen en español
-\palabrasclave{palabra, clave}%TODO
+La evolución de las redes informáticas ha hecho que estas aumenten en tamaño, complejidad y cantidad de trafico que soportan. Es cada vez más importante llevar a cabo una monitorización exhaustiva para detectar posibles anomalías en su funcionamiento. Conocer los caminos que recorren los paquetes de una red pudiendo así obtener información de su topología es de gran utilidad. Además, obtener estadísticas de los dispositivos que la conforman la propia red puede ayudar a comprenderla mejor y localizar errores.
+
+En este TFG se diseñará y desarrollará una herramienta de reconstrucción de caminos a partir de trazas de tráfico pcap. También se inferirán los dispositivos centrales de la red en base a los resultados obtenidos de esta reconstrucción y se clasificarán en \textit{firewalls}, \textit{routers} y balanceadores de carga a nivel MAC. Pasaremos de esta manera de una visión más específica de cada conexión IP de la red a una más global.
+
+En primer lugar, se realiza una investigación de aplicaciones actuales de análisis de tráfico de red para ver qué soluciones proponen a estos problemas. Tras recolectar toda la información, se decidió que los caminos que recorren los paquetes se guardan en forma de grafo unidireccional. Durante el desarrollo se pondrá especial énfasis en conseguir un buen rendimiento y eficiencia en memoria y tiempo de ejecución.
+
+Se recopila también información sobre las características de los dispositivos que se pretende detectar. Nos valemos de estas para diseñar las reglas de clasificación una vez que se hayan detectado de manera general. Este sistema de reglas puede hacer que se aumente el número de dispositivos a detectar en un futuro.
+
+La herramienta se adapta a otro tipo de entradas que no sean trazas pcap como es el caso de ficheros \textit{Procesa}. De esta manera el programa es más versátil y puede obtener información de redes en base a otros ficheros que mantengan una estructura similar a la de \textit{paquete a paquete}.
+
+Como parte del proyecto, se diseña una batería de tests para comprobar la funcionalidad del código escrito. Estos test se integran en el repositorio donde se almacena el proyecto, GitLab, gracias al CI que permite ejecutar estos tests con cada actualización de código.
+
+\palabrasclave{Reconstrucción de caminos, Detección de dispositivos, Análisis de tráfico}

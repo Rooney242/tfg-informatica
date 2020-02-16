@@ -1,2 +1,13 @@
-abstract in english
-\keywords{key, words}%TODO
+Evolution in computers' networks has made them grow in size, complexity and amount of traffic they support. The importance of monitoring networks looking for anomalies and errors is increasing every day. It is really useful to know paths traffic packets follow in a network, as it gives helpful information about its topology. Moreover, obtaining statistics about devices that conform the network could help understanding how it works and find errors.
+
+In this project, a tool for reconstructing paths based on pcap traces will be designed and developed. Also, network devices will be inferred from the output obtained in the reconstruction and they will be classified into routers, firewalls and load balancers at MAC level. In this way, we have started with a local view of each IP connection and end with a global perspective of the network.
+
+In the first place, an investigation through current traffic analysis tools will be done to observe how these problems are approached. With all the information gathered, we decided paths that packets follow are stored in an unidirectional graph. We will insist in Reaching a great memory efficiency and performance in runtime.
+
+Information about main features of devices we expect detecting is also compiled. We take advantage of these characteristics to design the classification rules once we have detected the devices. We can update and enlarge the amount of devices we detect in the future adding more rules to the system.
+
+The program adapts to other kind of inputs different form pcap traces, like in the case of \textit{Procesa} files. The designed tool is then more versatile and is able to obtain information based on other input files that follow a \textit{packet} structure.
+
+As a part of the project, a test battery has been implemented to check the functionality of the code. These tests are included in GitLab, where the project is stored remotely, using the CI that allows to execute them each time the code is changed.
+
+\keywords{Path reconstruction, Device detection, Traffic analysis}
