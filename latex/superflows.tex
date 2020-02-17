@@ -31,11 +31,12 @@
 \tikzstyle{connection}=[-latex, line width=0.7mm, draw=black]
 \tikzstyle{double connection}=[latex-latex, line width=0.7mm, draw=black]
 
-\definecolor{palette1}{HTML}{61d4b3}
-\definecolor{palette2}{HTML}{fdd365}
-\definecolor{palette3}{HTML}{fb8d62}
-\definecolor{palette4}{HTML}{fd2eb3}
-\definecolor{palette5}{HTML}{a7e9af}
+%Glosario
+\newglossaryentry{router}{
+	name = {\textit{router}},
+	description = {Enrutador. Dispositivo que permite conectar hosts en una red. Se encarga de establecer la ruta de cada paquete dentro de dicha red}
+}
+
 
 \title{Reconstrucción de caminos y detección de dispositivos}
 \author{David Moreno Maldonado}
@@ -48,8 +49,6 @@
 \abstractfile{abstract.tex}
 \ackfile{agradecimientos.tex}%TODO
 
-%Glosario: TODO
-
 \begin{document}
 
 \chapter{Introducción}
@@ -59,11 +58,11 @@
 % Igualmente, lo de la detección de dispositivos no lo dejaría como algo ahí aparte. Es cierto que lo hemos puesto a posteriori pero hay que motivarlo bien. Por ejemplo, se puede mencionar que la reconstrucción de caminos abre la puerta a detectar dispositivos centrales de la red (routers, firewalls) y poder sacar estadísticas de su funcionamiento, lo que ayuda a simplificar y acelerar la detección de fallos y anomalías.
 % Con todo eso explicado, ya puedes centrarte en el resto de motivación más específica: es de utilidad para la empresa, es interesante para revisar los conceptos y abarca muchas áreas del grado (buena idea mencionando eso de las áreas que tocas, por cierto). Yo no mencionaría aquí todavía cosas de trabajo futuro. Podrías poner algo en el resumen pero aquí cuadra poco.
 % La conclusión de la sección deberían de ser los objetivos del TFG expresados de manera concisa (por ejemplo: desarrollar un programa que haga X, que el programa tenga rendimiento suficiente, desarrollar algoritmos de detección de dispositivos, implementar y probar esos algoritmos), de tal forma que cuando alguien acabe de leer el TFG pueda volver a esta parte y decir "ok, ha logrado todos los objetivos".
-El problema al que este TFG plantea una solución es la inexistencia de herramientas específica que permita reconstruir el camino que recorre un paquete en una red informática. Esto es un problema de gran interés porque estudiando ese camino se puede entender qué fallos se producen en la red y localizarlos para su posterior reparación. Además, la reconstrucción de caminos abre la puerta a detectar dispositivos centrales de la red como \textit{routers} o \textit{firewalls} y sacar estadísticas de su funcionamiento. Esto simplificaría y aceleraría la detección de fallos y anomalías en redes. Estas herramientas serías de especial utilidad en redes de gran tamaño y complejidad que podemos encontrar en el ámbito empresarial donde su análisis y comprensión no resulta siempre sencillo a simple vista.
+El problema al que este TFG plantea una solución es la inexistencia de herramientas específica que permita reconstruir el camino que recorre un paquete en una red informática. Esto es un problema de gran interés porque estudiando ese camino se puede entender qué fallos se producen en la red y localizarlos para su posterior reparación. Además, la reconstrucción de caminos abre la puerta a detectar dispositivos centrales de la red como \glspl{router} o \textit{firewalls} y sacar estadísticas de su funcionamiento. Esto simplificaría y aceleraría la detección de fallos y anomalías en redes. Estas herramientas serías de especial utilidad en redes de gran tamaño y complejidad que podemos encontrar en el ámbito empresarial donde su análisis y comprensión no resulta siempre sencillo a simple vista.
 
 El análisis y monitorización de tráfico de redes informáticas y de los datos medidos en ellas es la principal actividad de Naudit. Como proyecto interno, se desarrollo un prototipo para la reconstrucción de caminos en Python, pero este no cumplía con los requisitos de rendimiento que se le exigían. Es por esto, que tras la realización de las prácticas curriculares en esta misma empresa se propuso como TFG el realizar un reconstructor de caminos que detectara dispositivos en C. Este programa sería de gran utilidad para la empresa ya que utilizaría datos que se generan con herramientas desarrolladas por Naudit y recopila información de tal manera que esta puede ser utilizada por herramientas a más alto nivel dentro de la propia empresa. Además, el proyecto tendría una aplicación directa e inmediata, pudiendo ser usado por empresas reales tras su finalización.
 
-Sacar adelante un proyecto de estas características se considera de gran interés desde el punto de vista académico. Al realizarlo se demuestra haber comprendido y dominado los conceptos que se han ido adquiriendo durante el grado. En especial, se requiere de conocimientos en los ámbitos de las redes informáticas, estructuras de datos, programación, análisis y diseño de software, ingeniería de software y análisis de algoritmos. Además, al realizarlo como parte de una empresa se considera alcanzada una de las finalidades del grado, la inserción laboral dentro de los campos estudiados. 
+Sacar adelante un proyecto de estas características se considera de gran interés desde el punto de vista académico. Al realizarlo se demuestra haber comprendido y dominado los conceptos que se han ido adquiriendo durante el grado. En especial, se requiere de conocimientos en los ámbitos de las redes informáticas, estructuras de datos, programación, análisis y diseño de software, ingeniería de software y análisis de algoritmos. Además, al realizarlo como parte de una empresa se considera alcanzada una de las finalidades del grado, la inserción laboral dentro de los campos estudiados.
 
 Realizar este TFGs e trataba, en conclusión, de una solución útil desde el punto de vista tecnológico, profesional y académico. Resuelve un problema de interés actual ya que ayuda a la detección de fallos y anomalías en redes de gran tamaño que se pueden encontrar en el mundo empresarial apoyándose en los conocimientos adquiridos durante el grado, demostrando su comprensión y dominio. 
 \section{Objetivos}
