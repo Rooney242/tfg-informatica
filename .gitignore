@@ -21,7 +21,6 @@ _minted*
 *.idx
 *.ilg
 *.ind
-*.ist
 *.lof
 *.log
 *.lot
@@ -69,6 +68,4 @@ tikzgen/*
 *.sublime-project
 *.zip
 
-gnuplot/*
-!gnuplot/*.gp
 *.psd
