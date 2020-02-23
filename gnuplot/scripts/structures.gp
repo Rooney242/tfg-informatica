@@ -4,8 +4,6 @@ set output "../png/structures.png"
 
 set key top left
 
-set xrange [0:300]
-set yrange [0:250000]
 
 set xlabel "Tamaño de traza en MB"
 set ylabel "Cantidad de estructuras usadas"
