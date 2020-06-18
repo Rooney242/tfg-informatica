@@ -33,13 +33,13 @@
 
 \begin{tikzpicture}
 \begin{scope}
-\fill[dashed, vlepsbasedseven, opacity=.5, draw opacity=1,  draw=black, ultra thick] (1.5, 2) rectangle (11, -6.5);
+\fill[dashed, gray, opacity=.5, draw opacity=1,  draw=black, ultra thick] (1.5, 2) rectangle (11, -6.5);
 
 \node[Input](pcap) at (0,0) {Traza\\ pcap};
 \node[Input](procesa) at (0,-3) {Fichero\\ \textit{Procesa}};
 \node[Module](sfpcap) at (3.2,0) {Módulo\\ PCAP};
 \node[Module](sfprocesa) at (3.2,-3) {Módulo\\ \textit{Procesa}};
-\node[Module](sfipmac) at (7.5,-1.5) {Módulo\\ IPMAC};
+\node[Module](sfipmac) at (7.5,-1.5) {Módulo\\ IP/MAC};
 \node[Library](layerlist) at (6, -5) {Librería\\ ordenación\\ superflujos};
 \node[Library](devicesdetection) at (9, -5) {Librería\\ detección\\ dispositivos};
 \node[Output](superflows) at (13, 0) {Salida\\superflujos\\ (registros)};

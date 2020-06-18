@@ -5,7 +5,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage{booktabs}
 
-\renewcommand*{\bibfont}{\raggedright}%TODO: es correcto que la bibliografía este a la izquierda
+\renewcommand*{\bibfont}{\raggedright}%: es correcto que la bibliografía este a la izquierda
 
 \usetikzlibrary{arrows}
 \usetikzlibrary{shapes}
@@ -45,7 +45,7 @@
 }
 
 \newglossaryentry{router}{
-	name = {\textit{Router}},
+	name = {\textit{router}},
 	description = {Enrutador. Dispositivo que permite conectar hosts en una red. Se encarga de establecer la ruta de cada paquete dentro de dicha red}
 }
 
@@ -108,13 +108,12 @@
 \title{Reconstrucción de caminos y detección de dispositivos}
 \author{David Moreno Maldonado}
 \advisor{Guillermo Julián Moreno}
+\speaker{Javier Aracil Rico}
 \levelin{Ingeniería Informática y Matemáticas}
-
-\dedication{Dedicatoria}%TODO
 
 \resumenfile{resumen.tex}
 \abstractfile{abstract.tex}
-\ackfile{agradecimientos.tex}%TODO
+\ackfile{agradecimientos.tex} 
 
 \begin{document}
 
@@ -125,7 +124,7 @@
 % Igualmente, lo de la detección de dispositivos no lo dejaría como algo ahí aparte. Es cierto que lo hemos puesto a posteriori pero hay que motivarlo bien. Por ejemplo, se puede mencionar que la reconstrucción de caminos abre la puerta a detectar dispositivos centrales de la red (routers, firewalls) y poder sacar estadísticas de su funcionamiento, lo que ayuda a simplificar y acelerar la detección de fallos y anomalías.
 % Con todo eso explicado, ya puedes centrarte en el resto de motivación más específica: es de utilidad para la empresa, es interesante para revisar los conceptos y abarca muchas áreas del grado (buena idea mencionando eso de las áreas que tocas, por cierto). Yo no mencionaría aquí todavía cosas de trabajo futuro. Podrías poner algo en el resumen pero aquí cuadra poco.
 % La conclusión de la sección deberían de ser los objetivos del TFG expresados de manera concisa (por ejemplo: desarrollar un programa que haga X, que el programa tenga rendimiento suficiente, desarrollar algoritmos de detección de dispositivos, implementar y probar esos algoritmos), de tal forma que cuando alguien acabe de leer el TFG pueda volver a esta parte y decir "ok, ha logrado todos los objetivos".
-El problema al que este TFG plantea una solución es la inexistencia de herramientas específicas que permitan reconstruir el camino que recorre un paquete en una red informática. Esto es un problema de gran interés porque estudiando ese camino se puede entender qué fallos se producen en la red y localizarlos para su posterior reparación. Además, la reconstrucción de caminos abre la puerta a detectar dispositivos centrales de la red como \gls{router} o \textit{firewalls} y sacar estadísticas de su funcionamiento. Esto simplificaría y aceleraría la detección de fallos y anomalías en redes. Estas herramientas serían de especial utilidad en redes de gran tamaño y complejidad que podemos encontrar en el ámbito empresarial, donde su análisis y comprensión no resulta siempre sencillo a simple vista.
+El problema al que este TFG plantea una solución es la inexistencia de herramientas específicas que permitan reconstruir el camino que recorre un paquete en una red informática. Esto es un problema de gran interés porque estudiando ese camino se puede entender qué fallos se producen en la red y localizarlos para su posterior reparación. Además, la reconstrucción de caminos abre la puerta a detectar dispositivos centrales de la red como \textit{routers} o \textit{firewalls} y sacar estadísticas de su funcionamiento. Esto simplificaría y aceleraría la detección de fallos y anomalías en redes. Estas herramientas serían de especial utilidad en redes de gran tamaño y complejidad que podemos encontrar en el ámbito empresarial, donde su análisis y comprensión no resulta siempre sencillo a simple vista.
 
 El análisis y monitorización de tráfico de redes informáticas y de los datos medidos en ellas es la principal actividad de Naudit. Como proyecto interno, se desarrolló un prototipo para la reconstrucción de caminos en Python, pero este no cumplía con los requisitos de rendimiento que se le exigían. Es por esto, que tras la realización de las prácticas curriculares en esta misma empresa se propuso como TFG el realizar en C un reconstructor de caminos que detectara dispositivos. Este programa sería de gran utilidad para la empresa ya que utilizaría datos que se generan con herramientas desarrolladas por Naudit y recopila información de tal manera que esta puede ser utilizada por herramientas a más alto nivel dentro de la propia empresa. Además, el proyecto tendría una aplicación directa e inmediata, pudiendo ser usado por empresas reales tras su finalización.
 
@@ -133,7 +132,7 @@ Sacar adelante un proyecto de estas características se considera de gran inter�
 
 Realizar este TFG se trataba, en conclusión, de una solución útil desde el punto de vista tecnológico, profesional y académico. Resuelve un problema de interés actual ya que ayuda a la detección de fallos y anomalías en redes de gran tamaño que se pueden encontrar en el mundo empresarial apoyándose en los conocimientos adquiridos durante el grado, demostrando su comprensión y dominio. 
 \section{Objetivos}
-Desde un punto de vista más técnico, el principal objetivo de este TFG es el de desarrollar un programa que consiga reconstruir el camino que sigue un paquete dentro de una red de ordenadores, así como detectar dispositivos intermedios que compongan dicha red. A partir de trazas pcap o de otro tipo de ficheros que se asemejen a una estructura \textit{paquete a paquete} se debe de inferir dichos caminos y dispositivos y recopilar la información obtenida de una manera estructurada. Se implementarán algoritmos y estructuras que faciliten esta tarea y se deberá argumentar y comprobar su correcto funcionamiento. Además, se deberá de tener siempre en cuenta que el rendimiento y la eficiencia son factores determinantes dentro del desarrollo del proyecto y se tendrán que utilizar las herramientas necesarias para asegurar la eficiencia de lo implementado.
+Desde un punto de vista más técnico, el principal objetivo de este TFG es el de desarrollar un programa que consiga reconstruir el camino que sigue un paquete dentro de una red de ordenadores, así como detectar dispositivos intermedios que compongan dicha red. A partir de trazas pcap o de otro tipo de ficheros que se asemejen a una estructura \textit{paquete a paquete}, se debe de inferir dichos caminos y dispositivos y recopilar la información obtenida de una manera estructurada. Se implementarán algoritmos y estructuras que faciliten esta tarea y se deberá argumentar y comprobar su correcto funcionamiento. Además, se deberá de tener siempre en cuenta que el rendimiento y la eficiencia son factores determinantes dentro del desarrollo del proyecto y se tendrán que utilizar las herramientas necesarias para asegurar la eficiencia de lo implementado.
 
 \section{Estructura del documento}
 El documento está estructurado en seis capítulos diferenciados. El primero es esta introducción donde se explican la motivación y objetivos que propiciaron la realización de este TFG. Tras esto, encontramos el estado del arte, donde se analizan herramientas actuales que pueden utilizarse para la reconstrucción de flujos IP y métodos existentes. Se comentan tecnologías de cara a ver qué se puede aprovechar para el análisis y desarrollo del TFG y que puedan informar de las decisiones que se han tomado durante él.
@@ -319,15 +318,15 @@ El procedimiento que se seguirá ahora es deductivo. En primer lugar se llevará
                 break\;
                 }
             new\_device $\gets$ DEVICE\_CREATE()\;
-            new\_device.in\_macs.APPEND(device.in\_mac)\;
+            new\_device.in\_macs.APPEND(dev.in\_mac)\;
             remain\_in\_macs $\gets$ CREATE\_LIST()\;
             remain\_out\_macs $\gets$ CREATE\_LIST()\;
-            remain\_in\_macs.APPEND(device.in\_mac)\;
+            remain\_in\_macs.APPEND(dev.in\_mac)\;
             \While{remain\_in\_macs \textbf{is not} EMPTY}{
                 mac $\gets$ remain\_in\_macs.POP()\;
                 \ForEach{dev \textbf{in} unresolved\_devices \textbf{with} key1 == mac}{
-                new\_device.out\_macs.APPEND(device.out\_mac)\;
-                remain\_out\_macs.APPEND(device.out\_mac)\;
+                new\_device.out\_macs.APPEND(dev.out\_mac)\;
+                remain\_out\_macs.APPEND(dev.out\_mac)\;
                 }
                 \While{remain\_out\_macs \textbf{is not} EMPTY}{
                 mac $\gets$ remain\_out\_macs.POP()\;
@@ -425,12 +424,14 @@ Dentro de \textit{fisher} se contaba con algunas estructuras de datos ya impleme
 Este módulo encargará de la inserción de nuevos elementos a los superflujos, manteniendo el orden, respetando la información perteneciente a cada capa (MAC o IP) y actualizando la información tanto de nodos como de aristas. Además, tendrá en cuenta los atributos de orden que se le indiquen para inferir el lugar de los nodos que no puedan ser reconocidos directamente. Guarda también información de nodos que no se puedan insertar por sus características, para que en otro momento de la ejecución se puedan volver a intentar insertar.
 
 \subsection{Estructura de datos usada}
+
 A un nivel abstracto, este módulo representa un grafo orientado con un único nodo inicial y un único nodo final, el propuesto en la solución y que guarda la información de cada superflujo. Cada nodo puede pertenecer a una de las capas que se indican al inicializar la estructura y puede comunicarse con nodos de su misma capa o de las adyacentes. En el caso de superflujos las capas serán IP y MAC. Para la implementación de este módulo se han creado 5 estructuras que se relacionan entre ellas. Se describen a continuación:
+
 \begin{itemize}
     \item Lista de capas: Es la estructura general donde se almacena la información de la lista y se definirá una por cada superflujo. En su inicialización se debe indicar: los \textit{pools} de memoria para los nodos y las aristas, la información de cada capa, su orden y el número de estas, el número de atributos de orden y las funciones para actualizarlos y usarlos para ordenar nodos y la función que pasa de la estructura de donde se sacará la información de cada camino a la estructura de camino en sí. Una vez definida e inicializada una estructura de lista de capas, se puede insertar caminos estandarizados con la función (\texttt{parse\_to\_path}), que ha tenido que ser previamente definida, simplemente llamando a la función \texttt{layer\_list\_add\_path}. Aparte de esto guarda información sobre los caminos huérfanos y el inicio del grafo.
     \item Información de capa: Se guarda la información relacionada con cada capa. Se define de manera global para los nodos de tipo IP y MAC ya que todos comparten la misma información respecto a la capa. Así, cada nodo únicamente tiene un puntero a la estructura de información de su capa y la eficiencia de memoria usada es mayor. La información que se almacena es: funciones para comparar, copiar y pasar a cadena de caracteres elementos de la capa, así como el \gls{pool}.
     \item Nodos de la lista: Se define uno por cada nodo que se intenta insertar en el grafo y se libera memoria en los que ya se ha extraído toda la información necesaria. De esta manera, quedan únicamente definidos hasta la finalización del programa los que han sido añadidos al grafo y los nodos pertenecientes a caminos huérfanos.  En los nodos se almacena información sobre el elemento, los atributos de orden de ese nodo y las siguientes aristas que conectan este nodo con el resto del grafo.
-    \item Aristas: No se definen hasta que no se insertan los nodos que conectan en la lista. Guardan la información de las aristas (VLANs, paquetes, bytes, RTT) que se va actualizando al añadir nuevos caminos y el tipo de conexión que establece entre nodos (real, virtual o cambio de capa).
+    \item Aristas de la lista: No se definen hasta que no se insertan los nodos que conectan en la lista. Guardan la información de las aristas (VLANs, paquetes, bytes, RTT) que se va actualizando al añadir nuevos caminos y el tipo de conexión que establece entre nodos (real, virtual o cambio de capa).
     \item Caminos: Esta estructura es el enlace entre estructuras exteriores al módulo y las que pertenecen. Es necesaria para mantener la cohesión y el correcto comportamiento del resto de funcionalidades. Por lo tanto, se define un camino por cada paquete que estamos analizando. Es en la función \texttt{parse\_to\_path} donde se debe rellenar la información necesaria de esta estructura en función de los datos que se consideren convenientes. En el caso más general se rellenaran con los datos de un paquete.
 \end{itemize}
 
@@ -561,6 +562,7 @@ El caso de \textit{Procesa} no es más que una muestra de la adaptabilidad que p
 Para los dos módulos con la funcionalidad más crítica de todo el proyecto, se realizaron tests unitarios específicos para garantizar su funcionamiento. Más adelante, se describirá como se han integrado estos y los ya existentes con \textit{GitLab}. En ambos casos se ha comprobado tanto la inicialización de variables y estructuras internas, como el funcionamiento de estas en casos conocidos. En estos casos se realizaron los cálculos manualmente para hallar la solución a cada caso y compararla con la que sacaba el programa.
 
 En primer lugar, tenemos el módulo de ordenación de superflujos. Aunque alguno de los tests puede corresponderse con situaciones poco usuales, hay que tenerlas en cuenta y son de gran utilidad para detectar errores y garantizar la robustez del módulo. Los tests que se han realizado son los siguientes:
+
 \begin{itemize}
 	\item Creación y comprobación de variables para una estructura \texttt{layer\_info} (que contiene la información de capa) para una capa MAC.
 	\item Creación y comprobación de variables para una estructura \texttt{layer\_info} (que contiene la información de capa) para una capa \textit{string}. Esta estructura se creó internamente en los tests y se utilizará en el resto para facilitar su codificación.
@@ -610,7 +612,7 @@ Como se puede ver en la Figura \ref{fig:Pruebas:Tiempo}, la relación entre el t
 \image{}{}{gnuplot/png/memory-usage.png}
 \end{figure}
 
-En la Figura \ref{fig:Pruebas:Memoria} podemos ver que el programa desarrollado es muy eficiente en memoria. Su eficiencia es mejor que $o(\sqrt{n})$ y, en general, la memoria usada es asumible por cualquier sistema que ejecute el programa (podemos ver que no supera los 60KB analizando una traza de 300MB) y que el factor más limitante del programa sería el tiempo. Se considera que la eficiencia en memoria es muy buena ya que se estarían usando cantidades de memoria muy inferiores a los tamaños de las trazas usadas. 
+En la Figura \ref{fig:Pruebas:Memoria} podemos ver que el programa desarrollado es muy eficiente en memoria. Su eficiencia es mejor que $o(\sqrt{n})$ y, en general, la memoria usada es asumible por cualquier sistema que ejecute el programa (podemos ver que no supera los 140KB analizando una traza de 2.1GB) y que el factor más limitante del programa sería el tiempo. Se considera que la eficiencia en memoria es muy buena ya que se estarían usando cantidades de memoria muy inferiores a los tamaños de las trazas usadas. 
 
 \subsection{Estructuras reservadas}
 En la sección \ref{subsec:Desarrollo:IPMAC:CoefPools} se desarrollo la idea de estimar la cantidad de estructuras que se iban a reservar de cada tipo para hacer el programa más eficiente en memoria. El cálculo del coeficiente $\alpha$ se puede hacer ahora experimentalmente gracias a las trazas reales en las que se ha usado el programa. Podemos comprobar ahora como evolucionan estas medidas en la Figura \ref{fig:Pruebas:Estructuras}.
